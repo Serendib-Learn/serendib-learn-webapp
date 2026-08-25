@@ -76,6 +76,21 @@ skill), and verify API changes with the endpoint table in `server/README.md`.
 4. Reuse primitives from `src/components/ui/` (button, field, modal) rather
    than styling new ones from scratch.
 
+## Google integration
+
+Two independent OAuth flows, one shared client — see `server/README.md`'s
+"Google: sign-in, Calendar and Meet" section before touching either:
+
+- **Sign-in**: `lib/google.ts`'s `verifyGoogleCredential`, an ID-token check
+  only. Needs `GOOGLE_CLIENT_ID`.
+- **Calendar + Meet**: `routes/integrations.ts` + the rest of `lib/google.ts`.
+  A tutor connects once (portal → Calendar → My hours), which stores a
+  refresh token in the `googleAccounts` collection; `POST /bookings/:id/pay`
+  then creates a real Calendar event with Meet conferencing instead of the
+  placeholder link. Needs `GOOGLE_CLIENT_SECRET` too. Both degrade
+  gracefully when unset — check `googleEnabled()` / `googleCalendarEnabled()`
+  before assuming either is configured, the same pattern `DEMO_MODE` uses.
+
 ## Auth model
 
 Scrypt password hashing, opaque session tokens in an httpOnly cookie (see

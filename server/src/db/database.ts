@@ -46,12 +46,31 @@ export interface ResetToken extends Doc {
   createdAt: string;
 }
 
+/** A Google account linked for Calendar + Meet. Separate from sign-in. */
+export interface GoogleAccount extends Doc {
+  /** Same value as the user id. */
+  id: string;
+  refreshToken: string;
+  email: string;
+  connectedAt: string;
+}
+
+/** A one-time, short-lived record proving who started a Calendar connect flow. */
+export interface OAuthState extends Doc {
+  /** The random state value handed to Google and back. */
+  id: string;
+  userId: string;
+  createdAt: string;
+}
+
 export interface Database {
   users: Collection<User>;
   credentials: Collection<Credential>;
   sessions: Collection<Session>;
   verificationCodes: Collection<PendingCode>;
   resetTokens: Collection<ResetToken>;
+  googleAccounts: Collection<GoogleAccount>;
+  oauthStates: Collection<OAuthState>;
   availability: Collection<AvailabilityRule>;
   bookings: Collection<Booking>;
   materials: Collection<Material>;
@@ -76,6 +95,8 @@ function build(from: Store): Database {
     sessions: from.collection<Session>("sessions"),
     verificationCodes: from.collection<PendingCode>("verificationCodes"),
     resetTokens: from.collection<ResetToken>("resetTokens"),
+    googleAccounts: from.collection<GoogleAccount>("googleAccounts"),
+    oauthStates: from.collection<OAuthState>("oauthStates"),
     availability: from.collection<AvailabilityRule>("availability"),
     bookings: from.collection<Booking>("bookings"),
     materials: from.collection<Material>("materials"),
@@ -106,6 +127,8 @@ async function seedContents(): Promise<Record<string, Doc[]>> {
     sessions: [],
     verificationCodes: [],
     resetTokens: [],
+    googleAccounts: [],
+    oauthStates: [],
     availability: seed.availability,
     bookings: seed.bookings,
     materials: seed.materials,

@@ -5,6 +5,7 @@ import type {
   CommunityPost,
   CommunityPostInput,
   GameResult,
+  GoogleCalendarStatus,
   GoogleSignInInput,
   HomeworkInput,
   HomeworkItem,
@@ -153,6 +154,15 @@ export interface Backend {
   /** Demo-only escape hatch: wipe everything back to the seeded state. */
   demo: {
     reset(): Promise<void>;
+  };
+
+  integrations: {
+    google: {
+      status(): Promise<GoogleCalendarStatus>;
+      /** Full-page navigation target, not a fetch — Google's consent screen is not an XHR. */
+      connectUrl(): string;
+      disconnect(): Promise<void>;
+    };
   };
 
   games: {

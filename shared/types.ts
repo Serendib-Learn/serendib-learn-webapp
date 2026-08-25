@@ -77,6 +77,8 @@ export interface Booking {
   createdAt: string;
   paidAt?: string;
   meetingUrl?: string;
+  /** Id of the Google Calendar event backing this booking, when there is one. */
+  googleEventId?: string;
 }
 
 export type MaterialKind = "pdf" | "audio" | "video" | "link" | "deck";
@@ -267,6 +269,12 @@ export interface ThreadSummary {
   other: User;
   lastMessage?: Message;
   unread: number;
+}
+
+/** Whether the current user has linked a Google account for Calendar + Meet. */
+export interface GoogleCalendarStatus {
+  connected: boolean;
+  email?: string;
 }
 
 /** What a tutor sees about one of their students. */

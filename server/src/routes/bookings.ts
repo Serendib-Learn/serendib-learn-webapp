@@ -3,6 +3,7 @@ import { db } from "../db/database.ts";
 import { ApiError, forbidden, notFound, wrap } from "../lib/errors.ts";
 import { pathParam } from "../lib/http.ts";
 import { blocksSlot, overlaps, priceFor, requireUserRecord } from "../lib/domain.ts";
+import { createGoogleMeeting, deleteGoogleMeeting } from "../lib/google.ts";
 import { newId, nowIso } from "../lib/ids.ts";
 import { deliver } from "../lib/mail.ts";
 import { requireAuth, requireSelfOrAdmin, requireUser } from "../lib/sessions.ts";
@@ -24,6 +25,42 @@ async function load(id: string): Promise<Booking> {
   const booking = await db().bookings.findById(id);
   if (!booking) throw notFound("That booking has gone.");
   return booking;
+}
+
+/**
+ * Real Meet link when the tutor has connected Google Calendar, otherwise the
+ * same placeholder link the demo has always used. Either way a booking can
+ * always be paid for — Calendar is an enhancement, never a hard requirement.
+ */
+async function scheduleMeeting(
+  booking: Booking,
+  tutor: User,
+  student: User,
+): Promise<{ meetingUrl: string; googleEventId?: string }> {
+  const linked = await db().googleAccounts.findById(tutor.id);
+  if (!linked) return { meetingUrl: `https://meet.serendiblearn.com/${booking.id}` };
+
+  try {
+    const startsAt = new Date(booking.startsAt);
+    const endsAt = new Date(startsAt.getTime() + booking.durationMins * 60 * 1000);
+
+    const meeting = await createGoogleMeeting({
+      refreshToken: linked.refreshToken,
+      summary: `Serendib Learn: ${tutor.name} × ${student.name}`,
+      description: booking.focus,
+      startIso: startsAt.toISOString(),
+      endIso: endsAt.toISOString(),
+      timezone: tutor.timezone,
+      attendeeEmails: [tutor.email, student.email],
+    });
+
+    return { meetingUrl: meeting.meetLink, googleEventId: meeting.eventId };
+  } catch (error) {
+    // A stale/revoked refresh token or a transient API error should not stop
+    // the booking from being paid for.
+    console.error("Google Calendar event creation failed:", error);
+    return { meetingUrl: `https://meet.serendiblearn.com/${booking.id}` };
+  }
 }
 
 bookingsRouter.get(
@@ -126,18 +163,21 @@ bookingsRouter.post(
       throw new ApiError("That booking is not waiting for payment.");
     }
 
+    const student = await requireUserRecord(booking.studentId);
+    const tutor = await requireUserRecord(booking.tutorId);
+
     // A real integration would create a payment intent and confirm it here.
+    const meeting = await scheduleMeeting(booking, tutor, student);
+
     const paid = await db().bookings.updateOne(
       { id: booking.id },
       {
         status: "confirmed",
         paidAt: nowIso(),
-        meetingUrl: `https://meet.serendiblearn.com/${booking.id}`,
+        meetingUrl: meeting.meetingUrl,
+        googleEventId: meeting.googleEventId,
       },
     );
-
-    const student = await requireUserRecord(booking.studentId);
-    const tutor = await requireUserRecord(booking.tutorId);
 
     if (student.membership === "none") {
       await db().users.updateOne({ id: student.id }, { membership: "active" });
@@ -163,6 +203,11 @@ bookingsRouter.post(
 
     if (booking.status === "completed") {
       throw new ApiError("That session already happened.");
+    }
+
+    if (booking.googleEventId) {
+      const linked = await db().googleAccounts.findById(booking.tutorId);
+      if (linked) await deleteGoogleMeeting(linked.refreshToken, booking.googleEventId);
     }
 
     response.json(await db().bookings.updateOne({ id: booking.id }, { status: "cancelled" }));

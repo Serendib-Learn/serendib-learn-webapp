@@ -29,6 +29,15 @@ function classes(variant: Variant, size: Size, className?: string) {
   return cn(base, variants[variant], sizes[size], className);
 }
 
+/**
+ * For the rare case that needs button styling on something that is not a
+ * `<button>` or a Next `Link` — a full-page-navigation `<a>`, for instance,
+ * where the browser has to actually leave the app (an OAuth consent screen).
+ */
+export function buttonClasses(variant: Variant = "primary", size: Size = "md", className?: string) {
+  return classes(variant, size, className);
+}
+
 interface Shared {
   variant?: Variant;
   size?: Size;

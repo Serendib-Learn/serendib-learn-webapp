@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { useAction, useQuery } from "@/lib/hooks";
@@ -9,10 +10,33 @@ import { isPast } from "@/lib/format";
 import { AvailabilityEditor } from "@/components/portal/availability-editor";
 import { BookingFlow } from "@/components/portal/booking-flow";
 import { BookingRow } from "@/components/portal/booking-row";
+import { GoogleCalendarConnect } from "@/components/portal/google-calendar-connect";
 import { PageHeader } from "@/components/portal/page-header";
 import { Button } from "@/components/ui/button";
-import { EmptyState, Loading } from "@/components/ui/primitives";
+import { Alert, EmptyState, Loading } from "@/components/ui/primitives";
 import type { Booking } from "@/lib/types";
+
+const googleConnectMessages = {
+  connected: { tone: "jade" as const, text: "Google Calendar is connected." },
+  error: {
+    tone: "clay" as const,
+    text: "Could not connect Google Calendar. Try again.",
+  },
+  cancelled: { tone: "saffron" as const, text: "Google Calendar connection was cancelled." },
+};
+
+function GoogleConnectBanner() {
+  const params = useSearchParams();
+  const outcome = params.get("google") as keyof typeof googleConnectMessages | null;
+  const message = outcome ? googleConnectMessages[outcome] : null;
+  if (!message) return null;
+
+  return (
+    <div className="mb-6">
+      <Alert tone={message.tone}>{message.text}</Alert>
+    </div>
+  );
+}
 
 type Filter = "upcoming" | "past" | "all";
 
@@ -35,6 +59,12 @@ export default function CalendarPage() {
           : "Book an hour with a tutor and manage the sessions you already have."}
       </PageHeader>
 
+      {isTutor ? (
+        <Suspense fallback={null}>
+          <GoogleConnectBanner />
+        </Suspense>
+      ) : null}
+
       <div className="mb-6 flex gap-1 rounded-full bg-white p-1 ring-1 ring-ink-900/8 sm:w-fit">
         {[{ id: "schedule" as const, label: "Schedule" }, secondary].map((item) => (
           <button
@@ -55,7 +85,12 @@ export default function CalendarPage() {
 
       {tab === "schedule" ? <Schedule userId={user.id} isTutor={isTutor} /> : null}
       {tab === "book" ? <BookingFlow student={user} /> : null}
-      {tab === "hours" ? <AvailabilityEditor tutorId={user.id} /> : null}
+      {tab === "hours" ? (
+        <div className="space-y-6">
+          <GoogleCalendarConnect />
+          <AvailabilityEditor tutorId={user.id} />
+        </div>
+      ) : null}
     </>
   );
 }

@@ -5,6 +5,7 @@ import type {
   Booking,
   CommunityPost,
   GameResult,
+  GoogleCalendarStatus,
   HomeworkItem,
   LessonNote,
   MailMessage,
@@ -392,6 +393,22 @@ export const httpBackend: Backend = {
         method: "POST",
         body: { chapterId, script, correct, total },
       });
+    },
+  },
+
+  integrations: {
+    google: {
+      status() {
+        return request<GoogleCalendarStatus>("/integrations/google/status");
+      },
+
+      connectUrl() {
+        return url("/integrations/google/connect");
+      },
+
+      disconnect() {
+        return request<void>("/integrations/google/disconnect", { method: "POST" });
+      },
     },
   },
 };

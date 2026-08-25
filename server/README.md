@@ -62,6 +62,59 @@ form, the tutor list and the demo inbox needs a session cookie.
 | Messages | `GET /threads`, `POST /threads`, `GET\|POST /threads/:id/messages`, `POST /threads/:id/read` |
 | Waitlist | `POST /waitlist`, `GET /waitlist` (admin) |
 | Demo | `GET /mail`, `POST /mail/:id/read`, `DELETE /mail`, `POST /demo/reset` |
+| Integrations | `GET /integrations/google/status`, `GET /integrations/google/connect`, `GET /integrations/google/callback`, `POST /integrations/google/disconnect` |
+
+## Google: sign-in, Calendar and Meet
+
+There are two independent Google features, sharing one OAuth client but
+needing different pieces of it:
+
+- **Sign-in** (`routes/auth.ts`, `lib/google.ts`'s `verifyGoogleCredential`)
+  only needs `GOOGLE_CLIENT_ID`. It uses Google Identity Services on the
+  frontend, which hands back an ID token — proof of identity, nothing more.
+- **Calendar + Meet** (`routes/integrations.ts`, the rest of `lib/google.ts`)
+  needs `GOOGLE_CLIENT_SECRET` too, because it runs a full OAuth
+  authorization-code flow to get a refresh token it can call the Calendar API
+  with later, unattended. A tutor connects once from the portal's "My hours"
+  tab; from then on, `POST /bookings/:id/pay` creates a real Calendar event
+  with Google Meet conferencing on the tutor's calendar, invites both parties
+  by email (`sendUpdates: "all"` — this is also how they get notified), and
+  stores the Meet link as the booking's `meetingUrl`. Cancelling a booking
+  best-effort deletes the event. Both are optional: a tutor who never
+  connects still gets the placeholder `meet.serendiblearn.com` link the demo
+  always used.
+
+Refresh tokens live in the `googleAccounts` collection, one per user, and are
+never sent to the frontend.
+
+### Setting up a Google Cloud project
+
+1. Go to [console.cloud.google.com](https://console.cloud.google.com/) and
+   create a project (or pick an existing one).
+2. **APIs & Services → Library** — enable the **Google Calendar API**.
+3. **APIs & Services → OAuth consent screen** — choose **External**, fill in
+   the required fields, and add yourself under **Test users** (while the app
+   is in "Testing" status, only test users can complete the consent screen —
+   fine for local development, no Google review needed).
+4. **APIs & Services → Credentials → Create credentials → OAuth client ID**,
+   application type **Web application**:
+   - Authorized JavaScript origins: `http://localhost:3000`
+   - Authorized redirect URIs: `http://localhost:4000/api/integrations/google/callback`
+5. Copy the **Client ID** into both `server/.env` (`GOOGLE_CLIENT_ID`) and the
+   frontend's `.env.local` (`NEXT_PUBLIC_GOOGLE_CLIENT_ID`) — same value,
+   two places. Copy the **Client secret** into `server/.env`
+   (`GOOGLE_CLIENT_SECRET`) only; it must never reach the browser.
+6. Restart both dev servers so the new env vars load.
+
+Sign-in works as soon as steps 4–6 are done. Calendar needs step 2 and the
+consent screen's scopes to include `.../auth/calendar.events` and
+`.../auth/userinfo.email` (added automatically — nothing to configure by
+hand — but Google's consent screen will list them, which is normal).
+
+Deploying for real users means submitting the OAuth consent screen for
+[verification](https://support.google.com/cloud/answer/13463073), since
+`calendar.events` is a sensitive scope; unverified apps are capped at 100
+test users and show an "unverified app" warning.
 
 ## Authorization
 
@@ -87,7 +140,9 @@ Nothing in `routes/` should need to change.
 ## Things that are still demo-shaped
 
 - **Payments.** `POST /bookings/:id/pay` marks the booking paid without touching
-  a payment provider.
+  a payment provider. (The Meet link it creates is real once the tutor has
+  connected Google Calendar — see above — it is only the payment that is
+  faked.)
 - **Mail.** `lib/mail.ts` writes into a collection that the site's demo inbox
   reads. The inbox is unauthenticated, because the verification code has to be
   readable before the account can log in — so every message is visible to

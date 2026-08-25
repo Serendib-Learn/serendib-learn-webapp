@@ -41,6 +41,21 @@ export const config = {
   googleClientId: process.env.GOOGLE_CLIENT_ID ?? "",
 
   /**
+   * The same OAuth client's secret, needed only for the Calendar connection
+   * flow (sign-in uses the client id alone). Empty means that flow is off:
+   * `/integrations/google/connect` refuses and the UI hides the button.
+   */
+  googleClientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
+
+  /** Where Google redirects after the Calendar consent screen. */
+  googleRedirectUri:
+    process.env.GOOGLE_REDIRECT_URI ??
+    `http://localhost:${process.env.PORT ?? 4000}/api/integrations/google/callback`,
+
+  /** Where to send the browser back to once the Calendar connection finishes. */
+  appUrl: process.env.APP_URL ?? "http://localhost:3000",
+
+  /**
    * The demo inbox and the reset endpoint exist so the flows can be tried
    * without a mail server. Turn this off for anything real.
    */

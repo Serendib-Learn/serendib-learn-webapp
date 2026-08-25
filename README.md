@@ -99,6 +99,15 @@ Every screen talks to the `Backend` interface in `src/lib/api/backend.ts`, and
 `src/lib/api/index.ts` is the single line that chooses the implementation. That is what made
 replacing the original in-browser mock with a real API a contained change.
 
+## Google: sign-in, Calendar and Meet
+
+Sign-in with Google, and a tutor connecting their Google Calendar so
+confirmed bookings get a real Calendar event with a Google Meet link, are
+both wired up but need a Google Cloud project's credentials to switch on —
+see `server/README.md` for the setup steps. Without them, sign-in hides its
+button and bookings fall back to the placeholder meeting link, same as
+before.
+
 ## Still demo-shaped
 
 - Checkout confirms a booking without contacting a payment provider.
