@@ -1,5 +1,6 @@
 import { config } from "../config.ts";
 import { hashPassword } from "../lib/passwords.ts";
+import { openMongoStore } from "./mongo-store.ts";
 import { openStore, type Collection, type Doc, type Store } from "./store.ts";
 import { DEMO_PASSWORD, createSeedData } from "../../../shared/seed.ts";
 import type {
@@ -165,12 +166,17 @@ async function seedContents(): Promise<Record<string, Doc[]>> {
 export async function connect(): Promise<Database> {
   if (database) return database;
 
-  store = await openStore(config.dataFile);
+  const usingMongo = config.mongodbUri !== "";
+  store = usingMongo
+    ? await openMongoStore(config.mongodbUri, config.mongodbDbName)
+    : await openStore(config.dataFile);
   database = build(store);
 
-  if (store.isEmpty()) {
+  if (await store.isEmpty()) {
     await store.replaceAll(await seedContents());
-    console.log(`Seeded a fresh database at ${config.dataFile}`);
+    console.log(
+      `Seeded a fresh database (${usingMongo ? `MongoDB: ${config.mongodbDbName}` : config.dataFile})`,
+    );
   }
 
   return database;

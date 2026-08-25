@@ -1,8 +1,9 @@
 # Serendib Learn API
 
-Express service behind the Next.js app. Data lives in a local JSON document
-store today; the store is shaped like MongoDB so that swapping it out is a
-contained change.
+Express service behind the Next.js app. Data lives in MongoDB when
+`MONGODB_URI` is set, or a local JSON document store shaped like Mongo when
+it isn't — a quick way to run this with nothing to provision. See "The
+MongoDB store" below.
 
 ## Running
 
@@ -32,13 +33,15 @@ src/
   index.ts              express app, middleware, route mounting
   config.ts             environment
   db/
-    store.ts            the document store: Collection<T>, filters, file writes
-    database.ts         typed collections, seeding, reseeding
+    store.ts            the JSON-file document store: Collection<T>, filters
+    mongo-store.ts       the same Collection<T> surface over real MongoDB
+    database.ts         typed collections, picks a store, seeding, reseeding
   lib/
     passwords.ts        scrypt hashing and verification
     sessions.ts         session cookies, auth middleware
     domain.ts           slot generation, pricing, progress, tutee lookup
-    mail.ts             writes to the mail collection instead of sending
+    google.ts           OAuth flows for sign-in, Calendar, and Gmail
+    mail.ts             demo-inbox write, plus a real Gmail send when connected
     errors.ts           ApiError and the error handler
     http.ts             small request helpers
   routes/               one file per area of the API
@@ -136,18 +139,31 @@ so that one member cannot read another's bookings, homework or messages. Writes
 check ownership too: only the tutor who set a task can mark it, only the owner of
 a material can assign it, and only a party to a booking can cancel it.
 
-## Moving to MongoDB
+## The MongoDB store
 
-1. `npm install mongodb`.
-2. Write a `MongoStore` implementing `Store` and `Collection<T>` from
-   `db/store.ts`. The methods map almost one to one: `find`, `findOne`,
-   `insertOne`, `updateOne` (as `$set`), `deleteOne`, `countDocuments`. The
-   filter objects already use Mongo's `$in`, `$ne`, `$gt`, `$lt` and `$exists`.
-3. Point `openStore` at it based on whether `MONGODB_URI` is set.
-4. Documents key off a string `id` rather than `_id`, so add a unique index on
-   `id` per collection. Nothing else in the service reads `_id`.
+`db/mongo-store.ts` implements `Store`/`Collection<T>` from `db/store.ts` over
+the real driver, and `db/database.ts`'s `connect()` uses it instead of the
+JSON file store whenever `MONGODB_URI` is set — nothing in `routes/` had to
+change to make that swap, which was the point of shaping the JSON store like
+Mongo from the start.
 
-Nothing in `routes/` should need to change.
+A few things worth knowing if you touch it:
+
+- Documents keep the app's own string `id` field rather than Mongo's `_id`.
+  `openMongoStore` creates a unique index on `id` per collection on startup;
+  nothing else ever reads `_id`, and every read strips it via projection so
+  it can't leak into an API response.
+- `FindOptions.sort` in `store.ts` is a JS comparator (routes pass real
+  closures, e.g. `(a, b) => a.startsAt.localeCompare(b.startsAt)`), which
+  Mongo's native `.sort()` can't run server-side — so `MongoDocCollection.find`
+  fetches by filter only, then sorts and limits in Node, same as the JSON
+  store already did. Fine at this app's scale.
+- `isEmpty()` (used once, to decide whether to seed a fresh database) checks
+  whether the `users` collection has any documents, not whether collections
+  exist — creating an index creates an empty collection, so existence alone
+  would say "not empty" on a completely fresh cluster.
+
+See `DEPLOYMENT.md` for creating a free MongoDB Atlas cluster.
 
 ## Things that are still demo-shaped
 

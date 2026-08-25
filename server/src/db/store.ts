@@ -59,7 +59,8 @@ export interface Store {
   collection<T extends Doc>(name: string): Collection<T>;
   /** Replaces every collection at once. Used by seeding and the demo reset. */
   replaceAll(contents: Record<string, Doc[]>): Promise<void>;
-  isEmpty(): boolean;
+  /** Async because a real database has to ask, not just check memory. */
+  isEmpty(): Promise<boolean>;
 }
 
 type Data = Record<string, Doc[]>;
@@ -129,7 +130,7 @@ class JsonStore implements Store {
     this.#data = data;
   }
 
-  isEmpty(): boolean {
+  async isEmpty(): Promise<boolean> {
     return Object.keys(this.#data).length === 0;
   }
 

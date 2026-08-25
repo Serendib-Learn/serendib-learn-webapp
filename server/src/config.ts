@@ -20,10 +20,20 @@ export const config = {
     "http://localhost:3001",
   ]),
 
-  /** Where the JSON document store keeps its file. */
+  /** Where the JSON document store keeps its file. Only used when MONGODB_URI is unset. */
   dataFile: process.env.DATA_FILE
     ? path.resolve(process.env.DATA_FILE)
     : path.join(root, "data", "db.json"),
+
+  /**
+   * Connection string for MongoDB (Atlas or otherwise). Empty means the JSON
+   * file store is used instead — handy for a quick local start with nothing
+   * to provision, but a real deployment should set this.
+   */
+  mongodbUri: process.env.MONGODB_URI ?? "",
+
+  /** Database name to use within the Mongo connection. */
+  mongodbDbName: process.env.MONGODB_DB_NAME ?? "serendib_learn",
 
   session: {
     cookie: "sl_session",
