@@ -90,12 +90,21 @@ echo -n "your-google-oauth-client-id" | \
   gcloud secrets create GOOGLE_CLIENT_ID --data-file=-
 echo -n "your-google-oauth-client-secret" | \
   gcloud secrets create GOOGLE_CLIENT_SECRET --data-file=-
+# Optional — only if you want CAPTCHA on signup/waitlist (step 6 below):
+echo -n "your-turnstile-secret-key" | \
+  gcloud secrets create TURNSTILE_SECRET_KEY --data-file=-
 
-for SECRET in MONGODB_URI GOOGLE_CLIENT_ID GOOGLE_CLIENT_SECRET; do
+for SECRET in MONGODB_URI GOOGLE_CLIENT_ID GOOGLE_CLIENT_SECRET TURNSTILE_SECRET_KEY; do
   gcloud secrets add-iam-policy-binding $SECRET \
     --member="serviceAccount:${SA_EMAIL}" --role=roles/secretmanager.secretAccessor
 done
 ```
+
+If you skip Turnstile, skip creating that secret too — and leave
+`deploy-backend.yml`'s `secrets:` block as-is (it doesn't reference
+`TURNSTILE_SECRET_KEY`); add a `TURNSTILE_SECRET_KEY=TURNSTILE_SECRET_KEY:latest`
+line there only once the secret actually exists, since Cloud Run fails the
+deploy outright if a referenced secret doesn't.
 
 (Update a secret later with `echo -n "new-value" | gcloud secrets versions add MONGODB_URI --data-file=-`.)
 
@@ -195,4 +204,5 @@ docker compose up --build
 - [ ] Vercel project created, env vars set, custom domain attached
 - [ ] `DEMO_MODE=false` in the API's deployed env (already set in `deploy-backend.yml`)
 - [ ] `COOKIE_SAMESITE=none` + `COOKIE_SECURE=true` in the API's deployed env (already set) — required because Vercel and Cloud Run are different domains
+- [ ] (optional) Cloudflare Turnstile site created at [dash.cloudflare.com](https://dash.cloudflare.com/?to=/:account/turnstile) if you want CAPTCHA on signup/waitlist — `TURNSTILE_SECRET_KEY` as a Cloud Run secret, `NEXT_PUBLIC_TURNSTILE_SITE_KEY` as a Vercel env var. Skipping this just means no CAPTCHA, same as local dev today.
 - [ ] Push to `main` → CI runs → deploy workflow runs → visit your domain

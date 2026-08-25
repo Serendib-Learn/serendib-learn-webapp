@@ -42,7 +42,8 @@ Copy `.env.example` to `.env.local` if the API is not on `localhost:4000`. Other
 npm run build              # production build of the site
 npm run lint               # eslint
 npm --prefix server run typecheck
-npm --prefix server run seed   # wipe the data and seed again
+npm --prefix server test          # server unit + integration tests
+npm --prefix server run seed      # wipe the data and seed again
 ```
 
 If `npm install` fails behind a corporate proxy with `SELF_SIGNED_CERT_IN_CHAIN`, run it with
@@ -119,10 +120,17 @@ and Docker-builds both apps on every push and PR. For the real deployment
 (Vercel + Google Cloud Run + MongoDB Atlas) and what `deploy-backend.yml`
 needs to do it automatically, see **`DEPLOYMENT.md`**.
 
+## Security and tests
+
+Rate limiting, security headers, input validation, an optional CAPTCHA, and
+an admin audit log are all in place — see server/README.md's "Security"
+section for what's covered and how each is configured. Automated tests
+(`npm test` in `server/`) cover the auth flow and the booking lifecycle end
+to end; see server/README.md's "Tests" section for what's not covered yet.
+
 ## Still demo-shaped
 
 - Checkout confirms a booking without contacting a payment provider.
 - The demo inbox is unauthenticated by design, so anyone who can reach the API can read every
   message. `DEMO_MODE=false` closes it and the reset endpoint.
-- No rate limiting on login or signup.
 - Both games work without an account; scores are only recorded when someone is logged in.

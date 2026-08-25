@@ -61,6 +61,12 @@ export interface Store {
   replaceAll(contents: Record<string, Doc[]>): Promise<void>;
   /** Async because a real database has to ask, not just check memory. */
   isEmpty(): Promise<boolean>;
+  /**
+   * Releases whatever the store holds open — a real client connection for
+   * MongoDB, nothing for the JSON file. Only tests and a graceful shutdown
+   * need this; a running server otherwise never calls it.
+   */
+  close?(): Promise<void>;
 }
 
 type Data = Record<string, Doc[]>;

@@ -39,11 +39,14 @@ Useful checks before calling something done:
 ```bash
 npm run lint
 npm --prefix server run typecheck
+npm --prefix server test
 ```
 
-There is no automated test suite in this repo yet — verify UI changes by
-running the dev server and checking the page in a browser (see the `run`
-skill), and verify API changes with the endpoint table in `server/README.md`.
+Verify UI changes by running the dev server and checking the page in a
+browser (see the `run` skill). For API changes, both an automated check and
+a manual one are warranted: extend the relevant `routes/*.test.ts` (see
+"Tests" below) *and* sanity-check against the endpoint table in
+`server/README.md`.
 
 ## Adding a new API endpoint
 
@@ -62,6 +65,12 @@ skill), and verify API changes with the endpoint table in `server/README.md`.
 4. Remember: relative imports need explicit `.ts` extensions, and type-only
    imports must use `import type` — Node runs this TypeScript directly by
    stripping types, no build step.
+5. If the body needs real validation (email format, enums, length bounds,
+   more than one field), use `zod` + `lib/validate.ts`'s `parseBody` — see
+   `routes/auth.ts` for the pattern. Give the base `z.string()` an
+   `{ error }` message too, not just `.min()`/`.pipe()` — otherwise a
+   missing field surfaces zod's generic "expected string, received
+   undefined" instead of a message a user should see.
 
 ## Adding a new frontend feature
 
@@ -112,15 +121,45 @@ collection and surface in the **Demo Inbox** UI
 (`src/components/site/demo-inbox.tsx`) instead of an inbox. Seeded test
 accounts (password `serendib` for all) are listed in the root `README.md`.
 
-## Known "still demo-shaped" areas
+## Security
 
-Don't be surprised by these — they're intentional placeholders, not bugs,
-unless the task is specifically to replace them:
+Covered: `helmet()` headers, rate limiting (`lib/rate-limit.ts` — 300/15min
+general, 20/15min on `/api/auth`, keyed off the real client IP via
+`trust proxy`), `zod` validation on auth, optional Cloudflare Turnstile
+CAPTCHA on signup/waitlist (`lib/turnstile.ts`, off unless
+`TURNSTILE_SECRET_KEY` is set), and an admin audit log (`lib/audit.ts`,
+`auditLog` collection) for role/membership changes, deletions, and
+moderation. Full rationale in `server/README.md`'s "Security" section —
+read it before changing any of these, and log a new admin action the same
+way (`logAudit(actor, action, targetLabel, detail?)`) rather than leaving it
+untracked.
 
-- Bookings are marked paid without a real payment provider.
-- The Demo Inbox is unauthenticated by design (verification codes must be
-  readable pre-login); `DEMO_MODE=false` closes it.
-- No rate limiting on login/signup.
+NoSQL injection is prevented by convention, not a library: every route
+coerces `request.body`/`request.query` with `String()`/`Number()` before it
+reaches a filter. Do the same in new routes — a filter object taken
+straight from user input is the mistake this convention exists to avoid.
+
+## Tests
+
+`node --test`, run from `server/` — no Vitest/Jest, consistent with running
+this TypeScript directly rather than through a bundler. `npm test` runs
+everything.
+
+- Pure logic (`lib/domain.test.ts`): straight unit tests, no I/O.
+- Anything hitting routes (`routes/*.test.ts`, `db/mongo-store.test.ts`):
+  boot a real Express app + real (in-memory) MongoDB via
+  `test-support/harness.ts`'s `startTestServer()`, then hit it over actual
+  HTTP with `fetch`. Add new route coverage here, following `bookings.test.ts`
+  or `auth.test.ts`'s shape — signed-up-and-verified test users, one `test()`
+  per behavior, assert on both the status code and the body.
+- The harness's `close()` closes three separate things (HTTP connections,
+  the MongoClient via `db/database.ts`'s `disconnect()`, the in-memory
+  mongod) — miss any one and the test process hangs instead of exiting,
+  which is a much harder failure to diagnose than a normal test failure. If
+  a new test file hangs, check `close()` is actually being awaited in an
+  `after()` hook before suspecting the test logic itself.
+- Not covered yet: materials/homework/community/messages routes, the Google
+  integrations (would need mocking `googleapis`), and the frontend.
 
 ## Deployment & infra
 

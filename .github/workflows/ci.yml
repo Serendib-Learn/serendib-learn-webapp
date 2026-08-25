@@ -23,7 +23,7 @@ jobs:
       - run: npm run build
 
   server:
-    name: API (typecheck)
+    name: API (typecheck, test)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -34,10 +34,20 @@ jobs:
           cache: npm
           cache-dependency-path: server/package-lock.json
 
+      # The integration tests spin up a real (in-memory) MongoDB via
+      # mongodb-memory-server, which downloads a mongod binary on first use.
+      # Caching it means only the first-ever CI run pays that cost.
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/mongodb-binaries
+          key: mongodb-binaries-${{ runner.os }}
+
       - working-directory: server
         run: npm ci
       - working-directory: server
         run: npm run typecheck
+      - working-directory: server
+        run: npm test
 
   docker:
     name: Docker images build
