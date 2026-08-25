@@ -53,11 +53,12 @@ skill), and verify API changes with the endpoint table in `server/README.md`.
    messages, misc). Use `requireAuth` / `requireAdmin` /
    `requireSelfOrAdmin(request, id)` from `lib/sessions.ts` for authorization
    — don't skip this even for "obviously safe" reads.
-3. Use the `Collection<T>` methods on `server/src/db/store.ts` (`find`,
-   `findOne`, `insertOne`, `updateOne`, `deleteOne`, `countDocuments`) with
-   Mongo-shaped filters (`$in`, `$ne`, `$gt`, `$lt`, `$exists`) — the store is
-   deliberately Mongo-shaped for an eventual migration, so don't bypass it
-   with ad hoc JSON file access.
+3. Use the `Collection<T>` methods on `db()` (`find`, `findOne`, `insertOne`,
+   `updateOne`, `deleteOne`, `countDocuments`) with Mongo-shaped filters
+   (`$in`, `$ne`, `$gt`, `$lt`, `$exists`) — never reach for the JSON file or
+   a Mongo client directly. `database.ts` picks the JSON store
+   (`db/store.ts`) or the real MongoDB store (`db/mongo-store.ts`) based on
+   whether `MONGODB_URI` is set; routes never know which one is live.
 4. Remember: relative imports need explicit `.ts` extensions, and type-only
    imports must use `import type` — Node runs this TypeScript directly by
    stripping types, no build step.
@@ -120,6 +121,32 @@ unless the task is specifically to replace them:
 - The Demo Inbox is unauthenticated by design (verification codes must be
   readable pre-login); `DEMO_MODE=false` closes it.
 - No rate limiting on login/signup.
+
+## Deployment & infra
+
+Target: Vercel (frontend, its own git integration, no workflow file for it)
++ Google Cloud Run (API, via `.github/workflows/deploy-backend.yml`) +
+MongoDB Atlas. Full setup steps in `DEPLOYMENT.md`; day-to-day, what matters
+for code changes:
+
+- `.github/workflows/ci.yml` runs lint + typecheck + build + a Docker build
+  of both images on every push/PR — treat a red CI run on a PR as the same
+  signal as `npm run lint`/`typecheck` failing locally.
+- `server/Dockerfile` and the root `Dockerfile` both build from the **repo
+  root** as their context (`docker build -f server/Dockerfile .`), because
+  both apps import `shared/` by relative path (`../../../shared/...` from
+  the API, `../../shared/...` from the frontend) — a context of just
+  `server/` or just the app itself would not have `shared/` available. If a
+  new top-level shared dependency is ever added, both Dockerfiles' COPY
+  lines need it too, not just server/package.json or package.json.
+- `NEXT_PUBLIC_*` env vars are compiled into the client bundle at Docker
+  **build** time, not read at container start — they're `ARG`s in the root
+  Dockerfile and `build.args` in `docker-compose.yml`, never
+  `environment:`. Getting this backwards silently ships the wrong API URL.
+- Production cookies need `COOKIE_SAMESITE=none` + `COOKIE_SECURE=true`
+  (already set in `deploy-backend.yml`) because Vercel and Cloud Run are
+  different domains — `lax` (the local-dev default) would silently break
+  login by never sending the session cookie back cross-site.
 
 ## Redesigning the frontend
 

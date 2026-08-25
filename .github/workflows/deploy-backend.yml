@@ -1,0 +1,63 @@
+name: Deploy API to Cloud Run
+
+# Runs after CI's checks pass on main, and can also be triggered by hand.
+# See DEPLOYMENT.md for the one-time GCP setup this depends on (Artifact
+# Registry repo, Cloud Run service, Workload Identity Federation, and the
+# GitHub secrets/variables referenced below).
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write # required for keyless auth to GCP (Workload Identity Federation)
+
+jobs:
+  deploy:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ vars.GCP_REGION }}-docker.pkg.dev
+
+      - name: Build and push
+        env:
+          IMAGE: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/serendib/api
+        run: |
+          docker build -f server/Dockerfile \
+            -t "$IMAGE:${{ github.sha }}" -t "$IMAGE:latest" .
+          docker push "$IMAGE:${{ github.sha }}"
+          docker push "$IMAGE:latest"
+
+      - name: Deploy to Cloud Run
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: serendib-api
+          region: ${{ vars.GCP_REGION }}
+          image: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/serendib/api:${{ github.sha }}
+          env_vars: |
+            CORS_ORIGINS=${{ vars.APP_URL }}
+            APP_URL=${{ vars.APP_URL }}
+            MONGODB_DB_NAME=serendib_learn
+            COOKIE_SAMESITE=none
+            COOKIE_SECURE=true
+            DEMO_MODE=false
+            GOOGLE_REDIRECT_URI=${{ vars.API_URL }}/api/integrations/google/callback
+          secrets: |
+            MONGODB_URI=MONGODB_URI:latest
+            GOOGLE_CLIENT_ID=GOOGLE_CLIENT_ID:latest
+            GOOGLE_CLIENT_SECRET=GOOGLE_CLIENT_SECRET:latest

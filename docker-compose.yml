@@ -1,0 +1,59 @@
+# Runs the whole stack — Mongo, the API, and the site — with one command and
+# no local Node install. This is a convenience path, not the deployment: the
+# real deployment is Vercel (frontend) + Cloud Run (API) + MongoDB Atlas, see
+# DEPLOYMENT.md. The day-to-day dev loop documented in the root README (two
+# `npm run dev` terminals) is still faster for active development — this is
+# for "just run it" or checking the production build locally.
+#
+#   docker compose up --build
+#
+# Google sign-in / Calendar / Gmail stay off unless you export
+# GOOGLE_CLIENT_ID (and GOOGLE_CLIENT_SECRET, for Calendar/Gmail) before
+# running this — see server/README.md.
+
+services:
+  mongo:
+    image: mongo:8
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+  server:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    depends_on:
+      - mongo
+    environment:
+      PORT: 4000
+      CORS_ORIGINS: http://localhost:3000
+      APP_URL: http://localhost:3000
+      MONGODB_URI: mongodb://mongo:27017
+      MONGODB_DB_NAME: serendib_learn
+      COOKIE_SAMESITE: lax
+      COOKIE_SECURE: "false"
+      DEMO_MODE: "true"
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GOOGLE_REDIRECT_URI: http://localhost:4000/api/integrations/google/callback
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:4000
+        NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    depends_on:
+      - server
+
+volumes:
+  mongo-data:

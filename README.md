@@ -50,13 +50,10 @@ If `npm install` fails behind a corporate proxy with `SELF_SIGNED_CERT_IN_CHAIN`
 
 ## Data
 
-The API stores documents in one JSON file, `server/data/db.json`, written atomically and
-gitignored. It seeds itself on first boot, so the portal has lessons, homework and posts to show
-before you create anything.
-
-The store is deliberately MongoDB-shaped: collections of documents, Mongo's filter operators, and
-a `Collection<T>` interface in `server/src/db/store.ts` that the driver can implement directly.
-`server/README.md` has the four steps for the switch.
+The API stores documents in MongoDB when `MONGODB_URI` is set, or in one local JSON file,
+`server/data/db.json`, when it isn't — a quick way to run this with nothing to provision. It
+seeds itself on first boot, so the portal has lessons, homework and posts to show before you
+create anything. `server/README.md` has more on the storage layer.
 
 Passwords are hashed with scrypt from Node's `crypto`, and sessions are opaque tokens in an
 httpOnly cookie. Seeded accounts all share the password `serendib`:
@@ -112,6 +109,15 @@ credentials to switch on — see `server/README.md` for the setup steps:
 
 Without credentials, sign-in hides its button, bookings fall back to the
 placeholder meeting link, and mail stays demo-inbox-only — same as before.
+
+## Docker and deployment
+
+`docker compose up --build` runs the whole stack (site, API, a local
+MongoDB) with nothing installed but Docker — see the comment at the top of
+`docker-compose.yml`. `.github/workflows/ci.yml` lints, typechecks, builds,
+and Docker-builds both apps on every push and PR. For the real deployment
+(Vercel + Google Cloud Run + MongoDB Atlas) and what `deploy-backend.yml`
+needs to do it automatically, see **`DEPLOYMENT.md`**.
 
 ## Still demo-shaped
 

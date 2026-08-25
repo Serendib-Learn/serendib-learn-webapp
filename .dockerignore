@@ -1,0 +1,22 @@
+# Both Dockerfiles build from the repo root, so this one file governs both.
+
+**/node_modules
+.next
+out
+build
+
+server/data
+server/.env
+.env
+.env*.local
+
+.git
+.github
+
+# Reference material, not needed inside either image — the frontend uses
+# public/brand/ (already copied in), not this source folder.
+docs
+branding
+
+*.md
+.vscode
