@@ -53,21 +53,32 @@ export default function HomePage() {
 
   return (
     <>
-      <section className="bg-weave relative overflow-hidden border-b border-ink-900/8">
-        <div className="mx-auto grid max-w-6xl items-center gap-14 px-5 py-16 sm:px-8 sm:py-24 lg:grid-cols-[1.05fr_0.95fr]">
-          <div className="animate-rise">
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge tone="jade">Sinhala &amp; Tamil</Badge>
-              <Badge tone="saffron">Live one-to-one</Badge>
-            </div>
+      <section className="relative overflow-hidden bg-jade-700">
+        <svg
+          aria-hidden
+          viewBox="0 0 24 24"
+          className="pointer-events-none absolute -right-24 -bottom-24 size-[32rem] fill-white/5"
+        >
+          <path d="M12 20V9" />
+          <path d="M12 9c0-3.2 2.4-5.6 5.6-5.6C17.6 6.6 15.2 9 12 9Z" />
+          <path d="M12 9C12 5.8 9.6 3.4 6.4 3.4 6.4 6.6 8.8 9 12 9Z" />
+          <path d="M12 9c3.2 0 5.6 2.4 5.6 5.6C14.4 14.6 12 12.2 12 9Z" />
+          <path d="M12 9c-3.2 0-5.6 2.4-5.6 5.6C9.6 14.6 12 12.2 12 9Z" />
+        </svg>
 
-            <h1 className="mt-6 text-4xl leading-[1.08] sm:text-5xl lg:text-6xl">
+        <div className="relative mx-auto grid max-w-6xl items-center gap-14 px-5 py-16 sm:px-8 sm:py-24 lg:grid-cols-[1.05fr_0.95fr]">
+          <div className="animate-rise">
+            <p className="text-xs font-semibold tracking-[0.28em] text-jade-200 uppercase">
+              Sinhala &amp; Tamil · Live one-to-one
+            </p>
+
+            <h1 className="mt-6 text-4xl leading-[1.08] text-sand-50 sm:text-5xl lg:text-6xl">
               Learn the language
               <br />
               your family speaks.
             </h1>
 
-            <p className="mt-6 max-w-xl text-lg leading-relaxed text-ink-600">
+            <p className="mt-6 max-w-xl text-lg leading-relaxed text-jade-100">
               Live lessons with tutors in Sri Lanka, a portal that keeps track of
               everything, and games that get you talking before your first class.
             </p>
@@ -81,15 +92,15 @@ export default function HomePage() {
               </ButtonLink>
             </div>
 
-            <dl className="mt-12 grid max-w-lg grid-cols-3 gap-6 border-t border-ink-900/10 pt-7">
+            <dl className="mt-12 grid max-w-lg grid-cols-3 gap-6 border-t border-white/15 pt-7">
               {[
                 { value: totalPhraseCount, label: "phrases, free" },
                 { value: allChapters.length, label: "story chapters" },
                 { value: heritageSites.length, label: "heritage sites" },
               ].map((item) => (
                 <div key={item.label}>
-                  <dt className="font-display text-3xl text-ink-900">{item.value}</dt>
-                  <dd className="mt-0.5 text-xs leading-snug text-ink-500">{item.label}</dd>
+                  <dt className="font-display text-3xl text-sand-50">{item.value}</dt>
+                  <dd className="mt-0.5 text-xs leading-snug text-jade-200">{item.label}</dd>
                 </div>
               ))}
             </dl>
@@ -199,7 +210,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="border-y border-ink-900/8 bg-ink-900 text-sand-100">
+      <section className="border-y border-white/10 bg-jade-700 text-sand-100">
         <div className="mx-auto max-w-6xl px-5 py-20 sm:px-8">
           <div className="max-w-2xl">
             <p className="mb-3 text-xs font-semibold tracking-[0.18em] text-jade-200 uppercase">

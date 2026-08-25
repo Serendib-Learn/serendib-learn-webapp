@@ -54,11 +54,11 @@ const socials = [
 
 export function Footer() {
   return (
-    <footer className="mt-auto border-t border-ink-900/10 bg-ink-900 text-sand-100">
+    <footer className="mt-auto border-t border-white/10 bg-jade-700 text-sand-100">
       <div className="mx-auto max-w-6xl px-5 py-14 sm:px-8">
         <div className="grid gap-12 md:grid-cols-[1.4fr_repeat(3,1fr)]">
           <div>
-            <Logo tone="light" />
+            <Logo tone="light" tagline />
             <p className="mt-4 max-w-xs text-sm leading-relaxed text-sand-200/70">
               Sinhala and Tamil, taught live by Sri Lankans. Built for people with a
               reason to learn — a family, a move, a place they want to belong to.
@@ -71,7 +71,7 @@ export function Footer() {
                   target="_blank"
                   rel="noreferrer noopener"
                   aria-label={social.label}
-                  className="grid size-9 place-items-center rounded-full bg-white/8 text-sand-100 transition hover:bg-jade-500 hover:text-white"
+                  className="grid size-9 place-items-center rounded-full bg-white/8 text-sand-100 transition hover:bg-saffron-500 hover:text-white"
                 >
                   <svg viewBox="0 0 24 24" className="size-4.5" fill="currentColor">
                     <path d={social.path} />

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { cn } from "@/lib/cn";
 
-type Variant = "primary" | "secondary" | "ghost" | "danger" | "saffron";
+type Variant = "primary" | "secondary" | "ghost" | "ghost-light" | "danger" | "saffron";
 type Size = "sm" | "md" | "lg";
 
 const base =
@@ -9,12 +9,13 @@ const base =
 
 const variants: Record<Variant, string> = {
   primary:
-    "bg-ink-900 text-sand-50 hover:bg-ink-800 shadow-card hover:shadow-lifted active:translate-y-px",
+    "bg-saffron-500 text-white hover:bg-saffron-600 shadow-card hover:shadow-lifted active:translate-y-px",
   secondary:
     "bg-white text-ink-900 ring-1 ring-inset ring-ink-900/12 hover:ring-ink-900/25 hover:bg-sand-50",
   saffron:
     "bg-saffron-400 text-ink-900 hover:bg-saffron-300 shadow-card hover:shadow-lifted active:translate-y-px",
   ghost: "text-ink-700 hover:bg-ink-900/6",
+  "ghost-light": "text-sand-100 hover:bg-white/10",
   danger: "bg-clay-500 text-white hover:bg-clay-600",
 };
 

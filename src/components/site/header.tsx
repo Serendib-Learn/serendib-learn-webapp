@@ -30,9 +30,9 @@ export function Header() {
   }, [menuOpen]);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-ink-900/8 bg-sand-50/85 backdrop-blur-md">
+    <header className="sticky top-0 z-40 border-b border-white/10 bg-jade-700">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5 sm:px-8">
-        <Logo />
+        <Logo tone="light" />
 
         <nav className="hidden items-center gap-1 md:flex" aria-label="Main">
           {navigation.map((item) => {
@@ -43,7 +43,7 @@ export function Header() {
                 href={item.href}
                 className={cn(
                   "rounded-full px-3.5 py-2 text-sm font-medium transition",
-                  active ? "bg-ink-900/8 text-ink-900" : "text-ink-600 hover:bg-ink-900/5 hover:text-ink-900",
+                  active ? "bg-white/10 text-sand-50" : "text-jade-100 hover:bg-white/5 hover:text-sand-50",
                 )}
               >
                 {item.label}
@@ -56,14 +56,14 @@ export function Header() {
           {user ? (
             <Link
               href="/portal"
-              className="flex items-center gap-2.5 rounded-full py-1 pr-4 pl-1 ring-1 ring-ink-900/10 transition hover:bg-white"
+              className="flex items-center gap-2.5 rounded-full py-1 pr-4 pl-1 ring-1 ring-white/15 transition hover:bg-white/10"
             >
               <Avatar name={user.name} size="sm" />
-              <span className="text-sm font-medium text-ink-800">Portal</span>
+              <span className="text-sm font-medium text-sand-100">Portal</span>
             </Link>
           ) : (
             <>
-              <ButtonLink href="/portal/login" variant="ghost" size="sm">
+              <ButtonLink href="/portal/login" variant="ghost-light" size="sm">
                 Log in
               </ButtonLink>
               <ButtonLink href="/portal/signup" size="sm">
@@ -74,7 +74,7 @@ export function Header() {
         </div>
 
         <Button
-          variant="ghost"
+          variant="ghost-light"
           size="sm"
           className="md:hidden"
           aria-expanded={menuOpen}
@@ -93,7 +93,7 @@ export function Header() {
       </div>
 
       {menuOpen ? (
-        <div id="mobile-menu" className="animate-fade border-t border-ink-900/8 bg-sand-50 md:hidden">
+        <div id="mobile-menu" className="animate-fade border-t border-white/10 bg-jade-700 md:hidden">
           <nav className="mx-auto max-w-6xl px-5 py-4" aria-label="Mobile">
             <ul className="space-y-1">
               {navigation.map((item) => (
@@ -101,7 +101,7 @@ export function Header() {
                   <Link
                     href={item.href}
                     onClick={closeMenu}
-                    className="block rounded-xl px-4 py-3 text-base font-medium text-ink-800 transition hover:bg-white"
+                    className="block rounded-xl px-4 py-3 text-base font-medium text-sand-100 transition hover:bg-white/10"
                   >
                     {item.label}
                   </Link>
@@ -109,7 +109,7 @@ export function Header() {
               ))}
             </ul>
 
-            <div className="mt-4 grid gap-2 border-t border-ink-900/8 pt-4">
+            <div className="mt-4 grid gap-2 border-t border-white/10 pt-4">
               {user ? (
                 <ButtonLink href="/portal" className="w-full" onClick={closeMenu}>
                   Go to your portal

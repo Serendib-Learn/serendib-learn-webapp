@@ -15,7 +15,7 @@ export default function GamesPage() {
 
   return (
     <>
-      <section className="border-b border-ink-900/8 bg-ink-900 text-sand-100">
+      <section className="border-b border-white/10 bg-jade-700 text-sand-100">
         <div className="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-24">
           <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1.5 text-xs font-medium text-jade-200">
             Free · No account needed

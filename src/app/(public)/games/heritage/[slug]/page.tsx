@@ -108,7 +108,7 @@ export default async function HeritageSitePage(props: PageProps<"/games/heritage
         </Card>
 
         {chapter ? (
-          <section className="mt-12 rounded-2xl bg-ink-900 p-8 text-sand-100">
+          <section className="mt-12 rounded-2xl bg-jade-700 p-8 text-sand-100">
             <p className="text-xs font-semibold tracking-[0.16em] text-jade-200 uppercase">
               Say it there
             </p>

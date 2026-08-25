@@ -1,22 +1,15 @@
 import type { Metadata } from "next";
 import {
-  Fraunces,
+  Inter,
   Noto_Sans_Sinhala,
   Noto_Sans_Tamil,
-  Plus_Jakarta_Sans,
 } from "next/font/google";
 import { DemoInbox } from "@/components/site/demo-inbox";
 import { AuthProvider } from "@/lib/auth";
 import "./globals.css";
 
-const jakarta = Plus_Jakarta_Sans({
-  variable: "--font-jakarta",
-  subsets: ["latin"],
-  display: "swap",
-});
-
-const fraunces = Fraunces({
-  variable: "--font-fraunces",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
   display: "swap",
 });
@@ -47,7 +40,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="en"
       data-scroll-behavior="smooth"
-      className={`${jakarta.variable} ${fraunces.variable} ${notoSinhala.variable} ${notoTamil.variable} h-full antialiased`}
+      className={`${inter.variable} ${notoSinhala.variable} ${notoTamil.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col bg-sand-50 text-ink-900">
         <AuthProvider>

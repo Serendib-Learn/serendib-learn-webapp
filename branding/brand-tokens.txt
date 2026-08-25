@@ -1,0 +1,42 @@
+SERENDIB LEARN -- BRAND TOKENS
+For designers and developers. Hand this file to anyone building something on-brand.
+
+COLOURS
+Forest   #1B4332   Primary -- headers, nav, dark sections
+Fern     #2D6A4F   Secondary -- supporting text and accents
+Sage     #95C4AA   Accent light -- muted text on dark backgrounds
+Spice    #C9873A   Accent warm -- calls to action, links, hover states
+Cream    #F7F3ED   Background -- primary light background
+Earth    #2C2416   Text dark -- body text on light backgrounds
+
+Never use corporate blue. The palette should feel like a boutique Colombo
+cafe, not a tech startup.
+
+TYPOGRAPHY
+Headings : Georgia (serif), fallback "Times New Roman", serif
+Body/UI  : Inter (sans-serif), fallback ui-sans-serif, system-ui, sans-serif
+
+Serif headlines carry the emotional/editorial weight. Sans-serif body text
+keeps things practical and readable.
+
+LOGO
+Mark   : five-petal white Araliya flower, amber centre, on a forest-green
+         circle. Files: Logo/Serendib-Icon.png
+Lockup (horizontal) : icon + "serendib.learn" wordmark + "KEEPING LANGUAGES
+         ALIVE" tagline, on forest-green background.
+         Files: Logo/Serendib-Lockup-Horizontal.png
+Lockup (vertical)   : same lockup, stacked, on cream background.
+         Files: Logo/Serendib-Lockup-Vertical.png
+
+Minimum clear space: keep the mark's own height as breathing room on every
+side. The mark reads best on Cream or Forest -- avoid placing it over busy
+photography.
+
+TAGLINE
+"Keeping languages alive."
+
+VOICE
+Warm, personal, editorial -- never corporate or salesy. Favour specific,
+sensory, human details over abstract claims. Speaks directly to the
+emotional core of the mission: "The language your child speaks with their
+grandmother is worth fighting for."
