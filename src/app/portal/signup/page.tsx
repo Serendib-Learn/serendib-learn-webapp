@@ -5,7 +5,7 @@ import { Suspense, useState } from "react";
 import { AuthCard, AuthFooterLink } from "@/components/portal/auth-card";
 import { GoogleButton } from "@/components/portal/google-button";
 import { Button } from "@/components/ui/button";
-import { Field, Input, Radio } from "@/components/ui/field";
+import { Checkbox, Field, Input } from "@/components/ui/field";
 import { Alert, Card } from "@/components/ui/primitives";
 import { turnstileAvailable, TurnstileWidget } from "@/components/ui/turnstile-widget";
 import { api } from "@/lib/api";
@@ -198,17 +198,11 @@ function SignUpForm() {
           </legend>
           <div className="grid gap-3 sm:grid-cols-2">
             {(["sinhala", "tamil"] as LanguageCode[]).map((language) => (
-              <Radio
+              <Checkbox
                 key={language}
-                name="language"
                 label={language === "sinhala" ? "Sinhala" : "Tamil"}
                 checked={languages.includes(language)}
                 onChange={() => toggleLanguage(language)}
-                onClick={(event) => {
-                  // Acts as a toggle so both languages can be selected together.
-                  event.preventDefault();
-                  toggleLanguage(language);
-                }}
               />
             ))}
           </div>
