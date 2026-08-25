@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { AuthCard, AuthFooterLink } from "@/components/portal/auth-card";
 import { GoogleButton } from "@/components/portal/google-button";
 import { Button } from "@/components/ui/button";
@@ -25,7 +25,7 @@ const roleOptions = [
   },
 ];
 
-export default function SignUpPage() {
+function SignUpForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [role, setRole] = useState<"student" | "tutor">("student");
@@ -223,6 +223,7 @@ export default function SignUpPage() {
         ) : null}
 
         {error ? <Alert>{error}</Alert> : null}
+        {googleError ? <Alert>{googleError}</Alert> : null}
         {languages.length === 0 ? <Alert tone="saffron">Pick at least one language.</Alert> : null}
 
         <Button
@@ -234,6 +235,22 @@ export default function SignUpPage() {
           {pending ? "Creating your account…" : "Create account"}
         </Button>
       </form>
+
+      <div className="mt-6">
+        <GoogleButton
+          text="signup_with"
+          disabled={languages.length === 0}
+          onCredential={signUpWithGoogle}
+        />
+      </div>
     </AuthCard>
+  );
+}
+
+export default function SignUpPage() {
+  return (
+    <Suspense fallback={<div className="bg-weave min-h-[calc(100vh-4rem)]" />}>
+      <SignUpForm />
+    </Suspense>
   );
 }

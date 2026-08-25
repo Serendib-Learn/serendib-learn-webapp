@@ -150,9 +150,11 @@ export function EmptyState({
 
 export function Alert({
   tone = "clay",
+  className,
   children,
 }: {
   tone?: "clay" | "jade" | "saffron";
+  className?: string;
   children: React.ReactNode;
 }) {
   const styles = {
@@ -164,7 +166,7 @@ export function Alert({
   return (
     <p
       role={tone === "clay" ? "alert" : undefined}
-      className={cn("rounded-xl px-4 py-3 text-sm ring-1 ring-inset", styles)}
+      className={cn("rounded-xl px-4 py-3 text-sm ring-1 ring-inset", styles, className)}
     >
       {children}
     </p>
