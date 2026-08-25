@@ -1,0 +1,96 @@
+# Serendib Learn API
+
+Express service behind the Next.js app. Data lives in a local JSON document
+store today; the store is shaped like MongoDB so that swapping it out is a
+contained change.
+
+## Running
+
+```bash
+npm install
+npm run dev        # node --watch src/index.ts, on http://localhost:4000
+npm start          # same thing without the watcher
+npm run typecheck  # tsc --noEmit
+npm run seed       # throw the data away and seed again
+```
+
+Node 24 runs the TypeScript directly by stripping the types, so there is no
+build step and no bundler. Two consequences to keep in mind when editing:
+
+- relative imports need their `.ts` extension, because this is ESM
+- type-only imports must say `import type`, because Node cannot tell a type
+  from a value when it strips them
+
+Copy `.env.example` to `.env` if you need to change the port, the allowed
+origins, or the cookie flags. On first boot the service seeds itself and writes
+`data/db.json`, which is gitignored.
+
+## Layout
+
+```
+src/
+  index.ts              express app, middleware, route mounting
+  config.ts             environment
+  db/
+    store.ts            the document store: Collection<T>, filters, file writes
+    database.ts         typed collections, seeding, reseeding
+  lib/
+    passwords.ts        scrypt hashing and verification
+    sessions.ts         session cookies, auth middleware
+    domain.ts           slot generation, pricing, progress, tutee lookup
+    mail.ts             writes to the mail collection instead of sending
+    errors.ts           ApiError and the error handler
+    http.ts             small request helpers
+  routes/               one file per area of the API
+```
+
+## Endpoints
+
+All under `/api`. Everything except signup, login, password reset, the waitlist
+form, the tutor list and the demo inbox needs a session cookie.
+
+| Area | Routes |
+| --- | --- |
+| Auth | `GET /auth/me`, `POST /auth/signup`, `/auth/verify`, `/auth/resend`, `/auth/login`, `/auth/logout`, `/auth/forgot-password`, `/auth/reset-password` |
+| Users | `GET /users` (admin), `GET /users/directory`, `GET /users/tutors`, `GET /users/:id`, `GET /users/:id/tutees`, `GET /users/:id/tutors`, `PATCH /users/:id`, `POST /users/:id/role` (admin), `POST /users/:id/membership` (admin), `DELETE /users/:id` (admin) |
+| Availability | `GET /availability?tutorId`, `GET /availability/slots?tutorId&days`, `POST /availability`, `DELETE /availability/:id` |
+| Bookings | `GET /bookings?userId`, `GET /bookings/:id`, `POST /bookings`, `POST /bookings/:id/pay`, `/cancel`, `/complete` |
+| Materials | `GET /materials?studentId\|ownerId`, `GET /materials/library`, `POST /materials`, `POST /materials/:id/assign`, `DELETE /materials/:id` |
+| Homework | `GET /homework?studentId\|tutorId`, `POST /homework`, `POST /homework/:id/submit`, `/review` |
+| Progress | `GET /lesson-notes?studentId`, `GET /progress?tutorId`, `GET /progress/:studentId` |
+| Community | `GET /posts`, `GET /posts/pending` (admin), `POST /posts`, `POST /posts/:id/like`, `GET\|POST /posts/:id/replies`, `POST /posts/:id/moderate` (admin) |
+| Messages | `GET /threads`, `POST /threads`, `GET\|POST /threads/:id/messages`, `POST /threads/:id/read` |
+| Waitlist | `POST /waitlist`, `GET /waitlist` (admin) |
+| Demo | `GET /mail`, `POST /mail/:id/read`, `DELETE /mail`, `POST /demo/reset` |
+
+## Authorization
+
+`loadSession` resolves the cookie into `request.user` on every request. Route
+handlers then use `requireAuth`, `requireAdmin`, or `requireSelfOrAdmin(request, id)`
+so that one member cannot read another's bookings, homework or messages. Writes
+check ownership too: only the tutor who set a task can mark it, only the owner of
+a material can assign it, and only a party to a booking can cancel it.
+
+## Moving to MongoDB
+
+1. `npm install mongodb`.
+2. Write a `MongoStore` implementing `Store` and `Collection<T>` from
+   `db/store.ts`. The methods map almost one to one: `find`, `findOne`,
+   `insertOne`, `updateOne` (as `$set`), `deleteOne`, `countDocuments`. The
+   filter objects already use Mongo's `$in`, `$ne`, `$gt`, `$lt` and `$exists`.
+3. Point `openStore` at it based on whether `MONGODB_URI` is set.
+4. Documents key off a string `id` rather than `_id`, so add a unique index on
+   `id` per collection. Nothing else in the service reads `_id`.
+
+Nothing in `routes/` should need to change.
+
+## Things that are still demo-shaped
+
+- **Payments.** `POST /bookings/:id/pay` marks the booking paid without touching
+  a payment provider.
+- **Mail.** `lib/mail.ts` writes into a collection that the site's demo inbox
+  reads. The inbox is unauthenticated, because the verification code has to be
+  readable before the account can log in — so every message is visible to
+  anyone who can reach the API. Set `DEMO_MODE=false` to close it, and replace
+  `deliver()` with a real provider.
+- **Rate limiting.** There is none. Login and signup are open to brute force.

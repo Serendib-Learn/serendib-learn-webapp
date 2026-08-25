@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "ES2023",
+    "lib": ["ES2023"],
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "types": ["node"],
+    "strict": true,
+    "noUncheckedIndexedAccess": false,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+
+    // Node runs these files directly by stripping the types, so imports keep
+    // their .ts extension and every type-only import must say `import type`.
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "erasableSyntaxOnly": true
+  },
+  "include": ["src/**/*.ts", "../shared/**/*.ts"]
+}
