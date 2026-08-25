@@ -1,0 +1,7 @@
+{
+  "name": "@serendib/shared",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Domain types and seed data used by both the Next.js app and the API service."
+}
