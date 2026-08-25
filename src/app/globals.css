@@ -1,26 +1,122 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-fraunces), ui-serif, Georgia, serif;
+  --font-sinhala: var(--font-noto-sinhala), "Nirmala UI", "Iskoola Pota", sans-serif;
+  --font-tamil: var(--font-noto-tamil), "Nirmala UI", "Latha", sans-serif;
+
+  --color-sand-50: #fdfaf5;
+  --color-sand-100: #f8f2e8;
+  --color-sand-200: #efe3d1;
+  --color-sand-300: #e2d0b6;
+
+  --color-ink-950: #0b1815;
+  --color-ink-900: #10201c;
+  --color-ink-800: #17302a;
+  --color-ink-700: #22443c;
+  --color-ink-600: #35564d;
+  --color-ink-500: #4f6f66;
+  --color-ink-400: #78938b;
+  --color-ink-300: #a6bab4;
+
+  --color-jade-50: #e9f7f3;
+  --color-jade-100: #cdeee5;
+  --color-jade-200: #9adcc9;
+  --color-jade-400: #2fb394;
+  --color-jade-500: #12977b;
+  --color-jade-600: #0d7a63;
+  --color-jade-700: #0a5f4e;
+
+  --color-saffron-50: #fdf4e3;
+  --color-saffron-100: #fbe9c8;
+  --color-saffron-300: #f4cd85;
+  --color-saffron-400: #eeb455;
+  --color-saffron-500: #e09a2a;
+  --color-saffron-600: #b87b1c;
+
+  --color-clay-50: #fbeee9;
+  --color-clay-100: #f7ddd4;
+  --color-clay-400: #d6705a;
+  --color-clay-500: #c4553d;
+  --color-clay-600: #a44430;
+
+  --color-ocean-100: #d6e9f0;
+  --color-ocean-500: #22809f;
+  --color-ocean-600: #1b6c8a;
+
+  --shadow-card: 0 1px 2px rgb(16 32 28 / 0.04), 0 8px 24px -12px rgb(16 32 28 / 0.14);
+  --shadow-lifted: 0 2px 4px rgb(16 32 28 / 0.05), 0 24px 48px -20px rgb(16 32 28 / 0.22);
+
+  --animate-rise: rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-fade: fade 0.35s ease-out both;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-sand-50);
+    color: var(--color-ink-900);
+    font-family: var(--font-sans);
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: -0.015em;
+  }
+
+  ::selection {
+    background-color: var(--color-saffron-100);
+    color: var(--color-ink-900);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-jade-500);
+    outline-offset: 2px;
+  }
+}
+
+@utility text-sinhala {
+  font-family: var(--font-sinhala);
+}
+
+@utility text-tamil {
+  font-family: var(--font-tamil);
+}
+
+/* Subtle woven texture used behind hero and section headers. */
+@utility bg-weave {
+  background-image:
+    radial-gradient(circle at 1px 1px, rgb(16 32 28 / 0.07) 1px, transparent 0),
+    linear-gradient(180deg, var(--color-sand-100), var(--color-sand-50));
+  background-size:
+    18px 18px,
+    100% 100%;
 }
