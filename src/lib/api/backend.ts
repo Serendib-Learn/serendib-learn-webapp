@@ -1,4 +1,5 @@
 import type {
+  AuditLogEntry,
   AvailabilityRule,
   Booking,
   BookingInput,
@@ -81,6 +82,8 @@ export interface Backend {
     remove(id: string): Promise<void>;
     tuteesOf(tutorId: string): Promise<User[]>;
     tutorsOf(studentId: string): Promise<User[]>;
+    /** Recent admin actions — role/membership changes, deletions, moderation. */
+    auditLog(): Promise<AuditLogEntry[]>;
   };
 
   availability: {
@@ -141,7 +144,9 @@ export interface Backend {
   };
 
   waitlist: {
-    join(input: Omit<WaitlistEntry, "id" | "createdAt">): Promise<WaitlistEntry>;
+    join(
+      input: Omit<WaitlistEntry, "id" | "createdAt"> & { turnstileToken?: string },
+    ): Promise<WaitlistEntry>;
     list(): Promise<WaitlistEntry[]>;
   };
 

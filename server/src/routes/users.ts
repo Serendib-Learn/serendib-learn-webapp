@@ -1,10 +1,12 @@
 import { Router } from "express";
 import { db } from "../db/database.ts";
+import { logAudit } from "../lib/audit.ts";
 import { ApiError, forbidden, notFound, wrap } from "../lib/errors.ts";
 import { pathParam } from "../lib/http.ts";
 import { tuteeIdsOf } from "../lib/domain.ts";
 import { requireAdmin, requireAuth, requireSelfOrAdmin, requireUser } from "../lib/sessions.ts";
 import type {
+  AuditLogEntry,
   MembershipStatus,
   PublicProfile,
   Role,
@@ -57,6 +59,19 @@ usersRouter.get(
   requireAdmin,
   wrap(async (_request, response) => {
     response.json(await db().users.find({}, { sort: byName }));
+  }),
+);
+
+usersRouter.get(
+  "/audit-log",
+  requireAdmin,
+  wrap(async (_request, response) => {
+    response.json(
+      await db().auditLog.find(
+        {},
+        { sort: (a: AuditLogEntry, b: AuditLogEntry) => b.createdAt.localeCompare(a.createdAt), limit: 200 },
+      ),
+    );
   }),
 );
 
@@ -132,8 +147,11 @@ usersRouter.post(
       throw forbidden("Change your own role from another administrator's account.");
     }
 
+    const target = await db().users.findById(pathParam(request, "id"));
     const updated = await db().users.updateOne({ id: pathParam(request, "id") }, { role });
     if (!updated) throw notFound("No such account.");
+
+    await logAudit(actor, "role_change", target?.name ?? updated.id, `${target?.role} → ${role}`);
     response.json(updated);
   }),
 );
@@ -147,8 +165,17 @@ usersRouter.post(
       throw new ApiError("Membership is either none or active.");
     }
 
+    const actor = requireUser(request);
+    const target = await db().users.findById(pathParam(request, "id"));
     const updated = await db().users.updateOne({ id: pathParam(request, "id") }, { membership });
     if (!updated) throw notFound("No such account.");
+
+    await logAudit(
+      actor,
+      "membership_change",
+      target?.name ?? updated.id,
+      `${target?.membership} → ${membership}`,
+    );
     response.json(updated);
   }),
 );
@@ -162,11 +189,13 @@ usersRouter.delete(
 
     if (actor.id === id) throw forbidden("You cannot delete your own account here.");
 
+    const target = await db().users.findById(id);
     const removed = await db().users.deleteOne({ id });
     if (!removed) throw notFound("No such account.");
 
     await db().credentials.deleteOne({ id });
     await db().sessions.deleteMany({ userId: id });
+    await logAudit(actor, "account_deleted", target?.name ?? id, target?.email);
 
     response.status(204).end();
   }),

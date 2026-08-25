@@ -1,45 +1,85 @@
 import { Router } from "express";
+import { z } from "zod";
 import { db } from "../db/database.ts";
 import { ApiError, unauthorized, wrap } from "../lib/errors.ts";
 import { verifyGoogleCredential } from "../lib/google.ts";
-import { newId, normaliseEmail, nowIso } from "../lib/ids.ts";
+import { newId, nowIso } from "../lib/ids.ts";
 import { deliver } from "../lib/mail.ts";
 import { hashPassword, randomToken, sixDigitCode, verifyPassword } from "../lib/passwords.ts";
 import { endSession, startSession } from "../lib/sessions.ts";
-import type { LanguageCode, Role, User } from "../../../shared/types.ts";
+import { requireTurnstile } from "../lib/turnstile.ts";
+import { parseBody } from "../lib/validate.ts";
+import type { Role, User } from "../../../shared/types.ts";
 
 export const authRouter = Router();
 
 const MIN_PASSWORD = 8;
 
-function readSignUp(body: unknown) {
-  const input = (body ?? {}) as Record<string, unknown>;
-  const email = normaliseEmail(String(input.email ?? ""));
-  const password = String(input.password ?? "");
-  const name = String(input.name ?? "").trim();
-  const role = input.role === "tutor" ? "tutor" : "student";
-  const languages = Array.isArray(input.languages)
-    ? (input.languages.filter(
-        (value) => value === "sinhala" || value === "tamil",
-      ) as LanguageCode[])
-    : [];
+const NOT_AN_EMAIL = "That does not look like an email address.";
+const PASSWORD_TOO_SHORT = `Use at least ${MIN_PASSWORD} characters for your password.`;
 
-  if (!name) throw new ApiError("We need a name to put on your account.");
-  if (!email.includes("@")) throw new ApiError("That does not look like an email address.");
-  if (password.length < MIN_PASSWORD) {
-    throw new ApiError(`Use at least ${MIN_PASSWORD} characters for your password.`);
-  }
-  if (languages.length === 0) throw new ApiError("Pick at least one language.");
+// `{ error }` on the base z.string() covers "missing or the wrong type
+// entirely" (zod's own message there is a generic "expected string, got
+// undefined") — the friendlier message from .min()/.pipe() only fires once
+// a string actually made it that far.
 
-  return {
-    name,
-    email,
-    password,
-    role: role as Exclude<Role, "admin">,
-    languages,
-    timezone: String(input.timezone ?? "UTC"),
-  };
-}
+/** Trimmed, lowercased, and shape-checked — not just "contains an @". */
+const emailSchema = z
+  .string({ error: NOT_AN_EMAIL })
+  .trim()
+  .toLowerCase()
+  .pipe(z.email(NOT_AN_EMAIL));
+
+const languagesSchema = z
+  .array(z.enum(["sinhala", "tamil"]))
+  .min(1, "Pick at least one language.");
+
+const signUpSchema = z.object({
+  name: z
+    .string({ error: "We need a name to put on your account." })
+    .trim()
+    .min(1, "We need a name to put on your account."),
+  email: emailSchema,
+  password: z.string({ error: PASSWORD_TOO_SHORT }).min(MIN_PASSWORD, PASSWORD_TOO_SHORT),
+  role: z.enum(["student", "tutor"]).default("student"),
+  languages: languagesSchema,
+  timezone: z.string().trim().min(1).default("UTC"),
+  turnstileToken: z.string().optional(),
+});
+
+const emailOnlySchema = z.object({ email: emailSchema });
+
+const verifySchema = z.object({
+  email: emailSchema,
+  code: z
+    .string({ error: "Enter the code from your email." })
+    .trim()
+    .min(1, "Enter the code from your email."),
+});
+
+const loginSchema = z.object({
+  email: emailSchema,
+  // Deliberately not the signup min-length policy: a login checks a
+  // password that already exists, whatever length it happens to be.
+  password: z.string({ error: "Enter your password." }).min(1, "Enter your password."),
+});
+
+const googleSignInSchema = z.object({
+  credential: z
+    .string({ error: "Google did not send a credential." })
+    .min(1, "Google did not send a credential."),
+  intent: z.enum(["login", "signup"]),
+  role: z.enum(["student", "tutor"]).optional(),
+  languages: z.array(z.enum(["sinhala", "tamil"])).optional(),
+  timezone: z.string().trim().optional(),
+});
+
+const RESET_LINK_INVALID = "That reset link has already been used, or never existed.";
+
+const resetPasswordSchema = z.object({
+  token: z.string({ error: RESET_LINK_INVALID }).min(1, RESET_LINK_INVALID),
+  password: z.string({ error: PASSWORD_TOO_SHORT }).min(MIN_PASSWORD, PASSWORD_TOO_SHORT),
+});
 
 async function sendVerification(email: string): Promise<void> {
   const code = sixDigitCode();
@@ -63,7 +103,8 @@ authRouter.get("/me", (request, response) => {
 authRouter.post(
   "/signup",
   wrap(async (request, response) => {
-    const input = readSignUp(request.body);
+    const input = parseBody(signUpSchema, request.body);
+    await requireTurnstile(input.turnstileToken, request.ip);
 
     if (await db().users.findOne({ email: input.email })) {
       throw new ApiError("An account with that email already exists.");
@@ -95,8 +136,7 @@ authRouter.post(
 authRouter.post(
   "/verify",
   wrap(async (request, response) => {
-    const email = normaliseEmail(String(request.body?.email ?? ""));
-    const code = String(request.body?.code ?? "").trim();
+    const { email, code } = parseBody(verifySchema, request.body);
 
     const pending = await db().verificationCodes.findById(email);
     if (!pending) {
@@ -130,7 +170,7 @@ authRouter.post(
 authRouter.post(
   "/resend",
   wrap(async (request, response) => {
-    const email = normaliseEmail(String(request.body?.email ?? ""));
+    const { email } = parseBody(emailOnlySchema, request.body);
     const user = await db().users.findOne({ email });
 
     if (!user) throw new ApiError("No account found for that email.");
@@ -144,8 +184,7 @@ authRouter.post(
 authRouter.post(
   "/login",
   wrap(async (request, response) => {
-    const email = normaliseEmail(String(request.body?.email ?? ""));
-    const password = String(request.body?.password ?? "");
+    const { email, password } = parseBody(loginSchema, request.body);
 
     const user = await db().users.findOne({ email });
     const credential = user ? await db().credentials.findById(user.id) : null;
@@ -187,8 +226,8 @@ authRouter.post(
 authRouter.post(
   "/google",
   wrap(async (request, response) => {
-    const body = (request.body ?? {}) as Record<string, unknown>;
-    const identity = await verifyGoogleCredential(String(body.credential ?? ""));
+    const body = parseBody(googleSignInSchema, request.body);
+    const identity = await verifyGoogleCredential(body.credential);
 
     const linked = await db().users.findOne({ googleId: identity.googleId });
     if (linked) {
@@ -229,12 +268,8 @@ authRouter.post(
       );
     }
 
-    const role = body.role === "tutor" ? "tutor" : "student";
-    const languages = Array.isArray(body.languages)
-      ? (body.languages.filter(
-          (value) => value === "sinhala" || value === "tamil",
-        ) as LanguageCode[])
-      : [];
+    const role: Exclude<Role, "admin"> = body.role === "tutor" ? "tutor" : "student";
+    const languages = body.languages ?? [];
 
     if (languages.length === 0) throw new ApiError("Pick at least one language.");
 
@@ -242,12 +277,12 @@ authRouter.post(
       id: newId("u"),
       name: identity.name,
       email: identity.email,
-      role: role as Exclude<Role, "admin">,
+      role,
       // No code to type: Google has already proven they own the address.
       verified: identity.emailVerified,
       membership: "none",
       createdAt: nowIso(),
-      timezone: String(body.timezone ?? "UTC"),
+      timezone: body.timezone || "UTC",
       languages,
       googleId: identity.googleId,
       avatarUrl: identity.avatarUrl,
@@ -283,7 +318,7 @@ authRouter.post(
 authRouter.post(
   "/forgot-password",
   wrap(async (request, response) => {
-    const email = normaliseEmail(String(request.body?.email ?? ""));
+    const { email } = parseBody(emailOnlySchema, request.body);
     const user = await db().users.findOne({ email });
 
     // Deliberately silent when there is no match.
@@ -307,12 +342,7 @@ authRouter.post(
 authRouter.post(
   "/reset-password",
   wrap(async (request, response) => {
-    const token = String(request.body?.token ?? "");
-    const password = String(request.body?.password ?? "");
-
-    if (password.length < MIN_PASSWORD) {
-      throw new ApiError(`Use at least ${MIN_PASSWORD} characters for your password.`);
-    }
+    const { token, password } = parseBody(resetPasswordSchema, request.body);
 
     const record = await db().resetTokens.findById(token);
     if (!record) {

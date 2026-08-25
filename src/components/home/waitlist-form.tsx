@@ -6,6 +6,7 @@ import { useAction } from "@/lib/hooks";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import { Alert } from "@/components/ui/primitives";
+import { turnstileAvailable, TurnstileWidget } from "@/components/ui/turnstile-widget";
 import type { LanguageCode } from "@/lib/types";
 
 export function WaitlistForm() {
@@ -15,6 +16,7 @@ export function WaitlistForm() {
   const [level, setLevel] = useState("none");
   const [reason, setReason] = useState("");
   const [done, setDone] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
 
   const { run, pending, error } = useAction(api.waitlist.join);
 
@@ -57,6 +59,7 @@ export function WaitlistForm() {
           language,
           level: level as never,
           reason,
+          turnstileToken: turnstileToken ?? undefined,
         });
         if (result) setDone(true);
       }}
@@ -125,9 +128,16 @@ export function WaitlistForm() {
         />
       </Field>
 
+      {turnstileAvailable ? <TurnstileWidget onToken={setTurnstileToken} /> : null}
+
       {error ? <Alert>{error}</Alert> : null}
 
-      <Button type="submit" size="lg" className="w-full" disabled={pending}>
+      <Button
+        type="submit"
+        size="lg"
+        className="w-full"
+        disabled={pending || (turnstileAvailable && !turnstileToken)}
+      >
         {pending ? "Adding you…" : "Join the waitlist"}
       </Button>
       <p className="text-center text-xs text-ink-400">

@@ -6,6 +6,7 @@ import { pathParam } from "../lib/http.ts";
 import { newId, normaliseEmail, nowIso } from "../lib/ids.ts";
 import { deliver } from "../lib/mail.ts";
 import { requireAdmin, requireAuth, requireSelfOrAdmin, requireUser } from "../lib/sessions.ts";
+import { requireTurnstile } from "../lib/turnstile.ts";
 import type { GameResult, LanguageCode, WaitlistEntry } from "../../../shared/types.ts";
 
 export const waitlistRouter = Router();
@@ -25,6 +26,10 @@ waitlistRouter.post(
 
     if (!name) throw new ApiError("We need a name.");
     if (!email.includes("@")) throw new ApiError("We need a working email address.");
+    await requireTurnstile(
+      body.turnstileToken ? String(body.turnstileToken) : undefined,
+      request.ip,
+    );
 
     const entry: WaitlistEntry = {
       id: newId("wl"),

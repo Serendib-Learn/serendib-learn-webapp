@@ -66,6 +66,13 @@ export const config = {
   appUrl: process.env.APP_URL ?? "http://localhost:3000",
 
   /**
+   * Cloudflare Turnstile secret key. Empty means CAPTCHA is off entirely —
+   * signup and the waitlist form accept requests without a token, same as
+   * today. Set once bot signups become an actual problem, not before.
+   */
+  turnstileSecretKey: process.env.TURNSTILE_SECRET_KEY ?? "",
+
+  /**
    * The demo inbox and the reset endpoint exist so the flows can be tried
    * without a mail server. Turn this off for anything real.
    */

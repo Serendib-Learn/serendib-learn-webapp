@@ -212,6 +212,8 @@ export interface SignUpInput {
   role: Exclude<Role, "admin">;
   languages: LanguageCode[];
   timezone: string;
+  /** Cloudflare Turnstile token. Required only when the server has CAPTCHA configured. */
+  turnstileToken?: string;
 }
 
 export interface GoogleSignInInput {
@@ -269,6 +271,17 @@ export interface ThreadSummary {
   other: User;
   lastMessage?: Message;
   unread: number;
+}
+
+/** A record of an administrator doing something to someone else's account or content. */
+export interface AuditLogEntry {
+  id: string;
+  actorId: string;
+  actorName: string;
+  action: string;
+  targetLabel: string;
+  detail?: string;
+  createdAt: string;
 }
 
 /** Whether the current user has linked a Google account for Calendar + Meet. */

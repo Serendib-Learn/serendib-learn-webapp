@@ -7,6 +7,7 @@ import { GoogleButton } from "@/components/portal/google-button";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Radio } from "@/components/ui/field";
 import { Alert, Card } from "@/components/ui/primitives";
+import { turnstileAvailable, TurnstileWidget } from "@/components/ui/turnstile-widget";
 import { api } from "@/lib/api";
 import { useAction, useTimezone } from "@/lib/hooks";
 import { cn } from "@/lib/cn";
@@ -33,6 +34,7 @@ function SignUpForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [languages, setLanguages] = useState<LanguageCode[]>(["sinhala"]);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const timezone = useTimezone();
 
   const { run, pending, error } = useAction(api.auth.signUp);
@@ -114,6 +116,7 @@ function SignUpForm() {
             role,
             languages,
             timezone: timezone || "UTC",
+            turnstileToken: turnstileToken ?? undefined,
           });
           if (result) {
             router.push(`/portal/verify?email=${encodeURIComponent(result.email)}`);
@@ -222,6 +225,8 @@ function SignUpForm() {
           </p>
         ) : null}
 
+        {turnstileAvailable ? <TurnstileWidget onToken={setTurnstileToken} /> : null}
+
         {error ? <Alert>{error}</Alert> : null}
         {googleError ? <Alert>{googleError}</Alert> : null}
         {languages.length === 0 ? <Alert tone="saffron">Pick at least one language.</Alert> : null}
@@ -230,7 +235,7 @@ function SignUpForm() {
           type="submit"
           size="lg"
           className="w-full"
-          disabled={pending || languages.length === 0}
+          disabled={pending || languages.length === 0 || (turnstileAvailable && !turnstileToken)}
         >
           {pending ? "Creating your account…" : "Create account"}
         </Button>

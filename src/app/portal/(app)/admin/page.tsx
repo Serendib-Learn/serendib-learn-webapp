@@ -6,7 +6,7 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { useAction, useQuery } from "@/lib/hooks";
 import { cn } from "@/lib/cn";
-import { formatDate, relativeTime } from "@/lib/format";
+import { formatDate, formatDateTime, relativeTime } from "@/lib/format";
 import { GoogleMailConnect } from "@/components/portal/google-mail-connect";
 import { PageHeader } from "@/components/portal/page-header";
 import { Button } from "@/components/ui/button";
@@ -21,13 +21,14 @@ import {
 } from "@/components/ui/primitives";
 import type { CommunityPost, Role, User } from "@/lib/types";
 
-type Tab = "people" | "moderation" | "waitlist" | "mail";
+type Tab = "people" | "moderation" | "waitlist" | "mail" | "audit";
 
 const tabs: { id: Tab; label: string }[] = [
   { id: "people", label: "People" },
   { id: "moderation", label: "Moderation" },
   { id: "waitlist", label: "Waitlist" },
   { id: "mail", label: "Mail" },
+  { id: "audit", label: "Audit log" },
 ];
 
 const googleConnectMessages = {
@@ -100,6 +101,7 @@ export default function AdminPage() {
       {tab === "moderation" ? <Moderation /> : null}
       {tab === "waitlist" ? <Waitlist /> : null}
       {tab === "mail" ? <GoogleMailConnect /> : null}
+      {tab === "audit" ? <AuditLog /> : null}
     </>
   );
 }
@@ -352,5 +354,53 @@ function Waitlist() {
         </Card>
       ))}
     </div>
+  );
+}
+
+const actionLabel: Record<string, string> = {
+  role_change: "Changed role",
+  membership_change: "Changed membership",
+  account_deleted: "Deleted account",
+  post_moderated: "Moderated post",
+};
+
+function AuditLog() {
+  const entries = useQuery(() => api.users.auditLog(), []);
+
+  if (entries.loading) return <Loading label="Loading the audit log" />;
+
+  const rows = entries.data ?? [];
+
+  if (rows.length === 0) {
+    return (
+      <EmptyState icon="🗒️" title="Nothing logged yet">
+        Role changes, membership changes, deletions, and moderation decisions will show up
+        here as they happen.
+      </EmptyState>
+    );
+  }
+
+  return (
+    <ul className="divide-y divide-ink-900/8 rounded-2xl bg-white px-5 ring-1 ring-ink-900/8">
+      {rows.map((entry) => (
+        <li key={entry.id} className="flex flex-wrap items-start justify-between gap-3 py-4">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge tone={entry.action === "account_deleted" ? "clay" : "jade"}>
+                {actionLabel[entry.action] ?? entry.action}
+              </Badge>
+              <span className="text-sm font-medium text-ink-800">{entry.targetLabel}</span>
+            </div>
+            {entry.detail ? (
+              <p className="mt-1 text-xs text-ink-500">{entry.detail}</p>
+            ) : null}
+          </div>
+          <div className="shrink-0 text-right text-xs text-ink-400">
+            <p>{entry.actorName}</p>
+            <p>{formatDateTime(entry.createdAt)}</p>
+          </div>
+        </li>
+      ))}
+    </ul>
   );
 }

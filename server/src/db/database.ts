@@ -4,6 +4,7 @@ import { openMongoStore } from "./mongo-store.ts";
 import { openStore, type Collection, type Doc, type Store } from "./store.ts";
 import { DEMO_PASSWORD, createSeedData } from "../../../shared/seed.ts";
 import type {
+  AuditLogEntry,
   AvailabilityRule,
   Booking,
   CommunityPost,
@@ -85,6 +86,7 @@ export interface Database {
   sessions: Collection<Session>;
   verificationCodes: Collection<PendingCode>;
   resetTokens: Collection<ResetToken>;
+  auditLog: Collection<AuditLogEntry>;
   googleAccounts: Collection<GoogleAccount>;
   googleMailer: Collection<GoogleMailer>;
   oauthStates: Collection<OAuthState>;
@@ -112,6 +114,7 @@ function build(from: Store): Database {
     sessions: from.collection<Session>("sessions"),
     verificationCodes: from.collection<PendingCode>("verificationCodes"),
     resetTokens: from.collection<ResetToken>("resetTokens"),
+    auditLog: from.collection<AuditLogEntry>("auditLog"),
     googleAccounts: from.collection<GoogleAccount>("googleAccounts"),
     googleMailer: from.collection<GoogleMailer>("googleMailer"),
     oauthStates: from.collection<OAuthState>("oauthStates"),
@@ -145,6 +148,7 @@ async function seedContents(): Promise<Record<string, Doc[]>> {
     sessions: [],
     verificationCodes: [],
     resetTokens: [],
+    auditLog: [],
     googleAccounts: [],
     googleMailer: [],
     oauthStates: [],
@@ -180,6 +184,19 @@ export async function connect(): Promise<Database> {
   }
 
   return database;
+}
+
+/**
+ * Closes the underlying connection (a real one for MongoDB) and forgets the
+ * cached instance, so a later `connect()` reconnects from scratch. Needed
+ * for tests, which each spin up their own database and must not leak a
+ * client — an unclosed MongoClient keeps its monitoring timers running,
+ * which keeps the process alive even after everything else is done.
+ */
+export async function disconnect(): Promise<void> {
+  await store?.close?.();
+  store = null;
+  database = null;
 }
 
 export function db(): Database {

@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { db } from "../db/database.ts";
+import { logAudit } from "../lib/audit.ts";
 import { ApiError, forbidden, notFound, wrap } from "../lib/errors.ts";
 import { pathParam } from "../lib/http.ts";
 import { newId, nowIso } from "../lib/ids.ts";
@@ -130,6 +131,7 @@ communityRouter.post(
       throw new ApiError("A post is either approved or rejected.");
     }
 
+    const actor = requireUser(request);
     const post = await db().posts.findById(pathParam(request, "id"));
     if (!post) throw notFound("That post has gone.");
 
@@ -138,6 +140,8 @@ communityRouter.post(
       { id: post.id },
       { status, moderationNote: note },
     );
+
+    await logAudit(actor, "post_moderated", post.title, `${status}${note ? `: ${note}` : ""}`);
 
     const author = await db().users.findById(post.authorId);
     if (author) {

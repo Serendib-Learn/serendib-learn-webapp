@@ -1,6 +1,7 @@
 import { ApiError, type Backend, type GoogleSignInResult } from "./backend";
 import { bumpRevision } from "./revision";
 import type {
+  AuditLogEntry,
   AvailabilityRule,
   Booking,
   CommunityPost,
@@ -174,6 +175,10 @@ export const httpBackend: Backend = {
 
     tutorsOf(studentId) {
       return request<User[]>(`/users/${studentId}/tutors`);
+    },
+
+    auditLog() {
+      return request<AuditLogEntry[]>("/users/audit-log");
     },
   },
 
