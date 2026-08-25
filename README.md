@@ -99,14 +99,19 @@ Every screen talks to the `Backend` interface in `src/lib/api/backend.ts`, and
 `src/lib/api/index.ts` is the single line that chooses the implementation. That is what made
 replacing the original in-browser mock with a real API a contained change.
 
-## Google: sign-in, Calendar and Meet
+## Google: sign-in, Calendar, Meet and Gmail
 
-Sign-in with Google, and a tutor connecting their Google Calendar so
-confirmed bookings get a real Calendar event with a Google Meet link, are
-both wired up but need a Google Cloud project's credentials to switch on —
-see `server/README.md` for the setup steps. Without them, sign-in hides its
-button and bookings fall back to the placeholder meeting link, same as
-before.
+Three Google features are wired up but need a Google Cloud project's
+credentials to switch on — see `server/README.md` for the setup steps:
+
+- Sign-in with Google.
+- A tutor connecting their Google Calendar so confirmed bookings get a real
+  Calendar event with a Google Meet link.
+- An admin connecting one Gmail account so verification codes, receipts and
+  welcome messages send for real instead of only appearing in the demo inbox.
+
+Without credentials, sign-in hides its button, bookings fall back to the
+placeholder meeting link, and mail stays demo-inbox-only — same as before.
 
 ## Still demo-shaped
 

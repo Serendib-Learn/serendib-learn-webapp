@@ -78,18 +78,29 @@ skill), and verify API changes with the endpoint table in `server/README.md`.
 
 ## Google integration
 
-Two independent OAuth flows, one shared client — see `server/README.md`'s
-"Google: sign-in, Calendar and Meet" section before touching either:
+Three independent OAuth flows, one shared client — see `server/README.md`'s
+"Google: sign-in, Calendar, Meet and Gmail" section before touching any:
 
 - **Sign-in**: `lib/google.ts`'s `verifyGoogleCredential`, an ID-token check
   only. Needs `GOOGLE_CLIENT_ID`.
-- **Calendar + Meet**: `routes/integrations.ts` + the rest of `lib/google.ts`.
-  A tutor connects once (portal → Calendar → My hours), which stores a
-  refresh token in the `googleAccounts` collection; `POST /bookings/:id/pay`
-  then creates a real Calendar event with Meet conferencing instead of the
-  placeholder link. Needs `GOOGLE_CLIENT_SECRET` too. Both degrade
-  gracefully when unset — check `googleEnabled()` / `googleCalendarEnabled()`
-  before assuming either is configured, the same pattern `DEMO_MODE` uses.
+- **Calendar + Meet**: `routes/integrations.ts`'s `/google/*` +
+  `lib/google.ts`. A tutor connects once (portal → Calendar → My hours),
+  storing a refresh token in `googleAccounts` (one row per tutor);
+  `POST /bookings/:id/pay` then creates a real Calendar event with Meet
+  conferencing instead of the placeholder link.
+- **Gmail**: `routes/integrations.ts`'s `/google/mail/*` +
+  `lib/google.ts`'s `sendGmail`. Site-wide, not per-user — one admin connects
+  once (admin area → Mail), storing a refresh token in `googleMailer` (one
+  fixed row, id `"system"`); `lib/mail.ts`'s `deliver()` then sends for real
+  on top of its existing demo-inbox write.
+
+Calendar and Gmail both need `GOOGLE_CLIENT_SECRET` in addition to the client
+id, since both run a full authorization-code exchange, not just an ID-token
+check. All three degrade gracefully when unset — check `googleEnabled()` /
+`googleCalendarEnabled()` before assuming any is configured, the same
+pattern `DEMO_MODE` uses. Adding a fourth Google-backed feature later should
+extend the shared `googleOAuthClient()` / `authUrl()` / `exchangeGoogleAuthCode()`
+helpers in `lib/google.ts` rather than duplicating the OAuth plumbing.
 
 ## Auth model
 

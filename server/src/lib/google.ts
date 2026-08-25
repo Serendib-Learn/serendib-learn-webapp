@@ -33,16 +33,23 @@ const CALENDAR_SCOPES = [
   "https://www.googleapis.com/auth/userinfo.email",
 ];
 
+const GMAIL_SCOPES = [
+  "https://www.googleapis.com/auth/gmail.send",
+  "https://www.googleapis.com/auth/userinfo.email",
+];
+
 /**
  * Built from `googleapis`'s own bundled `google-auth-library`, not the
- * standalone package used by `verifyGoogleCredential` above — `google.calendar()`
- * and `google.oauth2()` below require an instance from that same bundle, and
- * the two packages' `OAuth2Client` classes are not interchangeable.
+ * standalone package used by `verifyGoogleCredential` above — `google.calendar()`,
+ * `google.gmail()` and `google.oauth2()` below require an instance from that
+ * same bundle, and the two packages' `OAuth2Client` classes are not
+ * interchangeable. Shared by both the Calendar and Gmail-send connection
+ * flows, which are the same OAuth client requesting different scopes.
  */
-function calendarOAuthClient() {
+function googleOAuthClient() {
   if (!googleCalendarEnabled()) {
     throw new ApiError(
-      "Google Calendar is not configured on this server.",
+      "This Google connection is not configured on this server.",
       503,
       "google_calendar_disabled",
     );
@@ -56,24 +63,33 @@ function calendarOAuthClient() {
 
 /** The URL that starts the Calendar consent flow. `state` round-trips to the callback. */
 export function googleCalendarAuthUrl(state: string): string {
-  return calendarOAuthClient().generateAuthUrl({
+  return authUrl(state, CALENDAR_SCOPES);
+}
+
+/** The URL that starts the Gmail-send consent flow, for the site's one system mailer. */
+export function googleMailAuthUrl(state: string): string {
+  return authUrl(state, GMAIL_SCOPES);
+}
+
+function authUrl(state: string, scopes: string[]): string {
+  return googleOAuthClient().generateAuthUrl({
     access_type: "offline",
     // Forces a fresh consent screen, which is the only way Google hands back
     // a refresh token if this account has connected before and revoked it.
     prompt: "consent",
-    scope: CALENDAR_SCOPES,
+    scope: scopes,
     state,
   });
 }
 
-export interface GoogleCalendarLink {
+export interface GoogleAccountLink {
   refreshToken: string;
   email: string;
 }
 
 /** Exchanges the authorization code from the callback for a refresh token. */
-export async function exchangeGoogleCalendarCode(code: string): Promise<GoogleCalendarLink> {
-  const oauth2Client = calendarOAuthClient();
+export async function exchangeGoogleAuthCode(code: string): Promise<GoogleAccountLink> {
+  const oauth2Client = googleOAuthClient();
 
   let refreshToken: string | null | undefined;
   try {
@@ -99,7 +115,7 @@ export async function exchangeGoogleCalendarCode(code: string): Promise<GoogleCa
 }
 
 function calendarClient(refreshToken: string) {
-  const oauth2Client = calendarOAuthClient();
+  const oauth2Client = googleOAuthClient();
   oauth2Client.setCredentials({ refresh_token: refreshToken });
   return google.calendar({ version: "v3", auth: oauth2Client });
 }
@@ -170,6 +186,45 @@ export async function deleteGoogleMeeting(refreshToken: string, eventId: string)
     // The event may already be gone, or the token may have been revoked.
     // Either way the booking's own cancellation is what matters.
   }
+}
+
+export interface SendGmailInput {
+  refreshToken: string;
+  to: string;
+  subject: string;
+  body: string;
+}
+
+/** RFC 2047 encoding for header values outside ASCII — subjects carry an em-dash. */
+function encodeHeaderWord(value: string): string {
+  if (/^[\x00-\x7F]*$/.test(value)) return value;
+  return `=?UTF-8?B?${Buffer.from(value, "utf8").toString("base64")}?=`;
+}
+
+/**
+ * Sends one plain-text email through Gmail, from whichever account owns
+ * `refreshToken` — the site's one connected system mailer, not a per-user
+ * account. `From` is left out deliberately: Gmail fills it in as the
+ * authenticated account, and setting it to anything else is rejected.
+ */
+export async function sendGmail(input: SendGmailInput): Promise<void> {
+  const oauth2Client = googleOAuthClient();
+  oauth2Client.setCredentials({ refresh_token: input.refreshToken });
+  const gmail = google.gmail({ version: "v1", auth: oauth2Client });
+
+  const raw = [
+    `To: ${input.to}`,
+    `Subject: ${encodeHeaderWord(input.subject)}`,
+    "MIME-Version: 1.0",
+    "Content-Type: text/plain; charset=utf-8",
+    "",
+    input.body,
+  ].join("\r\n");
+
+  await gmail.users.messages.send({
+    userId: "me",
+    requestBody: { raw: Buffer.from(raw, "utf8").toString("base64url") },
+  });
 }
 
 /**

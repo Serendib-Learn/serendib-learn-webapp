@@ -409,6 +409,18 @@ export const httpBackend: Backend = {
       disconnect() {
         return request<void>("/integrations/google/disconnect", { method: "POST" });
       },
+
+      mailStatus() {
+        return request<GoogleCalendarStatus>("/integrations/google/mail/status");
+      },
+
+      mailConnectUrl() {
+        return url("/integrations/google/mail/connect");
+      },
+
+      mailDisconnect() {
+        return request<void>("/integrations/google/mail/disconnect", { method: "POST" });
+      },
     },
   },
 };

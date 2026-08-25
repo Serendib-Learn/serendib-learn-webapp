@@ -55,11 +55,26 @@ export interface GoogleAccount extends Doc {
   connectedAt: string;
 }
 
-/** A one-time, short-lived record proving who started a Calendar connect flow. */
+/**
+ * The single Google account authorized to send mail for the whole site, via
+ * Gmail. Unlike `GoogleAccount`, this is not per-user — one admin connects it
+ * once, from the admin area's Mail tab, and every outgoing notification sends
+ * from that account. Always looked up by the fixed id `"system"`.
+ */
+export interface GoogleMailer extends Doc {
+  id: string;
+  refreshToken: string;
+  email: string;
+  connectedAt: string;
+}
+
+/** A one-time, short-lived record proving who started a Google connect flow. */
 export interface OAuthState extends Doc {
   /** The random state value handed to Google and back. */
   id: string;
   userId: string;
+  /** Which connection this state is for — the callback trusts this, not the URL it hit. */
+  purpose: "calendar" | "mail";
   createdAt: string;
 }
 
@@ -70,6 +85,7 @@ export interface Database {
   verificationCodes: Collection<PendingCode>;
   resetTokens: Collection<ResetToken>;
   googleAccounts: Collection<GoogleAccount>;
+  googleMailer: Collection<GoogleMailer>;
   oauthStates: Collection<OAuthState>;
   availability: Collection<AvailabilityRule>;
   bookings: Collection<Booking>;
@@ -96,6 +112,7 @@ function build(from: Store): Database {
     verificationCodes: from.collection<PendingCode>("verificationCodes"),
     resetTokens: from.collection<ResetToken>("resetTokens"),
     googleAccounts: from.collection<GoogleAccount>("googleAccounts"),
+    googleMailer: from.collection<GoogleMailer>("googleMailer"),
     oauthStates: from.collection<OAuthState>("oauthStates"),
     availability: from.collection<AvailabilityRule>("availability"),
     bookings: from.collection<Booking>("bookings"),
@@ -128,6 +145,7 @@ async function seedContents(): Promise<Record<string, Doc[]>> {
     verificationCodes: [],
     resetTokens: [],
     googleAccounts: [],
+    googleMailer: [],
     oauthStates: [],
     availability: seed.availability,
     bookings: seed.bookings,

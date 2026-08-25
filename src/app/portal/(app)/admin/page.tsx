@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { useAction, useQuery } from "@/lib/hooks";
 import { cn } from "@/lib/cn";
 import { formatDate, relativeTime } from "@/lib/format";
+import { GoogleMailConnect } from "@/components/portal/google-mail-connect";
 import { PageHeader } from "@/components/portal/page-header";
 import { Button } from "@/components/ui/button";
 import { Select, Textarea } from "@/components/ui/field";
@@ -19,13 +21,33 @@ import {
 } from "@/components/ui/primitives";
 import type { CommunityPost, Role, User } from "@/lib/types";
 
-type Tab = "people" | "moderation" | "waitlist";
+type Tab = "people" | "moderation" | "waitlist" | "mail";
 
 const tabs: { id: Tab; label: string }[] = [
   { id: "people", label: "People" },
   { id: "moderation", label: "Moderation" },
   { id: "waitlist", label: "Waitlist" },
+  { id: "mail", label: "Mail" },
 ];
+
+const googleConnectMessages = {
+  connected: { tone: "jade" as const, text: "Connected." },
+  error: { tone: "clay" as const, text: "Could not connect. Try again." },
+  cancelled: { tone: "saffron" as const, text: "Connection was cancelled." },
+};
+
+function GoogleConnectBanner() {
+  const params = useSearchParams();
+  const outcome = params.get("google") as keyof typeof googleConnectMessages | null;
+  const message = outcome ? googleConnectMessages[outcome] : null;
+  if (!message) return null;
+
+  return (
+    <div className="mb-6">
+      <Alert tone={message.tone}>{message.text}</Alert>
+    </div>
+  );
+}
 
 export default function AdminPage() {
   const { user } = useAuth();
@@ -48,6 +70,10 @@ export default function AdminPage() {
       <PageHeader title="Administration">
         Accounts, the moderation queue and everyone waiting for a tutor.
       </PageHeader>
+
+      <Suspense fallback={null}>
+        <GoogleConnectBanner />
+      </Suspense>
 
       <div className="mb-6 flex gap-1 rounded-full bg-white p-1 ring-1 ring-ink-900/8 sm:w-fit">
         {tabs.map((item) => (
@@ -73,6 +99,7 @@ export default function AdminPage() {
       {tab === "people" ? <People me={user} /> : null}
       {tab === "moderation" ? <Moderation /> : null}
       {tab === "waitlist" ? <Waitlist /> : null}
+      {tab === "mail" ? <GoogleMailConnect /> : null}
     </>
   );
 }

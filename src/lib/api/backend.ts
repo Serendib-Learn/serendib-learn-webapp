@@ -162,6 +162,14 @@ export interface Backend {
       /** Full-page navigation target, not a fetch — Google's consent screen is not an XHR. */
       connectUrl(): string;
       disconnect(): Promise<void>;
+
+      /**
+       * The site's one shared account for sending mail through Gmail —
+       * admin-only, separate from any tutor's own Calendar connection.
+       */
+      mailStatus(): Promise<GoogleCalendarStatus>;
+      mailConnectUrl(): string;
+      mailDisconnect(): Promise<void>;
     };
   };
 
