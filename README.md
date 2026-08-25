@@ -9,6 +9,12 @@ moderation.
 The content — the eight Survival Sri Lanka chapters, the eighteen heritage sites and the tutor
 profiles — comes from the source documents in `docs/`.
 
+**Working on this with Claude, Cursor, or another AI assistant?** Read
+`AGENTS.md` first — it has a table of "where to look before exploring" that
+points straight at the right doc for most questions (deployment, tests,
+security, Google integrations, adding a feature, branding), instead of
+re-discovering the codebase from scratch each session.
+
 ## Two services
 
 | Path | What it is | Port |

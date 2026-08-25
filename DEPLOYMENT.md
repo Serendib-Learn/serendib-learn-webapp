@@ -1,23 +1,104 @@
 # Deploying Serendib Learn
 
-Target architecture:
+This document has two halves: **testing what you have right now, on your own
+computer** (no accounts, no money, no risk), and **putting it on the
+internet for real** (needs three new free accounts, on top of the GitHub
+one you already have, and about an hour the first time). Do the first half
+whenever you're unsure something works. Do the second half once, then
+mostly forget about it — pushing to `main` handles the rest automatically.
 
-| Piece | Where | Why |
-| --- | --- | --- |
-| Next.js site | Vercel, custom domain | Native Next.js builds, zero-config previews |
-| Express API | Google Cloud Run | Fully managed containers, scales to zero, no server to patch |
-| Database | MongoDB Atlas (free tier) | Managed, works from anywhere, no disk to provision |
-| CI | GitHub Actions (`ci.yml`) | Lint + typecheck + build on every push/PR, both apps |
-| CD | GitHub Actions (`deploy-backend.yml`) | Builds the API image and deploys it to Cloud Run on push to `main` |
+## What you actually need to do (plain English)
+
+Skip straight to whichever line matches what you're trying to do:
+
+- **"I just want to check the app still works"** → run it locally. See
+  [Local testing](#local-testing) below. Costs nothing, needs no accounts.
+- **"I want to put this on the internet so other people can use it"** → sign
+  up for three free services (MongoDB Atlas, Google Cloud, Vercel) and copy
+  some keys between them and your existing GitHub repo. See
+  [Going live](#going-live) below. This is a one-time setup; after that,
+  deploying is just `git push`.
+- **"I want Google sign-in / Calendar / Gmail to actually work"** → that's
+  part of "going live" (step 2 and 3 below) — you need a Google Cloud
+  account either way, whether or not you use Cloud Run.
+- **"Something broke after I deployed"** → check the
+  [Go-live checklist](#go-live-checklist) at the bottom first; most breakage
+  is one missing setting, not a code problem.
+
+Everything below explains those four steps in detail, with copy-pasteable
+commands. You do not need to understand every line of them — just paste them
+in order into a terminal after signing into the right account first.
+
+## Target architecture
+
+| Piece | Where | Why | Costs money? |
+| --- | --- | --- | --- |
+| Next.js site | Vercel, custom domain | Native Next.js builds, zero-config previews | Free tier is enough |
+| Express API | Google Cloud Run | Fully managed containers, scales to zero, no server to patch | Free tier is enough at low traffic |
+| Database | MongoDB Atlas (free tier) | Managed, works from anywhere, no disk to provision | Free (M0 tier) |
+| CI | GitHub Actions (`ci.yml`) | Lint + typecheck + build + test on every push/PR, both apps | Free for public/small private repos |
+| CD | GitHub Actions (`deploy-backend.yml`) | Builds the API image and deploys it to Cloud Run on push to `main` | Free |
 
 Vercel deploys the frontend itself via its own GitHub integration — there is
 no frontend deploy workflow in `.github/workflows/`, and there shouldn't be
 one; it would just be reimplementing what Vercel already does natively.
 
+## Local testing
+
+Do this before touching any of the "going live" steps — it proves the code
+itself works, with nothing to sign up for and nothing that can go wrong on
+the internet.
+
+**Fastest check — does it build and pass its own tests?**
+
+```bash
+npm run lint && npm run typecheck && npm run build   # the website
+npm --prefix server run typecheck && npm --prefix server test   # the API
+```
+
+If all four commands finish without a red error, the code is sound. This is
+exactly what `ci.yml` runs on every push — running it yourself first just
+means you find out immediately instead of waiting on GitHub.
+
+**Actually clicking around in it:**
+
+```bash
+cd server && npm install && npm run dev   # terminal 1 — API on :4000
+npm install && npm run dev                # terminal 2 — site on :3000
+```
+
+Open `http://localhost:3000`. Log in with any of the seeded demo accounts in
+the root `README.md` (password `serendib` for all of them). Nothing here
+needs Google, Cloudflare, or MongoDB Atlas — the API falls back to a local
+JSON file (`server/data/db.json`) with no setup, and Google sign-in/CAPTCHA
+buttons just don't render when their keys aren't set.
+
+**Whole stack in one command, no Node installed at all:**
+
+```bash
+docker compose up --build
+```
+
+Same thing, but running inside Docker containers (including a throwaway
+local MongoDB) instead of directly on your machine. Useful for confirming
+the Docker images themselves are correct, not just the source code.
+
+**What the automated tests actually check:** the full account
+signup-to-login flow, and the entire booking lifecycle (book → pay →
+complete, including rejecting a double-booked time slot). See
+`server/README.md`'s "Tests" section for the full list and what isn't
+covered yet.
+
+## Going live
+
 Do these roughly in order — Atlas first, since Cloud Run needs a connection
 string; Google Cloud next; Vercel last, since it needs the API's live URL.
 
 ## 1. MongoDB Atlas
+
+*In short: this is where your data (accounts, bookings, messages) actually
+lives once it's not just a file on your own computer. Free, and you only
+set it up once.*
 
 1. Create a free account at [mongodb.com/cloud/atlas](https://www.mongodb.com/cloud/atlas) and a new **M0 (free)** cluster.
 2. **Database Access** → add a database user with a generated password (save it).
@@ -28,6 +109,15 @@ string; Google Cloud next; Vercel last, since it needs the API's live URL.
 5. Test it locally first: put it in `server/.env` and run `npm run dev` in `server/` — the startup log should say `Seeded a fresh database (MongoDB: serendib_learn)`.
 
 ## 2. Google Cloud (Cloud Run + Artifact Registry)
+
+*In short: this is where your API (the backend that handles logins,
+bookings, etc.) actually runs. The commands below are all one-time setup —
+run each block once, in order, in a terminal. You'll need to install the
+`gcloud` command-line tool first if you don't have it
+([instructions here](https://cloud.google.com/sdk/docs/install)), then run
+`gcloud auth login` to sign in and `gcloud projects create` (or pick an
+existing project in the [console](https://console.cloud.google.com/)) before
+starting.*
 
 Requires the `gcloud` CLI, authenticated (`gcloud auth login`), with a project selected.
 
@@ -130,6 +220,12 @@ service name.
 
 ## 3. Google Sign-in, Calendar and Gmail
 
+*In short: this is a different Google setup from step 2 — step 2 was about
+where the API's code runs, this is about the "Sign in with Google" button,
+tutors' Calendar/Meet links, and the site's outgoing email. All three are
+optional — the site works without them, just with less automation. Same
+Google Cloud project as step 2.*
+
 Full walkthrough already in `server/README.md`'s "Google: sign-in, Calendar,
 Meet and Gmail" section — same steps, just use your Cloud Run/custom-domain
 URL instead of `localhost:4000` for the redirect URI, e.g.:
@@ -143,6 +239,10 @@ Once you have real users, submit the OAuth consent screen for verification
 scopes, and an unverified app caps out at 100 test users.
 
 ## 4. Vercel (frontend)
+
+*In short: this is the actual website people visit. Easiest step by far —
+Vercel is built specifically for Next.js sites like this one, so most of it
+is clicking a couple of buttons, not running commands.*
 
 1. [vercel.com/new](https://vercel.com/new) → import the GitHub repo. Vercel
    auto-detects Next.js at the repo root — no config needed.
