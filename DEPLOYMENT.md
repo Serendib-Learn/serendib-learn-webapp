@@ -38,10 +38,26 @@ in order into a terminal after signing into the right account first.
 | Database | MongoDB Atlas (free tier) | Managed, works from anywhere, no disk to provision | Free (M0 tier) |
 | CI | GitHub Actions (`ci.yml`) | Lint + typecheck + build + test on every push/PR, both apps | Free for public/small private repos |
 | CD | GitHub Actions (`deploy-backend.yml`) | Builds the API image and deploys it to Cloud Run on push to `main` | Free |
+| Security scanning | GitHub Actions (`ci.yml`, Trivy) | Vulnerability-scans both built Docker images and secret-scans the working tree, on every push/PR | Free |
 
 Vercel deploys the frontend itself via its own GitHub integration — there is
 no frontend deploy workflow in `.github/workflows/`, and there shouldn't be
 one; it would just be reimplementing what Vercel already does natively.
+
+`ci.yml`'s `docker` job fails the build on any CRITICAL/HIGH vulnerability
+with a fix available in either image (`ignore-unfixed: true` — there's
+nothing actionable about failing CI for a CVE with no patch yet), and a
+separate `secret-scan` job fails on any secret pattern found in the
+working tree. Both upload results to the repo's **Security** tab regardless
+of pass/fail, so findings stay browsable over time. One gotcha already hit:
+`node:*-alpine` ships a bundled npm CLI with its own vendored dependencies
+(`tar`, `ip-address`, `brace-expansion`) that can carry CVEs independent of
+anything in this app's own `package-lock.json` — `npm install -g
+npm@latest` does **not** reliably fix this, since the latest npm release
+can still vendor the same flagged versions. Since neither Dockerfile's app
+invokes `npm` at runtime, both delete npm's bundled install outright after
+it's no longer needed during the build, which actually clears the finding
+regardless of upstream's patch timeline.
 
 ## Local testing
 
