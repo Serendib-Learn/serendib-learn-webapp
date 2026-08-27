@@ -9,6 +9,14 @@
 
 FROM node:24-alpine AS base
 
+# node:*-alpine ships with alpine OS packages and a bundled npm CLI that
+# both drift out of date relative to the image tag's build date — CI's
+# Trivy scan (ci.yml) gates on CRITICAL/HIGH CVEs in both, and this app
+# never invokes `npm` at runtime (CMD is `node server.js`), so patching
+# both here is pure risk reduction with nothing depending on the old
+# versions.
+RUN apk upgrade --no-cache && npm install -g npm@latest
+
 FROM base AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./

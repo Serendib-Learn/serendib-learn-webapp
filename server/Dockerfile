@@ -8,6 +8,14 @@
 
 FROM node:24-alpine
 
+# node:*-alpine ships with alpine OS packages and a bundled npm CLI that
+# both drift out of date relative to the image tag's build date — CI's
+# Trivy scan (ci.yml) gates on CRITICAL/HIGH CVEs in both, and this app
+# never invokes `npm` at runtime (CMD is `node src/index.ts`), so patching
+# both here is pure risk reduction with nothing depending on the old
+# versions.
+RUN apk upgrade --no-cache && npm install -g npm@latest
+
 WORKDIR /app
 
 # Install with only server/'s manifests first, so this layer caches across
