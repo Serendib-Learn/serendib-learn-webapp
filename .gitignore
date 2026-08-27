@@ -44,3 +44,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local-only deployment record (real project IDs/URLs, no secret values —
+# still kept out of the now-public repo out of caution)
+DEPLOYMENT_NOTES.md

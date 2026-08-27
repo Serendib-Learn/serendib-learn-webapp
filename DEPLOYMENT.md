@@ -197,6 +197,17 @@ for SECRET in MONGODB_URI GOOGLE_CLIENT_ID GOOGLE_CLIENT_SECRET TURNSTILE_SECRET
   gcloud secrets add-iam-policy-binding $SECRET \
     --member="serviceAccount:${SA_EMAIL}" --role=roles/secretmanager.secretAccessor
 done
+
+# The deploy step above only covers the *deployer* identity (${SA_EMAIL}),
+# which performs the deploy action. The *running container* reads secrets
+# as a different identity — GCP's default Compute service account — and
+# needs the same role or the deploy fails with "Permission denied on
+# secret" even though the deployer already has access:
+export RUNTIME_SA="$(gcloud projects describe $PROJECT_ID --format='value(projectNumber)')-compute@developer.gserviceaccount.com"
+for SECRET in MONGODB_URI GOOGLE_CLIENT_ID GOOGLE_CLIENT_SECRET TURNSTILE_SECRET_KEY; do
+  gcloud secrets add-iam-policy-binding $SECRET \
+    --member="serviceAccount:${RUNTIME_SA}" --role=roles/secretmanager.secretAccessor
+done
 ```
 
 If you skip Turnstile, skip creating that secret too — and leave
@@ -220,6 +231,11 @@ gcloud run deploy serendib-api --region=$REGION \
 If `--no-image` isn't accepted by your `gcloud` version, just let the deploy
 workflow's first run create the service — `deploy-cloudrun` creates it if it
 doesn't exist yet, given the right permissions (already granted above).
+`deploy-backend.yml`'s deploy step already passes
+`flags: --allow-unauthenticated`, so every deploy (including this
+auto-created first one) stays publicly reachable — without it the service
+403s every request, since a fresh Cloud Run service requires auth by
+default and `deploy-cloudrun` doesn't set that flag on its own.
 
 Note the resulting URL (`https://serendib-api-xxxxx.<region>.run.app`), or
 better, map a custom domain to it (**Cloud Run → Manage Custom Domains**) —
@@ -254,20 +270,44 @@ Vercel is built specifically for Next.js sites like this one, so most of it
 is clicking a couple of buttons, not running commands.*
 
 1. [vercel.com/new](https://vercel.com/new) → import the GitHub repo. Vercel
-   auto-detects Next.js at the repo root — no config needed.
+   auto-detects Next.js at the repo root — no config needed. If the repo is
+   **private** and you (the pusher) aren't literally the owner of the
+   Vercel team/account, the Hobby (free) plan blocks every deploy with
+   "the commit author did not have contributing access" — Hobby doesn't
+   support collaborators deploying to a private repo at all, regardless of
+   GitHub permissions. Either make the repo public (fine as long as no
+   real secret ever got committed — check with
+   `git log --all -p -- '*.env*'`, `server/.env` itself should never show
+   up since it's git-ignored) or upgrade to Pro.
 2. **Settings → Environment Variables**, add for Production (and Preview, if
    you want previews to work against the real API):
    - `NEXT_PUBLIC_API_URL` = your Cloud Run URL or custom API domain
-   - `NEXT_PUBLIC_GOOGLE_CLIENT_ID` = the same client id as the API's `GOOGLE_CLIENT_ID`
+   - `NEXT_PUBLIC_GOOGLE_CLIENT_ID` = the same client id as the API's
+     `GOOGLE_CLIENT_ID` — add it as type **Config**, not **Secret**. Vercel
+     warns about `NEXT_PUBLIC_*` secrets because they ship to the browser,
+     but that's correct here: OAuth client IDs aren't sensitive, they're
+     visible in every sign-in request anyway. Only the Client *Secret*
+     (`GOOGLE_CLIENT_SECRET`, API-side only, in Secret Manager) must stay
+     out of any `NEXT_PUBLIC_*` var.
 3. **Settings → Domains** → add your custom domain, follow Vercel's DNS instructions.
 4. Every push to `main` deploys to production automatically; every PR gets its
    own preview URL. Nothing in this repo's GitHub Actions touches this —
-   it's entirely Vercel's own integration.
+   it's entirely Vercel's own integration. `NEXT_PUBLIC_*` vars are baked in
+   at build time — adding/changing one in Settings has no effect until the
+   next deploy, so trigger a manual Redeploy after editing one instead of
+   assuming it took effect immediately.
 
 Preview deployments get a different URL every time, which won't be in the
 API's `CORS_ORIGINS` — previews will build fine but API calls from them will
 be blocked by CORS. That's expected unless you point previews at a separate
 staging API.
+
+`next.config.ts`'s `output: "standalone"` (for the Docker image) is gated
+on `!process.env.VERCEL` — Vercel sets `VERCEL=1` on every build it runs.
+Leaving it unconditional breaks Vercel's build with
+`ENOENT: .next/next-server.js.nft.json`, because Vercel does its own file
+tracing/bundling and the two collide. If you ever see that exact error on a
+Vercel build, this is almost certainly why.
 
 ## 5. GitHub Secrets & Variables
 
@@ -279,8 +319,15 @@ staging API.
 | `GCP_SERVICE_ACCOUNT` | Secret | `serendib-deployer@<project-id>.iam.gserviceaccount.com` |
 | `GCP_PROJECT_ID` | Variable | Your GCP project id |
 | `GCP_REGION` | Variable | e.g. `us-central1` |
-| `APP_URL` | Variable | Your Vercel custom domain, e.g. `https://serendiblearn.com` |
-| `API_URL` | Variable | Your Cloud Run URL/custom domain, e.g. `https://api.serendiblearn.com` |
+| `APP_URL` | Variable | Your Vercel custom domain, e.g. `https://serendiblearn.com` — **no trailing slash** |
+| `API_URL` | Variable | Your Cloud Run URL/custom domain, e.g. `https://api.serendiblearn.com` — **no trailing slash** |
+
+The no-trailing-slash part matters more than it looks: `APP_URL` also
+becomes `CORS_ORIGINS` (see `deploy-backend.yml`), and browsers never send
+a trailing slash in the `Origin` header on a cross-origin request. The CORS
+check is an exact string match, so a stray `/` at the end makes it silently
+reject every real request from your frontend — no error in the browser
+console pointing at the cause, it just looks like every API call fails.
 
 `MONGODB_URI`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` are **not** GitHub
 secrets — they live in Google Secret Manager (step 2) and Cloud Run reads
@@ -305,7 +352,9 @@ docker compose up --build
 - [ ] Atlas cluster created, network access allows Cloud Run, connection string saved
 - [ ] Artifact Registry repo + Cloud Run service created
 - [ ] Workload Identity Federation set up, GitHub can auth without a stored key
-- [ ] `MONGODB_URI`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` in Secret Manager, service account can read them
+- [ ] `MONGODB_URI`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` in Secret Manager, **both** the deployer service account and the default Compute (runtime) service account can read them — granting only one causes a "Permission denied on secret" deploy failure
+- [ ] Cloud Run service allows unauthenticated invocations (`deploy-backend.yml` sets `--allow-unauthenticated` on every deploy) — otherwise every real request 403s
+- [ ] `APP_URL`/`API_URL` GitHub variables have **no trailing slash** — a trailing slash silently breaks CORS for the real frontend
 - [ ] Cloud Run has a stable URL (custom domain mapped, or you're fine with the `*.run.app` one)
 - [ ] Google Cloud project: Calendar API + Gmail API enabled, OAuth consent screen configured, redirect URI set to the Cloud Run URL
 - [ ] GitHub secrets/variables from the table above are set
