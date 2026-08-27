@@ -106,7 +106,16 @@ set it up once.*
    allowlist instead — the connection is still authenticated and TLS-encrypted,
    just not IP-restricted. Tighten this later with [Private Service Connect](https://www.mongodb.com/docs/atlas/security-private-endpoint/) if it matters for your use case.
 4. **Database** → **Connect** → **Drivers** → copy the `mongodb+srv://...` connection string. This is `MONGODB_URI`.
-5. Test it locally first: put it in `server/.env` and run `npm run dev` in `server/` — the startup log should say `Seeded a fresh database (MongoDB: serendib_learn)`.
+5. Test it locally first: paste it into `server/.env` as `MONGODB_URI=...`
+   (unquoted, one line — that file is git-ignored, so your secret never gets
+   committed). The server auto-loads `server/.env` on `npm run dev`/`start`,
+   so just run `npm run dev` in `server/` and read the startup log:
+   - `… accounts in MongoDB (serendib_learn)` → **connected to Atlas.** On a
+     brand-new cluster you'll also see `Seeded a fresh database (MongoDB:
+     serendib_learn)` the first time.
+   - `… accounts in ./data/db.json` → the URI **wasn't** picked up and it fell
+     back to the local JSON file. Check the variable name is exactly
+     `MONGODB_URI` and the value isn't wrapped in quotes.
 
 ## 2. Google Cloud (Cloud Run + Artifact Registry)
 

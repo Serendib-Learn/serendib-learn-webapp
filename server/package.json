@@ -5,10 +5,10 @@
   "type": "module",
   "description": "API service for Serendib Learn. Local JSON document store now, MongoDB later.",
   "scripts": {
-    "dev": "node --watch src/index.ts",
-    "start": "node src/index.ts",
+    "dev": "node --env-file-if-exists=.env --watch src/index.ts",
+    "start": "node --env-file-if-exists=.env src/index.ts",
     "typecheck": "tsc --noEmit",
-    "seed": "node src/scripts/reseed.ts",
+    "seed": "node --env-file-if-exists=.env src/scripts/reseed.ts",
     "test": "node --test"
   },
   "engines": {
