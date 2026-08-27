@@ -9,13 +9,11 @@
 
 FROM node:24-alpine AS base
 
-# node:*-alpine ships with alpine OS packages and a bundled npm CLI that
-# both drift out of date relative to the image tag's build date — CI's
-# Trivy scan (ci.yml) gates on CRITICAL/HIGH CVEs in both, and this app
-# never invokes `npm` at runtime (CMD is `node server.js`), so patching
-# both here is pure risk reduction with nothing depending on the old
-# versions.
-RUN apk upgrade --no-cache && npm install -g npm@latest
+# node:*-alpine's OS packages drift out of date relative to the image
+# tag's build date — CI's Trivy scan (ci.yml) gates on CRITICAL/HIGH CVEs,
+# and this needs to happen in every derived stage (deps/builder still run
+# real installs/builds), so it lives in the shared base.
+RUN apk upgrade --no-cache
 
 FROM base AS deps
 WORKDIR /app
@@ -51,6 +49,15 @@ RUN addgroup --system --gid 1001 nodejs \
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+# npm ships bundled inside every node:*-alpine image regardless of whether
+# the app uses it — this one doesn't (CMD runs `node server.js` directly)
+# — and npm's own internal dependencies (tar, ip-address, brace-expansion)
+# lag behind CVE fixes independent of `npm install -g npm@latest`, which
+# still ships the same vendored versions. Deleting it outright is what
+# actually clears CI's Trivy gate, not just patching in place.
+RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack \
+  /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack
 
 USER nextjs
 EXPOSE 3000
