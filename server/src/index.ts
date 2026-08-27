@@ -72,7 +72,9 @@ const accounts = await database.users.count();
 // should need either export.
 export const server = app.listen(config.port, () => {
   console.log(`Serendib Learn API on http://localhost:${config.port}`);
-  console.log(`${accounts} accounts in ${config.dataFile}`);
+  console.log(
+    `${accounts} accounts in ${config.mongodbUri ? `MongoDB (${config.mongodbDbName})` : config.dataFile}`,
+  );
   console.log(`Allowing credentialed requests from ${config.origins.join(", ")}`);
   if (config.demoMode) {
     console.log("Demo mode is on: the mail inbox and the reset endpoint are open.");
