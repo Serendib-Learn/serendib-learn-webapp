@@ -2,10 +2,12 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   // Lets the Docker image (see the root Dockerfile) ship only the traced
-  // runtime files instead of the full node_modules tree. Vercel ignores
-  // this and uses its own build output either way, so it is safe alongside
-  // that deployment too.
-  output: "standalone",
+  // runtime files instead of the full node_modules tree. Vercel does its
+  // own file tracing/bundling and the two collide (its builder goes
+  // looking for .next/next-server.js.nft.json in a layout "standalone"
+  // output changes), so this must stay off during a Vercel build — Vercel
+  // sets VERCEL=1 for every build it runs.
+  ...(process.env.VERCEL ? {} : { output: "standalone" as const }),
 
   async headers() {
     return [
