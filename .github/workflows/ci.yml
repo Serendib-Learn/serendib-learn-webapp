@@ -78,7 +78,7 @@ jobs:
       # there's no action to take on is just noise.
       - name: Scan API image (report)
         if: always()
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: serendib-api:ci
           format: sarif
@@ -95,7 +95,7 @@ jobs:
           category: trivy-api-image
 
       - name: Scan API image (gate)
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: serendib-api:ci
           format: table
@@ -105,7 +105,7 @@ jobs:
 
       - name: Scan web image (report)
         if: always()
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: serendib-web:ci
           format: sarif
@@ -122,7 +122,7 @@ jobs:
           category: trivy-web-image
 
       - name: Scan web image (gate)
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: serendib-web:ci
           format: table
@@ -144,7 +144,7 @@ jobs:
       # when it went public; this guards against new ones from here on).
       - name: Scan for committed secrets (report)
         if: always()
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: fs
           scan-ref: .
@@ -161,7 +161,7 @@ jobs:
           category: trivy-secrets
 
       - name: Scan for committed secrets (gate)
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: fs
           scan-ref: .
