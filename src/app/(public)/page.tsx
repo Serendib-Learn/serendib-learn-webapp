@@ -69,18 +69,18 @@ export default function HomePage() {
         <div className="relative mx-auto grid max-w-6xl items-center gap-14 px-5 py-16 sm:px-8 sm:py-24 lg:grid-cols-[1.05fr_0.95fr]">
           <div className="animate-rise">
             <p className="text-xs font-semibold tracking-[0.28em] text-jade-200 uppercase">
-              Sinhala &amp; Tamil · Live one-to-one
+              Tutors for Sri Lankans wherever they call home
             </p>
 
             <h1 className="mt-6 text-4xl leading-[1.08] text-sand-50 sm:text-5xl lg:text-6xl">
-              Learn the language
-              <br />
-              your family speaks.
+              The language you speak with your grandmother is worth fighting
+              for.
             </h1>
 
             <p className="mt-6 max-w-xl text-lg leading-relaxed text-jade-100">
-              Live lessons with tutors in Sri Lanka, a portal that keeps track of
-              everything, and games that get you talking before your first class.
+              serendib.learn connects Sri Lankan communities around the world
+              with exceptional, personally vetted tutors with the purpose of
+              keeping the Sinhala and Tamil languages alive.
             </p>
 
             <div className="mt-9 flex flex-wrap gap-3">
