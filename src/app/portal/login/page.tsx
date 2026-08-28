@@ -142,7 +142,7 @@ export default function LoginPage() {
       </form>
 
       <div className="mt-6">
-        <GoogleButton text="signin_with" onCredential={signInWithGoogle} />
+        <GoogleButton text="continue_with" onCredential={signInWithGoogle} />
       </div>
     </AuthCard>
   );

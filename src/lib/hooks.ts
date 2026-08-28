@@ -30,6 +30,14 @@ export interface QueryResult<T> {
   data: T | undefined;
   loading: boolean;
   error?: string;
+  /**
+   * True while a revision-triggered refetch is in flight, even though
+   * `loading` stays false so stale data keeps rendering. Most consumers
+   * can ignore this — it exists for callers where a stale "empty" result
+   * (e.g. no logged-in user) must not be treated as a settled answer
+   * while a fresher one is on the way. See `AuthProvider`.
+   */
+  refetching: boolean;
 }
 
 interface Settled<T> {
@@ -84,6 +92,7 @@ export function useQuery<T>(loader: () => Promise<T>, deps: unknown[]): QueryRes
     data: current?.data,
     loading: current === null || (inFlight && current.data === undefined),
     error: inFlight ? undefined : current?.error,
+    refetching: current !== null && inFlight,
   };
 }
 
