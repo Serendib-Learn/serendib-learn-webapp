@@ -82,6 +82,10 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
 }
 
 export const httpBackend: Backend = {
+  health() {
+    return request<{ ok: boolean; demoMode: boolean }>("/health");
+  },
+
   auth: {
     async currentUser() {
       const { user } = await request<{ user: User | null }>("/auth/me");

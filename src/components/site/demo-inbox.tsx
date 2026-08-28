@@ -33,10 +33,22 @@ const kindLabel = {
 export function DemoInbox() {
   const [open, setOpen] = useState(false);
   const [expanded, setExpanded] = useState<string | null>(null);
-  const { data: mail } = useQuery(() => api.mail.inbox(), []);
+  const { data: health } = useQuery(() => api.health(), []);
+  const demoMode = health?.demoMode;
+
+  // Wait for the demo-mode check before ever calling /mail — the API 403s
+  // that route once DEMO_MODE is off in production, and firing it
+  // unconditionally on every page load (this widget is mounted globally)
+  // put a 403 in the console for every visitor, demo mode or not.
+  const { data: mail } = useQuery(
+    () => (demoMode ? api.mail.inbox() : Promise.resolve([])),
+    [demoMode],
+  );
 
   const messages = mail ?? [];
   const unread = messages.filter((message) => !message.read).length;
+
+  if (demoMode === false) return null;
 
   return (
     <>

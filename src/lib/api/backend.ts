@@ -53,6 +53,9 @@ export type { StudentProgress, ThreadSummary } from "@/lib/types";
  * interface for the UI to keep working unchanged.
  */
 export interface Backend {
+  /** Cheap, unauthenticated status probe — used to check whether demo-only features are live. */
+  health(): Promise<{ ok: boolean; demoMode: boolean }>;
+
   auth: {
     currentUser(): Promise<User | null>;
     signUp(input: SignUpInput): Promise<{ email: string }>;
