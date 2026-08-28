@@ -72,7 +72,7 @@ export default function HomePage() {
               Tutors for Sri Lankans wherever they call home
             </p>
 
-            <h1 className="mt-6 text-4xl leading-[1.08] text-sand-50 sm:text-5xl lg:text-6xl">
+            <h1 className="mt-6 max-w-xl text-3xl leading-[1.12] text-sand-50 sm:text-4xl lg:text-5xl">
               The language you speak with your grandmother is worth fighting
               for.
             </h1>
