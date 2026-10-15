@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { ButtonLink } from "@/components/ui/button";
 import { Avatar, Badge, Card, EmptyState, SectionHeading } from "@/components/ui/primitives";
 import { fetchPublicTutors } from "@/lib/api/public";
+import { learningLanguage } from "@/lib/learning-language-server";
 
 export const metadata: Metadata = {
   title: "Tutors",
@@ -9,12 +10,13 @@ export const metadata: Metadata = {
     "The Sinhala and Tamil tutors at Serendib Learn — who they are, where they are from, and what they are best at teaching.",
 };
 
-// Re-read the roster at most once a minute, so a newly approved tutor or an
-// edited profile shows up without a redeploy.
-export const revalidate = 60;
-
 export default async function TutorsPage() {
-  const tutors = await fetchPublicTutors();
+  // The roster itself is cached for a minute (see fetchPublicTutors); the
+  // page is per-visitor because it follows their learning-language choice.
+  const choice = await learningLanguage();
+  const everyone = await fetchPublicTutors();
+  const tutors =
+    choice === "both" ? everyone : everyone.filter((tutor) => tutor.languages.includes(choice));
 
   return (
     <>
@@ -33,6 +35,13 @@ export default async function TutorsPage() {
       </section>
 
       <section className="mx-auto max-w-6xl px-5 py-20 sm:px-8">
+        {choice !== "both" && everyone.length > 0 ? (
+          <p className="mb-6 text-sm text-ink-500">
+            Showing the {tutors.length} tutor{tutors.length === 1 ? "" : "s"} who teach{" "}
+            {choice === "sinhala" ? "Sinhala" : "Tamil"} — switch to “Both” at the top to see
+            all {everyone.length}.
+          </p>
+        ) : null}
         {tutors.length === 0 ? (
           <EmptyState
             icon="🧑‍🏫"

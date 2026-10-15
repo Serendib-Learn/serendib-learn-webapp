@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import {
   Inter,
   Noto_Sans_Sinhala,
@@ -27,12 +27,20 @@ const notoTamil = Noto_Sans_Tamil({
 });
 
 export const metadata: Metadata = {
+  // Absolute URLs for the share image and canonical links. Set
+  // NEXT_PUBLIC_SITE_URL wherever the site is served from somewhere else.
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.serendiblearn.com"),
   title: {
     default: "Serendib Learn — Sinhala & Tamil, taught by Sri Lankans",
     template: "%s · Serendib Learn",
   },
   description:
     "Live one-to-one Sinhala and Tamil lessons with personally vetted Sri Lankan tutors, and a portal for students, tutors and a vetted community.",
+};
+
+/** The forest green of the header, for the browser chrome and the installed app. */
+export const viewport: Viewport = {
+  themeColor: "#1B4332",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

@@ -9,6 +9,8 @@ import { Avatar, Badge, Card, SectionHeading } from "@/components/ui/primitives"
 // import { allChapters, totalPhraseCount } from "@/data/vocabulary";
 // import { heritageSites } from "@/data/heritage";
 import { fetchPublicTutors } from "@/lib/api/public";
+import { learningLanguage } from "@/lib/learning-language-server";
+import type { LearningLanguage } from "@/lib/learning-language";
 
 const steps = [
   {
@@ -37,7 +39,7 @@ const reasons = [
   {
     emoji: "⚖️",
     title: "Both languages, no favourites",
-    body: "Sinhala and Tamil, taught with equal care and side by side. Every phrase in our decks carries both, in script and in romanisation.",
+    body: "Sinhala and Tamil, taught with equal care and side by side. Every phrase in our course carries both, in script and in romanisation.",
   },
   {
     emoji: "👋",
@@ -51,11 +53,13 @@ const reasons = [
   },
 ];
 
-// The tutor section reads the live roster; re-read it at most once a minute.
-export const revalidate = 60;
-
 export default async function HomePage() {
-  const tutors = (await fetchPublicTutors()).slice(0, 3);
+  // The roster is cached for a minute (see fetchPublicTutors); the page itself
+  // follows the visitor's learning-language choice.
+  const choice = await learningLanguage();
+  const tutors = (await fetchPublicTutors())
+    .filter((tutor) => choice === "both" || tutor.languages.includes(choice))
+    .slice(0, 3);
 
   // GAMES-HIDDEN
   // const colomboSites = heritageSites.filter((site) => site.region === "Colombo");
@@ -125,7 +129,7 @@ export default async function HomePage() {
           </div>
 
           <div className="animate-rise lg:pl-6">
-            <WelcomeCard />
+            <WelcomeCard choice={choice} />
             {/* Decks are off the landing page for now.
             <PhraseCardStack />
             */}
@@ -364,28 +368,44 @@ export default async function HomePage() {
 }
 
 /** Hero companion now that the phrase decks are off the landing page. */
-function WelcomeCard() {
+function WelcomeCard({ choice }: { choice: LearningLanguage }) {
+  const greetings = [
+    {
+      language: "sinhala",
+      label: "Sinhala",
+      labelClass: "text-jade-600",
+      scriptClass: "text-sinhala",
+      word: "ආයුබෝවන්",
+      say: "ā-yu-bō-wan · “may you live long”",
+    },
+    {
+      language: "tamil",
+      label: "Tamil",
+      labelClass: "text-clay-500",
+      scriptClass: "text-tamil",
+      word: "வணக்கம்",
+      say: "va-ṇak-kam · “I greet you”",
+    },
+  ];
+  // The language they are here for comes first; with a single choice, only that one.
+  const shown = choice === "both" ? greetings : greetings.filter((item) => item.language === choice);
+
   return (
     <div className="relative">
       <div aria-hidden className="absolute inset-x-6 -bottom-3 h-full rounded-3xl bg-jade-600/12" />
       <div aria-hidden className="absolute inset-x-3 -bottom-1.5 h-full rounded-3xl bg-saffron-400/25" />
 
       <div className="relative rounded-3xl bg-white p-7 shadow-lifted ring-1 ring-ink-900/8">
-        <div className="grid gap-5 sm:grid-cols-2">
-          <div>
-            <p className="text-[0.7rem] font-semibold tracking-[0.18em] text-jade-600 uppercase">
-              Sinhala
-            </p>
-            <p className="text-sinhala mt-1 text-3xl leading-snug text-ink-900">ආයුබෝවන්</p>
-            <p className="text-sm text-ink-500">ā-yu-bō-wan · &ldquo;may you live long&rdquo;</p>
-          </div>
-          <div>
-            <p className="text-[0.7rem] font-semibold tracking-[0.18em] text-clay-500 uppercase">
-              Tamil
-            </p>
-            <p className="text-tamil mt-1 text-3xl leading-snug text-ink-900">வணக்கம்</p>
-            <p className="text-sm text-ink-500">va-ṇak-kam · &ldquo;I greet you&rdquo;</p>
-          </div>
+        <div className={shown.length > 1 ? "grid gap-5 sm:grid-cols-2" : ""}>
+          {shown.map((item) => (
+            <div key={item.language}>
+              <p className={`text-[0.7rem] font-semibold tracking-[0.18em] uppercase ${item.labelClass}`}>
+                {item.label}
+              </p>
+              <p className={`mt-1 text-3xl leading-snug text-ink-900 ${item.scriptClass}`}>{item.word}</p>
+              <p className="text-sm text-ink-500">{item.say}</p>
+            </div>
+          ))}
         </div>
 
         <ul className="mt-7 space-y-3 border-t border-ink-900/8 pt-6">

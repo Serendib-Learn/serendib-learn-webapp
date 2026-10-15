@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { LanguageToggle } from "./language-toggle";
 import { Logo } from "./logo";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/primitives";
@@ -16,7 +17,8 @@ const navigation = [
   // GAMES-HIDDEN: games are parked for now — see src/lib/features.ts.
   // { href: "/games", label: "Games" },
   { href: "/portal/community", label: "Community" },
-  { href: "/portal/signup?role=tutor", label: "Teach with us" },
+  // In the mobile menu and the footer always; in the top bar only when wide.
+  { href: "/portal/signup?role=tutor", label: "Teach with us", wideOnly: true },
 ];
 
 export function Header() {
@@ -37,7 +39,7 @@ export function Header() {
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5 sm:px-8">
         <Logo tone="light" />
 
-        <nav className="hidden items-center gap-1 md:flex" aria-label="Main">
+        <nav className="hidden items-center gap-1 lg:flex" aria-label="Main">
           {navigation.map((item) => {
             const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
             return (
@@ -45,7 +47,8 @@ export function Header() {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "rounded-full px-3.5 py-2 text-sm font-medium transition",
+                  "rounded-full px-3.5 py-2 text-sm font-medium whitespace-nowrap transition",
+                  "wideOnly" in item && item.wideOnly && "hidden xl:block",
                   active ? "bg-white/10 text-sand-50" : "text-jade-100 hover:bg-white/5 hover:text-sand-50",
                 )}
               >
@@ -55,7 +58,8 @@ export function Header() {
           })}
         </nav>
 
-        <div className="hidden items-center gap-3 md:flex">
+        <div className="hidden items-center gap-3 whitespace-nowrap lg:flex">
+          <LanguageToggle />
           {user ? (
             <Link
               href="/portal"
@@ -79,7 +83,7 @@ export function Header() {
         <Button
           variant="ghost-light"
           size="sm"
-          className="md:hidden"
+          className="lg:hidden"
           aria-expanded={menuOpen}
           aria-controls="mobile-menu"
           onClick={() => setMenuOpen((open) => !open)}
@@ -96,7 +100,7 @@ export function Header() {
       </div>
 
       {menuOpen ? (
-        <div id="mobile-menu" className="animate-fade border-t border-white/10 bg-jade-700 md:hidden">
+        <div id="mobile-menu" className="animate-fade border-t border-white/10 bg-jade-700 lg:hidden">
           <nav className="mx-auto max-w-6xl px-5 py-4" aria-label="Mobile">
             <ul className="space-y-1">
               {navigation.map((item) => (
@@ -111,6 +115,10 @@ export function Header() {
                 </li>
               ))}
             </ul>
+
+            <div className="mt-4 border-t border-white/10 pt-4">
+              <LanguageToggle variant="full" />
+            </div>
 
             <div className="mt-4 grid gap-2 border-t border-white/10 pt-4">
               {user ? (
