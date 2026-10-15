@@ -31,28 +31,21 @@ const columns = [
   },
 ];
 
+// The accounts the original serendib.learn site linked to.
 const socials = [
   {
     label: "Instagram",
-    href: "https://instagram.com/serendiblearn",
+    href: "https://instagram.com/serendib.learn",
     path: "M12 8.6a3.4 3.4 0 100 6.8 3.4 3.4 0 000-6.8Zm0-2.2c2 0 2.3 0 3.1.05.8.03 1.3.16 1.7.32.5.2.8.42 1.2.8.38.38.6.72.8 1.2.16.4.29.9.32 1.7.04.8.05 1.1.05 3.1s0 2.3-.05 3.1c-.03.8-.16 1.3-.32 1.7-.2.5-.42.8-.8 1.2-.38.38-.72.6-1.2.8-.4.16-.9.29-1.7.32-.8.04-1.1.05-3.1.05s-2.3 0-3.1-.05c-.8-.03-1.3-.16-1.7-.32-.5-.2-.8-.42-1.2-.8-.38-.38-.6-.72-.8-1.2-.16-.4-.29-.9-.32-1.7C4.4 14.3 4.4 14 4.4 12s0-2.3.05-3.1c.03-.8.16-1.3.32-1.7.2-.5.42-.8.8-1.2.38-.38.72-.6 1.2-.8.4-.16.9-.29 1.7-.32C9.7 6.4 10 6.4 12 6.4Zm5.3 1.4a.9.9 0 100 1.8.9.9 0 000-1.8Z",
   },
   {
-    label: "YouTube",
-    href: "https://youtube.com/@serendiblearn",
-    path: "M21.2 8.2c-.2-1-.9-1.7-1.8-1.9C17.7 6 12 6 12 6s-5.7 0-7.4.3c-.9.2-1.6.9-1.8 1.9C2.5 9.9 2.5 12 2.5 12s0 2.1.3 3.8c.2 1 .9 1.7 1.8 1.9 1.7.3 7.4.3 7.4.3s5.7 0 7.4-.3c.9-.2 1.6-.9 1.8-1.9.3-1.7.3-3.8.3-3.8s0-2.1-.3-3.8ZM10.2 15.1V8.9l5.3 3.1-5.3 3.1Z",
-  },
-  {
-    label: "Facebook",
-    href: "https://facebook.com/serendiblearn",
-    path: "M13.3 21v-7.5h2.5l.4-2.9h-2.9V8.7c0-.8.2-1.4 1.4-1.4h1.6V4.7c-.3 0-1.2-.1-2.3-.1-2.3 0-3.8 1.4-3.8 3.9v2.1H7.7v2.9h2.5V21h3.1Z",
-  },
-  {
-    label: "TikTok",
-    href: "https://tiktok.com/@serendiblearn",
-    path: "M14.2 3h2.5c.2 1.5 1.1 2.8 2.8 3.1v2.5c-1.1 0-2.1-.3-3-.9v5.7a5.1 5.1 0 11-5.1-5.1c.3 0 .5 0 .8.1v2.6a2.5 2.5 0 101.9 2.4V3Z",
+    label: "LinkedIn",
+    href: "https://linkedin.com/company/serendib-learn",
+    path: "M4.98 3.5A2.5 2.5 0 1 1 5 8.5a2.5 2.5 0 0 1-.02-5zM3 9h4v12H3zM10 9h3.8v1.7h.05c.53-1 1.83-2.05 3.77-2.05C21.4 8.65 22 11.1 22 14.2V21h-4v-6c0-1.43-.03-3.28-2-3.28-2 0-2.3 1.56-2.3 3.17V21h-4z",
   },
 ];
+
+export const contactEmail = "serendib.learn@gmail.com";
 
 export function Footer() {
   return (
@@ -105,7 +98,12 @@ export function Footer() {
         </div>
 
         <div className="mt-12 flex flex-col gap-3 border-t border-white/10 pt-6 text-xs text-sand-200/55 sm:flex-row sm:items-center sm:justify-between">
-          <p>© {new Date().getFullYear()} Serendib Learn. Made between Colombo and everywhere else.</p>
+          <p>
+            © {new Date().getFullYear()} Serendib Learn ·{" "}
+            <a href={`mailto:${contactEmail}`} className="transition hover:text-white">
+              {contactEmail}
+            </a>
+          </p>
           <p className="flex items-center gap-1.5">
             <span className="text-sinhala">ආයුබෝවන්</span>
             <span aria-hidden>·</span>
