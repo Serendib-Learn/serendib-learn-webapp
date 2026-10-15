@@ -225,3 +225,57 @@ test("reminders: at the end of class, again a day later, then never", async () =
   await cron("test-cron-secret");
   assert.equal((await mailTo("nudged-student@example.com")).length, before, "two reminders, no more");
 });
+
+test("lesson reminders: a day ahead and an hour ahead, to both people, once each", async () => {
+  const tutor = await signedUpUser(harness, "tutor", "soon-tutor@example.com");
+  const student = await signedUpUser(harness, "student", "soon-student@example.com");
+  const created = await student.client.post("/bookings", {
+    tutorId: tutor.user.id,
+    startsAt: new Date(Date.now() + 20 * 3600_000).toISOString(),
+    durationMins: 60,
+    language: "sinhala",
+    focus: "Greetings",
+  });
+  await student.client.post(`/bookings/${created.body.id}/pay`);
+  await tutor.client.post(`/bookings/${created.body.id}/meeting-link`, {
+    url: "https://meet.google.com/abc-defg-hij",
+  });
+
+  const cron = () =>
+    fetch(`${harness.baseUrl}/jobs/reminders`, {
+      method: "POST",
+      headers: { "X-Cron-Secret": "test-cron-secret" },
+    });
+  const reminders = async (email: string) =>
+    (await mailTo(email)).filter((item) => /^Tomorrow:|within the hour/.test(item.subject));
+
+  await cron();
+  const studentDay = await reminders("soon-student@example.com");
+  assert.equal(studentDay.length, 1);
+  assert.match(studentDay[0].subject, /^Tomorrow: your lesson with Test Tutor/);
+  assert.match(studentDay[0].body, /meet\.google\.com\/abc-defg-hij/);
+  assert.match(studentDay[0].body, /\/portal\/calendar/);
+  assert.equal((await reminders("soon-tutor@example.com")).length, 1);
+
+  await cron();
+  assert.equal((await reminders("soon-student@example.com")).length, 1, "not twice");
+
+  const { db } = await import("../db/database.ts");
+  await db().bookings.updateOne(
+    { id: created.body.id },
+    { startsAt: new Date(Date.now() + 30 * 60_000).toISOString() },
+  );
+  await cron();
+  const later = await reminders("soon-student@example.com");
+  assert.equal(later.length, 2);
+  assert.ok(later.some((item) => /starts within the hour/.test(item.subject)));
+});
+
+test("google test actions refuse cleanly when nothing is connected", async () => {
+  const { adminClient } = await import("../test-support/accounts.ts");
+  const admin = await adminClient(harness);
+  const mail = await admin.client.post("/integrations/google/mail/test");
+  assert.equal(mail.status, 409);
+  const calendar = await admin.client.post("/integrations/google/system-calendar/test");
+  assert.equal(calendar.status, 409);
+});

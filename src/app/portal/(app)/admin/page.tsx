@@ -57,8 +57,21 @@ function GoogleConnectBanner() {
 }
 
 export default function AdminPage() {
+  return (
+    <Suspense fallback={<Loading />}>
+      <AdminArea />
+    </Suspense>
+  );
+}
+
+function AdminArea() {
   const { user } = useAuth();
-  const [tab, setTab] = useState<Tab>("people");
+  const params = useSearchParams();
+  // ?tab=google (from the dashboard's "Finish connecting Google"), and the
+  // return from Google's consent screen, both land on the Google tab.
+  const [tab, setTab] = useState<Tab>(
+    params.get("tab") === "google" || params.get("google") ? "mail" : "people",
+  );
   const pending = useQuery(() => api.community.pending(), []);
   const accounts = useQuery(() => api.users.list(), []);
   const applications = (accounts.data ?? []).filter(

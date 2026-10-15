@@ -137,6 +137,11 @@ export interface Booking {
   payment?: BookingPayment;
   /** Why a booking was cancelled, when the system did it (an expired checkout, say). */
   cancelReason?: string;
+  /** When each before-the-lesson reminder went out (a day ahead, an hour ahead). */
+  lessonReminders?: {
+    day?: string;
+    hour?: string;
+  };
   /** When each feedback reminder went out, so none is sent twice. */
   feedbackReminders?: {
     student?: string[];

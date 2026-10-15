@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { config } from "../config.ts";
 import { db, SYSTEM_CALENDAR_ID } from "../db/database.ts";
 import { ApiError, forbidden, notFound, wrap } from "../lib/errors.ts";
 import { pathParam } from "../lib/http.ts";
@@ -245,7 +246,7 @@ bookingsRouter.post(
       await deliver({
         to: student.email,
         subject: "Your meeting link is ready",
-        body: `The link for your lesson on ${new Date(booking.startsAt).toLocaleString()}:\n\n${url.toString()}\n\nIt is also on the booking in your portal.`,
+        body: `The link for your lesson on ${new Date(booking.startsAt).toLocaleString()}:\n\n${url.toString()}\n\nIt is also on the booking in your calendar: ${config.appUrl}/portal/calendar`,
         kind: "notification",
       });
     }

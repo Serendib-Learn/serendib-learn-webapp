@@ -629,6 +629,19 @@ export const httpBackend: Backend = {
           method: "POST",
         });
       },
+
+      testMail() {
+        return request<{ sentTo: string; from: string }>("/integrations/google/mail/test", {
+          method: "POST",
+        });
+      },
+
+      testSystemCalendar() {
+        return request<{ meetLink: string; calendar: string }>(
+          "/integrations/google/system-calendar/test",
+          { method: "POST" },
+        );
+      },
     },
   },
 };

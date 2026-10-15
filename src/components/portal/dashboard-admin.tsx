@@ -13,6 +13,8 @@ export function AdminDashboard({ user }: { user: User }) {
   const users = useQuery(() => api.users.list(), []);
   const pending = useQuery(() => api.community.pending(), []);
   const waitlist = useQuery(() => api.waitlist.list(), []);
+  const mailer = useQuery(() => api.integrations.google.mailStatus(), []);
+  const calendar = useQuery(() => api.integrations.google.systemCalendarStatus(), []);
 
   const everyone = users.data ?? [];
   const bookings = useQuery(
@@ -46,6 +48,23 @@ export function AdminDashboard({ user }: { user: User }) {
       >
         Logged in as {user.name}. Everything below is live.
       </GlanceHeader>
+
+      {(mailer.data && !mailer.data.connected) || (calendar.data && !calendar.data.connected) ? (
+        <Card className="mb-6 border-amber-spice/40 p-5">
+          <p className="font-medium text-forest">Finish connecting Google</p>
+          <ul className="mt-2 space-y-1 text-sm text-earth/70">
+            {mailer.data && !mailer.data.connected ? (
+              <li>• Gmail is not connected, so no email reaches a real inbox — not verification codes, receipts or lesson reminders.</li>
+            ) : null}
+            {calendar.data && !calendar.data.connected ? (
+              <li>• The Serendib calendar is not connected, so bookings only get a Meet link if their tutor connected their own calendar.</li>
+            ) : null}
+          </ul>
+          <ButtonLink href="/portal/admin?tab=google" size="sm" className="mt-4">
+            Connect in Administration → Google
+          </ButtonLink>
+        </Card>
+      ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Stat label="Students" value={students.length} />

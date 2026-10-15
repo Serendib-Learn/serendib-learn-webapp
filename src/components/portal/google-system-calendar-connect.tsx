@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { api } from "@/lib/api";
 import { useAction, useQuery } from "@/lib/hooks";
 import { buttonClasses } from "@/components/ui/button";
@@ -13,6 +14,8 @@ import { Card, Loading } from "@/components/ui/primitives";
 export function GoogleSystemCalendarConnect() {
   const status = useQuery(() => api.integrations.google.systemCalendarStatus(), []);
   const disconnect = useAction(() => api.integrations.google.systemCalendarDisconnect());
+  const test = useAction(() => api.integrations.google.testSystemCalendar());
+  const [result, setResult] = useState<string | null>(null);
 
   return (
     <Card className="p-6">
@@ -27,14 +30,35 @@ export function GoogleSystemCalendarConnect() {
             link from <span className="font-medium text-ink-800">{status.data.email}</span>&rsquo;s
             calendar. The tutor and student are both invited, so Google emails them the event.
           </p>
-          <button
-            type="button"
-            disabled={disconnect.pending}
-            onClick={() => void disconnect.run()}
-            className={buttonClasses("ghost", "sm", "mt-4 text-clay-600 hover:bg-clay-50")}
-          >
-            Disconnect
-          </button>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <button
+              type="button"
+              disabled={test.pending}
+              onClick={async () => {
+                setResult(null);
+                const made = await test.run();
+                if (made) setResult(made.meetLink);
+              }}
+              className={buttonClasses("secondary", "sm")}
+            >
+              {test.pending ? "Making one…" : "Make a test Meet link"}
+            </button>
+            <button
+              type="button"
+              disabled={disconnect.pending}
+              onClick={() => void disconnect.run()}
+              className={buttonClasses("ghost", "sm", "text-clay-600 hover:bg-clay-50")}
+            >
+              Disconnect
+            </button>
+          </div>
+          {result ? (
+            <p className="mt-3 text-sm text-fern">
+              It works: Google made <span className="font-medium">{result}</span> (a throwaway
+              event, already deleted). Every new booking now gets its own link like this.
+            </p>
+          ) : null}
+          {test.error ? <p className="mt-3 text-sm text-clay-600">{test.error}</p> : null}
           {disconnect.error ? (
             <p className="mt-2 text-sm text-clay-600">{disconnect.error}</p>
           ) : null}

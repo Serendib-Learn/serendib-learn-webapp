@@ -256,6 +256,11 @@ export interface Backend {
       systemCalendarStatus(): Promise<GoogleCalendarStatus>;
       systemCalendarConnectUrl(): string;
       systemCalendarDisconnect(): Promise<void>;
+
+      /** Sends a real email through the connected Gmail account, to you. */
+      testMail(): Promise<{ sentTo: string; from: string }>;
+      /** Makes (and deletes) a real Meet link on the Serendib calendar. */
+      testSystemCalendar(): Promise<{ meetLink: string; calendar: string }>;
     };
   };
 

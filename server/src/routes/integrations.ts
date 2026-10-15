@@ -3,10 +3,13 @@ import { config } from "../config.ts";
 import { db, SYSTEM_CALENDAR_ID } from "../db/database.ts";
 import { ApiError, wrap } from "../lib/errors.ts";
 import {
+  createGoogleMeeting,
+  deleteGoogleMeeting,
   exchangeGoogleAuthCode,
   googleCalendarAuthUrl,
   googleCalendarEnabled,
   googleMailAuthUrl,
+  sendGmail,
 } from "../lib/google.ts";
 import { nowIso } from "../lib/ids.ts";
 import { randomToken } from "../lib/passwords.ts";
@@ -163,6 +166,67 @@ integrationsRouter.post(
   wrap(async (_request, response) => {
     await db().googleAccounts.deleteOne({ id: SYSTEM_CALENDAR_ID });
     response.status(204).end();
+  }),
+);
+
+/** Google's own words when a test fails, so an admin can see what to fix. */
+function googleError(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error);
+  if (/invalid_grant/i.test(message)) {
+    return "Google refused the saved connection (it was revoked, or expired — apps still in Google's \"Testing\" mode lose access after 7 days). Disconnect and connect again.";
+  }
+  return `Google said: ${message}`;
+}
+
+/** Sends a real email through the connected Gmail account, to the admin asking. */
+integrationsRouter.post(
+  "/google/mail/test",
+  requireAdmin,
+  wrap(async (request, response) => {
+    const actor = requireUser(request);
+    const linked = await db().googleMailer.findById("system");
+    if (!linked) throw new ApiError("Gmail is not connected yet.", 409);
+    try {
+      await sendGmail({
+        refreshToken: linked.refreshToken,
+        to: actor.email,
+        subject: "Serendib Learn: Gmail sending works",
+        body: `This is a test from Administration → Google. Verification codes, receipts, lesson reminders and notifications will now arrive in real inboxes, sent from ${linked.email}.`,
+      });
+    } catch (error) {
+      throw new ApiError(googleError(error), 502);
+    }
+    response.json({ sentTo: actor.email, from: linked.email });
+  }),
+);
+
+/**
+ * Makes a real Google Meet link on the Serendib calendar, then deletes the
+ * throwaway event (no invitations go out), to prove bookings will get one.
+ */
+integrationsRouter.post(
+  "/google/system-calendar/test",
+  requireAdmin,
+  wrap(async (_request, response) => {
+    const linked = await db().googleAccounts.findById(SYSTEM_CALENDAR_ID);
+    if (!linked) throw new ApiError("The Serendib calendar is not connected yet.", 409);
+    const start = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    let meeting;
+    try {
+      meeting = await createGoogleMeeting({
+        refreshToken: linked.refreshToken,
+        summary: "Serendib Learn: connection test (deleted straight away)",
+        description: "Created by Administration → Google → Make a test Meet link.",
+        startIso: start.toISOString(),
+        endIso: new Date(start.getTime() + 30 * 60 * 1000).toISOString(),
+        timezone: "Asia/Colombo",
+        attendeeEmails: [],
+      });
+    } catch (error) {
+      throw new ApiError(googleError(error), 502);
+    }
+    await deleteGoogleMeeting(linked.refreshToken, meeting.eventId);
+    response.json({ meetLink: meeting.meetLink, calendar: linked.email });
   }),
 );
 
