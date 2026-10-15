@@ -62,3 +62,4 @@ jobs:
             MONGODB_URI=MONGODB_URI:latest
             GOOGLE_CLIENT_ID=GOOGLE_CLIENT_ID:latest
             GOOGLE_CLIENT_SECRET=GOOGLE_CLIENT_SECRET:latest
+            CRON_SECRET=CRON_SECRET:latest
