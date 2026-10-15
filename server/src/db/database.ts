@@ -115,6 +115,15 @@ export interface VoiceNote extends Doc {
   createdAt: string;
 }
 
+/** A photo attached to a community post. Base64, capped by the upload route. */
+export interface PostImage extends Doc {
+  id: string;
+  ownerId: string;
+  mimeType: string;
+  data: string;
+  createdAt: string;
+}
+
 export interface Database {
   users: Collection<User>;
   credentials: Collection<Credential>;
@@ -141,6 +150,7 @@ export interface Database {
   feedback: Collection<SessionFeedback>;
   chapters: Collection<CourseChapter>;
   connections: Collection<Connection>;
+  postImages: Collection<PostImage>;
   voiceNotes: Collection<VoiceNote>;
 }
 
@@ -174,6 +184,7 @@ function build(from: Store): Database {
     feedback: from.collection<SessionFeedback>("feedback"),
     chapters: from.collection<CourseChapter>("chapters"),
     connections: from.collection<Connection>("connections"),
+    postImages: from.collection<PostImage>("postImages"),
     voiceNotes: from.collection<VoiceNote>("voiceNotes"),
   };
 }
@@ -212,6 +223,7 @@ async function seedContents(): Promise<Record<string, Doc[]>> {
     paymentEvents: [],
     feedback: [],
     connections: [],
+    postImages: [],
     chapters: defaultChapters.map((chapter) => ({ ...chapter, createdAt: new Date().toISOString() })),
     voiceNotes: [],
   };

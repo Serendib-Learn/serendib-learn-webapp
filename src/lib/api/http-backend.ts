@@ -89,6 +89,20 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   return payload as T;
 }
 
+/** Scales a photo down to `maxSide` pixels and re-encodes it as JPEG, so uploads stay small. */
+async function resizeImage(file: File, maxSide: number): Promise<Blob> {
+  const bitmap = await createImageBitmap(file);
+  const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(bitmap.width * scale);
+  canvas.height = Math.round(bitmap.height * scale);
+  canvas.getContext("2d")?.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  bitmap.close();
+  return new Promise((resolve, reject) =>
+    canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new ApiError("That photo could not be read."))), "image/jpeg", 0.85),
+  );
+}
+
 export const httpBackend: Backend = {
   health() {
     return request<{ ok: boolean; demoMode: boolean }>("/health");
@@ -457,6 +471,30 @@ export const httpBackend: Backend = {
         method: "POST",
         body: { status, note },
       });
+    },
+
+    async uploadImage(file) {
+      const blob = await resizeImage(file, 1600);
+      const bytes = new Uint8Array(await blob.arrayBuffer());
+      let binary = "";
+      for (let index = 0; index < bytes.length; index += 0x8000) {
+        binary += String.fromCharCode(...bytes.subarray(index, index + 0x8000));
+      }
+      return request<{ id: string }>("/post-images", {
+        method: "POST",
+        body: { mimeType: blob.type, data: btoa(binary) },
+      });
+    },
+
+    async image(id) {
+      let response: Response;
+      try {
+        response = await fetch(url(`/post-images/${id}`), { credentials: "include" });
+      } catch {
+        throw new ApiError("Could not reach the API to fetch that photo.");
+      }
+      if (!response.ok) throw new ApiError("That photo could not be shown.");
+      return response.blob();
     },
 
     members(language) {

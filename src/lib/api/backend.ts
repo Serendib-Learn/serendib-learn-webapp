@@ -192,6 +192,10 @@ export interface Backend {
     reply(postId: string, authorId: string, body: string): Promise<PostReply>;
     repliesFor(postId: string): Promise<PostReply[]>;
     moderate(postId: string, status: PostStatus, note?: string): Promise<CommunityPost>;
+    /** Uploads a photo for a post (resized in the browser first); returns its id. */
+    uploadImage(file: File): Promise<{ id: string }>;
+    /** A post's photo, fetched with the session cookie. */
+    image(id: string): Promise<Blob>;
     /** Vetted fellow learners, optionally only those learning `language`. */
     members(language?: LanguageCode): Promise<CommunityMember[]>;
     /** Friends and open requests, in either direction. */

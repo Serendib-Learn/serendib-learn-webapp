@@ -11,7 +11,7 @@ import { loadSession, parseCookies } from "./lib/sessions.ts";
 import { authRouter } from "./routes/auth.ts";
 import { availabilityRouter } from "./routes/availability.ts";
 import { bookingsRouter } from "./routes/bookings.ts";
-import { communityRouter } from "./routes/community.ts";
+import { communityRouter, postImagesRouter } from "./routes/community.ts";
 import { homeworkRouter } from "./routes/homework.ts";
 import { integrationsRouter } from "./routes/integrations.ts";
 import { materialsRouter } from "./routes/materials.ts";
@@ -53,7 +53,7 @@ app.post(
 // body limit; the general parser skips them and their router brings its own.
 const jsonBody = express.json({ limit: "256kb" });
 app.use((request, response, next) => {
-  if (request.path.startsWith("/api/voice-notes")) next();
+  if (request.path.startsWith("/api/voice-notes") || request.path.startsWith("/api/post-images")) next();
   else jsonBody(request, response, next);
 });
 app.use(parseCookies);
@@ -71,6 +71,7 @@ app.use("/api/bookings", bookingsRouter);
 app.use("/api/payments", paymentsRouter);
 app.use("/api/feedback", feedbackRouter);
 app.use("/api/voice-notes", express.json({ limit: "5mb" }), voiceNotesRouter);
+app.use("/api/post-images", express.json({ limit: "3mb" }), postImagesRouter);
 app.use("/api/jobs", jobsRouter);
 app.use("/api/materials", materialsRouter);
 app.use("/api/chapters", chaptersRouter);

@@ -6,9 +6,54 @@ import { pathParam } from "../lib/http.ts";
 import { newId, nowIso } from "../lib/ids.ts";
 import { deliver } from "../lib/mail.ts";
 import { requireAdmin, requireAuth, requireUser } from "../lib/sessions.ts";
-import type { CommunityPost, PostReply, PostStatus } from "../../../shared/types.ts";
+import type { CommunityPost, PostKind, PostReply, PostStatus } from "../../../shared/types.ts";
 
 export const communityRouter = Router();
+export const postImagesRouter = Router();
+
+const kinds: PostKind[] = ["story", "review", "idea", "photo"];
+
+/** ~1.5 MB of image once decoded — plenty for a phone photo resized in the browser. */
+const MAX_IMAGE_BASE64 = 2 * 1024 * 1024;
+
+/** Upload a photo for a post you are about to write. Members only, like posting. */
+postImagesRouter.post(
+  "/",
+  requireAuth,
+  wrap(async (request, response) => {
+    const actor = requireUser(request);
+    if (actor.role === "student" && actor.membership !== "active") {
+      throw forbidden("Community posting is for members. Book a lesson to join in.");
+    }
+    const mimeType = String(request.body?.mimeType ?? "");
+    const data = String(request.body?.data ?? "");
+    if (!/^image\/(jpeg|png|webp)$/.test(mimeType)) throw new ApiError("Photos can be JPEG, PNG or WebP.");
+    if (!data || data.length > MAX_IMAGE_BASE64 || !/^[A-Za-z0-9+/]+={0,2}$/.test(data)) {
+      throw new ApiError("That photo is too large or did not come through. Try a smaller one.");
+    }
+    const image = await db().postImages.insertOne({
+      id: newId("img"),
+      ownerId: actor.id,
+      mimeType,
+      data,
+      createdAt: nowIso(),
+    });
+    response.status(201).json({ id: image.id });
+  }),
+);
+
+/** Photos are for signed-in members, like the posts they belong to. */
+postImagesRouter.get(
+  "/:id",
+  requireAuth,
+  wrap(async (request, response) => {
+    const image = await db().postImages.findById(pathParam(request, "id"));
+    if (!image) throw notFound("That photo has gone.");
+    response.setHeader("Content-Type", image.mimeType);
+    response.setHeader("Cache-Control", "private, max-age=86400");
+    response.send(Buffer.from(image.data, "base64"));
+  }),
+);
 
 const newestFirst = (a: { createdAt: string }, b: { createdAt: string }) =>
   b.createdAt.localeCompare(a.createdAt);
@@ -37,9 +82,7 @@ communityRouter.post(
     const title = String(request.body?.title ?? "").trim();
     const body = String(request.body?.body ?? "").trim();
 
-    if (!title || !body) {
-      throw new ApiError("A post needs both a title and something to say.");
-    }
+    if (!body) throw new ApiError("Write something to share first.");
     if (actor.role === "student" && actor.membership !== "active") {
       throw forbidden("Community posting is for members. Book a lesson to join in.");
     }
@@ -54,9 +97,18 @@ communityRouter.post(
         ).slice(0, 6)
       : [];
 
+    const kind = kinds.includes(request.body?.kind) ? (request.body.kind as PostKind) : "story";
+    const imageId = request.body?.imageId ? String(request.body.imageId) : undefined;
+    if (imageId) {
+      const image = await db().postImages.findById(imageId);
+      if (!image || image.ownerId !== actor.id) throw new ApiError("That photo is not yours to attach.");
+    }
+
     const post: CommunityPost = {
       id: newId("po"),
       authorId: actor.id,
+      kind,
+      imageId,
       title,
       body,
       tags: tags as string[],

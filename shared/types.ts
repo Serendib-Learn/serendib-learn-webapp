@@ -291,6 +291,9 @@ export interface SessionFeedbackInput {
 
 export type PostStatus = "pending" | "approved" | "rejected";
 
+/** What a community post is, as on the original site's community page. */
+export type PostKind = "story" | "review" | "idea" | "photo";
+
 export interface CommunityPost {
   id: string;
   authorId: string;
@@ -301,6 +304,10 @@ export interface CommunityPost {
   createdAt: string;
   likedBy: string[];
   moderationNote?: string;
+  /** Missing on posts from before kinds existed; treat as a story. */
+  kind?: PostKind;
+  /** An uploaded photo, served from /post-images/:id. */
+  imageId?: string;
 }
 
 export interface PostReply {
@@ -452,6 +459,8 @@ export interface CommunityPostInput {
   title: string;
   body: string;
   tags: string[];
+  kind?: PostKind;
+  imageId?: string;
 }
 
 /** A conversation with the other participant and unread count folded in. */

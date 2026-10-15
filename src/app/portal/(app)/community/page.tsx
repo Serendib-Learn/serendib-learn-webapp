@@ -1,15 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { ImageIcon, MessageCircle } from "lucide-react";
+import Link from "next/link";
+import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { useAction, useQuery } from "@/lib/hooks";
 import { relativeTime } from "@/lib/format";
 import { cn } from "@/lib/cn";
-import { PageHeader } from "@/components/portal/page-header";
 import { Button, ButtonLink } from "@/components/ui/button";
-import { Field, Input, Select, Textarea } from "@/components/ui/field";
-import { Modal } from "@/components/ui/modal";
+import { Input, Select } from "@/components/ui/field";
 import {
   Alert,
   Avatar,
@@ -18,9 +18,23 @@ import {
   EmptyState,
   Loading,
 } from "@/components/ui/primitives";
-import type { CommunityMember, CommunityPost, LanguageCode, PublicProfile, User } from "@/lib/types";
+import type {
+  CommunityMember,
+  CommunityPost,
+  LanguageCode,
+  PostKind,
+  PublicProfile,
+  User,
+} from "@/lib/types";
 
 type Tab = "stories" | "partners" | "friends";
+
+const KINDS: { value: PostKind; label: string }[] = [
+  { value: "story", label: "Story" },
+  { value: "review", label: "Review" },
+  { value: "idea", label: "Idea" },
+  { value: "photo", label: "Photo" },
+];
 
 /** Who counts as vetted — mirrors server/src/lib/community.ts's isVetted. */
 function isVetted(user: User): boolean {
@@ -30,6 +44,11 @@ function isVetted(user: User): boolean {
   return user.membership === "active";
 }
 
+/**
+ * The original site's community page — "Stories worth keeping", a share card,
+ * kind filters and the posts — with this version's practice partners and
+ * friends alongside.
+ */
 export default function CommunityPage() {
   const { user } = useAuth();
   const [tab, setTab] = useState<Tab>("stories");
@@ -50,36 +69,34 @@ export default function CommunityPage() {
   ];
 
   return (
-    <>
-      <PageHeader title="Community">
-        A place to practise with people learning the same languages, and to share the wins,
-        questions and homesick stories along the way.
-      </PageHeader>
+    <div className="mx-auto max-w-3xl">
+      <p className="label-eyebrow mb-2 text-[12px] sm:mb-3 sm:text-[13px]">Community</p>
+      <h1 className="mb-3 font-display text-[28px] text-forest sm:mb-4 sm:text-5xl">Stories worth keeping</h1>
+      <p className="mb-5 max-w-xl text-[14px] leading-relaxed text-earth/65 sm:text-base">
+        A shared space for Serendib families, students and tutors - share a story, a review, a
+        photo or an idea. Every post is read by us before it goes up, so this stays a warm, ad-free
+        place.
+      </p>
+      <p className="mb-7 max-w-xl text-[13px] leading-relaxed text-fern sm:mb-10">
+        Everyone here is vetted: every member has confirmed their email and booked a paid lesson
+        with one of our personally interviewed tutors. Find people to practise with under Practice
+        partners.
+      </p>
 
-      <div className="mb-6 flex items-start gap-3 rounded-2xl bg-jade-50 px-5 py-4 ring-1 ring-jade-200">
-        <span aria-hidden className="text-xl">🛡️</span>
-        <p className="text-sm leading-relaxed text-jade-700">
-          <span className="font-medium">Everyone here is vetted.</span> Every member has
-          confirmed their email address and booked a paid lesson with one of our personally
-          interviewed tutors, and every post is read by our team before it goes up. If anything
-          ever feels off, tell us and we will deal with it.
-        </p>
-      </div>
-
-      <div className="mb-6 flex gap-1 overflow-x-auto rounded-full bg-white p-1 border border-forest/10 sm:w-fit">
+      <div className="mb-7 flex flex-wrap gap-2 border-b border-forest/10 pb-4">
         {tabs.map((item) => (
           <button
             key={item.id}
             type="button"
             onClick={() => setTab(item.id)}
             className={cn(
-              "flex-1 shrink-0 rounded-full px-5 py-2 text-sm font-medium whitespace-nowrap transition sm:flex-none",
-              tab === item.id ? "bg-ink-900 text-sand-50" : "text-ink-500 hover:text-ink-900",
+              "flex items-center gap-1.5 px-1 pb-1 text-sm transition-colors",
+              tab === item.id ? "border-b-2 border-amber-spice text-forest" : "text-earth/55 hover:text-forest",
             )}
           >
             {item.label}
             {item.badge ? (
-              <span className="ml-2 rounded-full bg-saffron-400 px-1.5 text-[0.65rem] font-bold text-ink-900">
+              <span className="grid h-4 min-w-4 place-items-center rounded-full bg-amber-spice px-1 text-[10px] font-semibold text-white">
                 {item.badge}
               </span>
             ) : null}
@@ -88,13 +105,17 @@ export default function CommunityPage() {
       </div>
 
       {tab === "stories" ? <Stories user={user} /> : null}
-      {tab === "partners" ? (
-        isVetted(user) ? <PracticePartners me={user} /> : <NotYetVetted />
+      {tab === "partners" ? (isVetted(user) ? <PracticePartners me={user} /> : <NotYetVetted />) : null}
+      {tab === "friends" ? (isVetted(user) ? <Friends connections={connections.data ?? []} /> : <NotYetVetted />) : null}
+
+      {user.role === "admin" ? (
+        <p className="mt-10 text-[12px] text-earth/35">
+          <Link href="/portal/admin" className="transition-colors hover:text-earth/60">
+            Moderator access
+          </Link>
+        </p>
       ) : null}
-      {tab === "friends" ? (
-        isVetted(user) ? <Friends connections={connections.data ?? []} /> : <NotYetVetted />
-      ) : null}
-    </>
+    </div>
   );
 }
 
@@ -317,60 +338,76 @@ function Friends({ connections }: { connections: CommunityMember[] }) {
 function Stories({ user }: { user: User }) {
   const feed = useQuery(() => api.community.feed(), []);
   const people = useQuery(() => api.users.directory(), []);
-  const [composing, setComposing] = useState(false);
-
-  if (feed.loading) return <Loading label="Loading the community" />;
+  const [filter, setFilter] = useState<PostKind | "all">("all");
 
   const posts = feed.data ?? [];
+  const shown = filter === "all" ? posts : posts.filter((post) => (post.kind ?? "story") === filter);
   const byId = new Map((people.data ?? []).map((person) => [person.id, person]));
   const canPost = user.role !== "student" || user.membership === "active";
 
   return (
     <>
-      <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <p className="max-w-xl text-sm text-ink-500">
-          Introduce yourself, share a win, ask a question, or tell us about Sri Lanka. A moderator
-          reads every post before it goes up, so it stays a community, not an advert board.
-        </p>
-        {canPost ? (
-          <Button size="sm" onClick={() => setComposing(true)}>
-            Write a post
-          </Button>
-        ) : null}
+      {canPost ? (
+        <Composer author={user} />
+      ) : (
+        <Alert tone="saffron">
+          Sharing opens up once you have booked your first lesson. Reading and replying are always
+          open.
+        </Alert>
+      )}
+
+      <div className="my-7 flex flex-wrap gap-2 sm:my-10">
+        {[{ value: "all" as const, label: "Everything" }, ...KINDS].map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            onClick={() => setFilter(option.value)}
+            className={cn(
+              "rounded-full border px-3.5 py-1.5 text-[13px] transition-colors",
+              filter === option.value
+                ? "border-forest bg-forest text-cream"
+                : "border-forest/15 text-earth/70 hover:border-amber-spice/50",
+            )}
+          >
+            {option.label}
+          </button>
+        ))}
       </div>
 
-      {!canPost ? (
-        <div className="mb-6">
-          <Alert tone="saffron">
-            Posting opens up once you have booked your first lesson. Reading and replying are
-            always open.
-          </Alert>
-        </div>
-      ) : null}
-
-      {posts.length === 0 ? (
-        <EmptyState icon="🌴" title="Nothing published yet">
-          Be the first — tell everyone what made you start learning.
-        </EmptyState>
+      {feed.loading ? null : shown.length === 0 ? (
+        <p className="text-sm text-earth/50">Nothing here yet - be the first to share something.</p>
       ) : (
-        <div className="space-y-4">
-          {posts.map((post) => (
-            <PostCard
-              key={post.id}
-              post={post}
-              author={byId.get(post.authorId)}
-              me={user}
-              people={byId}
-            />
+        <div className="space-y-5 sm:space-y-7">
+          {shown.map((post) => (
+            <PostCard key={post.id} post={post} author={byId.get(post.authorId)} me={user} people={byId} />
           ))}
         </div>
       )}
-
-      {composing ? (
-        <Composer author={user} onClose={() => setComposing(false)} />
-      ) : null}
     </>
   );
+}
+
+function PostImage({ id, alt }: { id: string; alt: string }) {
+  const [src, setSrc] = useState<string | null>(null);
+  useEffect(() => {
+    let url: string | null = null;
+    let live = true;
+    api.community.image(id).then(
+      (blob) => {
+        if (!live) return;
+        url = URL.createObjectURL(blob);
+        setSrc(url);
+      },
+      () => undefined,
+    );
+    return () => {
+      live = false;
+      if (url) URL.revokeObjectURL(url);
+    };
+  }, [id]);
+  if (!src) return <div className="mb-4 h-48 animate-pulse rounded-xl bg-mist" />;
+  // eslint-disable-next-line @next/next/no-img-element -- a private blob URL; next/image cannot optimise it.
+  return <img src={src} alt={alt} className="mb-4 max-h-[420px] w-full rounded-xl object-cover" />;
 }
 
 function PostCard({
@@ -392,24 +429,19 @@ function PostCard({
   );
   const like = useAction(() => api.community.toggleLike(post.id, me.id));
   const reply = useAction(() => api.community.reply(post.id, me.id, draft));
-
   const liked = post.likedBy.includes(me.id);
 
   return (
-    <Card className="p-6">
-      <div className="flex items-center gap-3">
-        <Avatar name={author?.name ?? "Member"} avatarId={author?.avatarId} size="sm" />
-        <div className="min-w-0">
-          <p className="truncate text-sm font-medium text-ink-800">
-            {author?.name ?? "Former member"}
-          </p>
-          <p className="text-xs text-ink-400">{relativeTime(post.createdAt)}</p>
-        </div>
+    <article className="animate-fade-up rounded-2xl border border-forest/10 bg-white p-5 sm:p-8">
+      <div className="mb-3 flex items-center gap-3">
+        <span className="rounded-full bg-mist px-2.5 py-1 text-[11px] text-forest capitalize">{post.kind ?? "story"}</span>
+        <span className="text-[12px] text-earth/45">
+          {new Date(post.createdAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+        </span>
       </div>
-
-      <h2 className="mt-4 text-xl leading-snug">{post.title}</h2>
-      <p className="mt-2 text-sm leading-relaxed whitespace-pre-line text-ink-600">{post.body}</p>
-
+      {post.title ? <h2 className="mb-3 font-display text-xl text-forest sm:text-2xl">{post.title}</h2> : null}
+      {post.imageId ? <PostImage id={post.imageId} alt={post.title || "Community photo"} /> : null}
+      <div className="space-y-3 text-[14px] leading-relaxed whitespace-pre-line text-earth/80 sm:text-[15px]">{post.body}</div>
       {post.tags.length > 0 ? (
         <div className="mt-4 flex flex-wrap gap-1.5">
           {post.tags.map((tag) => (
@@ -417,167 +449,161 @@ function PostCard({
           ))}
         </div>
       ) : null}
+      <p className="mt-4 flex items-center gap-2 text-[13px] text-earth/50">
+        <Avatar name={author?.name ?? "Member"} avatarId={author?.avatarId} size="sm" />- {author?.name ?? "Former member"}
+      </p>
 
-      <div className="mt-5 flex items-center gap-1 border-t border-ink-900/8 pt-4">
-        <Button
-          variant="ghost"
-          size="sm"
+      <div className="mt-4 flex items-center gap-4 border-t border-forest/8 pt-3 text-[13px]">
+        <button
+          type="button"
           disabled={like.pending}
           onClick={() => void like.run()}
-          className={liked ? "text-clay-600" : undefined}
+          className={cn("transition-colors", liked ? "text-amber-spice" : "text-earth/55 hover:text-forest")}
         >
           {liked ? "♥" : "♡"} {post.likedBy.length}
-        </Button>
-        <Button variant="ghost" size="sm" onClick={() => setOpen((value) => !value)}>
+        </button>
+        <button type="button" onClick={() => setOpen((value) => !value)} className="text-earth/55 hover:text-forest">
           {open ? "Hide replies" : "Replies"}
-        </Button>
+        </button>
       </div>
 
       {open ? (
-        <div className="mt-4 space-y-4 border-t border-ink-900/8 pt-4">
+        <div className="mt-4 space-y-4">
           {replies.loading ? (
             <Loading label="Loading replies" />
           ) : (replies.data ?? []).length === 0 ? (
-            <p className="text-sm text-ink-400">No replies yet.</p>
+            <p className="text-sm text-earth/45">No replies yet.</p>
           ) : (
             <ul className="space-y-3">
               {(replies.data ?? []).map((item) => (
                 <li key={item.id} className="flex gap-3">
-                  <Avatar
-                    name={people.get(item.authorId)?.name ?? "Member"}
-                    avatarId={people.get(item.authorId)?.avatarId}
-                    size="sm"
-                  />
-                  <div className="min-w-0 flex-1 rounded-xl bg-sand-100 px-4 py-2.5">
-                    <p className="text-xs font-medium text-ink-700">
+                  <Avatar name={people.get(item.authorId)?.name ?? "Member"} avatarId={people.get(item.authorId)?.avatarId} size="sm" />
+                  <div className="min-w-0 flex-1 rounded-xl bg-cream px-4 py-2.5">
+                    <p className="text-xs font-medium text-forest">
                       {people.get(item.authorId)?.name ?? "Member"}
-                      <span className="ml-2 font-normal text-ink-400">
-                        {relativeTime(item.createdAt)}
-                      </span>
+                      <span className="ml-2 font-normal text-earth/45">{relativeTime(item.createdAt)}</span>
                     </p>
-                    <p className="mt-1 text-sm leading-relaxed text-ink-600">{item.body}</p>
+                    <p className="mt-1 text-sm leading-relaxed text-earth/80">{item.body}</p>
                   </div>
                 </li>
               ))}
             </ul>
           )}
-
           <form
             className="flex items-center gap-2"
             onSubmit={async (event) => {
               event.preventDefault();
               if (!draft.trim()) return;
-              const result = await reply.run();
-              if (result) setDraft("");
+              if (await reply.run()) setDraft("");
             }}
           >
-            <Input
-              value={draft}
-              onChange={(event) => setDraft(event.target.value)}
-              placeholder="Add a reply"
-              aria-label="Reply"
-            />
-            <Button type="submit" size="sm" disabled={reply.pending || !draft.trim()}>
+            <Input value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="Add a reply" aria-label="Reply" />
+            <Button type="submit" size="sm" variant="forest" disabled={reply.pending || !draft.trim()}>
               Reply
             </Button>
           </form>
         </div>
       ) : null}
-    </Card>
+    </article>
   );
 }
 
-function Composer({ author, onClose }: { author: User; onClose: () => void }) {
+/** The original site's "Share something" card, opening into the form. */
+function Composer({ author }: { author: User }) {
+  const [open, setOpen] = useState(false);
+  const [kind, setKind] = useState<PostKind>("story");
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
-  const [tags, setTags] = useState("");
-  const [sent, setSent] = useState(false);
+  const [file, setFile] = useState<File | null>(null);
+  const [done, setDone] = useState(false);
 
-  const create = useAction(() =>
-    api.community.create({
+  const send = useAction(async () => {
+    const image = file ? await api.community.uploadImage(file) : null;
+    return api.community.create({
       authorId: author.id,
-      title,
-      body,
-      tags: tags
-        .split(",")
-        .map((tag) => tag.trim().replace(/^#/, "").toLowerCase())
-        .filter(Boolean),
-    }),
-  );
+      kind,
+      title: title.trim(),
+      body: body.trim(),
+      tags: [],
+      imageId: image?.id,
+    });
+  });
 
   return (
-    <Modal
-      open
-      onClose={onClose}
-      title={sent ? "Sent for review" : "Write a post"}
-      description={
-        sent
-          ? undefined
-          : "A moderator reads posts before they appear, usually within a day."
-      }
-    >
-      {sent ? (
-        <div className="space-y-5">
-          <Alert tone="jade">
-            Your post is in the moderation queue. You will get a note in your inbox when it
-            goes live.
-          </Alert>
-          <Button className="w-full" onClick={onClose}>
-            Done
-          </Button>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          <Field label="Title" htmlFor="post-title">
-            <Input
-              id="post-title"
-              value={title}
-              onChange={(event) => setTitle(event.target.value)}
-              placeholder="I ordered kottu entirely in Sinhala"
-            />
-          </Field>
+    <div className="rounded-2xl border border-dashed border-forest/20 bg-white/70 p-5 sm:p-7">
+      <button type="button" onClick={() => setOpen((value) => !value)} className="flex w-full items-center gap-2.5 text-left" aria-expanded={open}>
+        <MessageCircle className="h-5 w-5 text-amber-spice" strokeWidth={1.75} />
+        <span className="font-display text-lg text-forest sm:text-xl">Share something</span>
+      </button>
+      <p className="mt-2 text-[13px] text-earth/55">A story, a review, a photo from home, or an idea for the community.</p>
 
-          <Field label="Your post" htmlFor="post-body">
-            <Textarea
-              id="post-body"
-              value={body}
-              onChange={(event) => setBody(event.target.value)}
-              className="min-h-40"
-              placeholder="What happened, what you were nervous about, and what you would tell someone starting out."
-            />
-          </Field>
+      {done ? (
+        <p className="mt-4 text-[13px] text-forest">Thank you for sharing - we&apos;ll read it and post it shortly.</p>
+      ) : null}
 
-          <Field
-            label="Tags"
-            htmlFor="post-tags"
-            hint="Comma separated. Helps others find posts like yours."
-          >
-            <Input
-              id="post-tags"
-              value={tags}
-              onChange={(event) => setTags(event.target.value)}
-              placeholder="sinhala, first-conversation, food"
-            />
-          </Field>
-
-          {create.error ? <Alert>{create.error}</Alert> : null}
-
-          <div className="flex justify-end gap-2 pt-2">
-            <Button variant="ghost" onClick={onClose}>
-              Cancel
-            </Button>
-            <Button
-              disabled={create.pending || !title.trim() || !body.trim()}
-              onClick={async () => {
-                const result = await create.run();
-                if (result) setSent(true);
-              }}
-            >
-              {create.pending ? "Sending…" : "Submit for review"}
-            </Button>
+      {open && !done ? (
+        <form
+          className="mt-5 space-y-3.5"
+          onSubmit={async (event) => {
+            event.preventDefault();
+            if (await send.run()) {
+              setDone(true);
+              setTitle("");
+              setBody("");
+              setFile(null);
+            }
+          }}
+        >
+          <div className="flex flex-wrap gap-2">
+            {KINDS.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => setKind(option.value)}
+                className={cn(
+                  "rounded-full border px-3 py-1.5 text-[13px] transition-colors",
+                  kind === option.value ? "border-forest/25 bg-mist text-forest" : "border-forest/15 text-earth/60",
+                )}
+              >
+                {option.label}
+              </button>
+            ))}
           </div>
-        </div>
-      )}
-    </Modal>
+          <input
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
+            placeholder="Title (optional)"
+            maxLength={120}
+            className="w-full rounded-xl border border-forest/15 bg-white px-4 py-2.5 text-[14px] outline-none focus:border-amber-spice"
+          />
+          <textarea
+            value={body}
+            onChange={(event) => setBody(event.target.value)}
+            placeholder="Write your message…"
+            rows={5}
+            maxLength={4000}
+            className="w-full rounded-xl border border-forest/15 bg-white px-4 py-3 text-[14px] leading-relaxed outline-none focus:border-amber-spice"
+          />
+          <label className="flex cursor-pointer items-center gap-2.5 text-[13px] text-earth/60">
+            <ImageIcon className="h-4 w-4" strokeWidth={1.75} />
+            <span>{file ? file.name : "Add a photo (optional)"}</span>
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              onChange={(event) => setFile(event.target.files?.[0] ?? null)}
+            />
+          </label>
+          {send.error ? <p className="text-[13px] text-clay-600">{send.error}</p> : null}
+          <button
+            type="submit"
+            disabled={send.pending || !body.trim()}
+            className="inline-flex h-10 items-center rounded-lg bg-forest px-5 text-sm font-medium text-cream transition-colors hover:bg-fern disabled:opacity-60"
+          >
+            {send.pending ? "Sending…" : "Share it"}
+          </button>
+        </form>
+      ) : null}
+    </div>
   );
 }
