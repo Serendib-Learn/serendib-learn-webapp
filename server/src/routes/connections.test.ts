@@ -77,7 +77,7 @@ test("friends: request, accept, then message — and not before", async () => {
   const summaries = (await dev.client.get("/threads")).body as ThreadSummary[];
   const summary = summaries.find((item) => item.other.id === chandi.user.id);
   assert.ok(summary);
-  assert.equal((summary.other as Record<string, unknown>).email, undefined, "threads never carry emails");
+  assert.equal((summary.other as unknown as Record<string, unknown>).email, undefined, "threads never carry emails");
 
   // Unfriending keeps the history but stops new messages.
   await dev.client.delete(`/community/connections/${requestId}`);
