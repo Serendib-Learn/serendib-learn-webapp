@@ -32,7 +32,7 @@ export const metadata: Metadata = {
     template: "%s · Serendib Learn",
   },
   description:
-    "Live one-to-one Sinhala and Tamil lessons, a portal for students and tutors, and games that teach you the island one phrase at a time.",
+    "Live one-to-one Sinhala and Tamil lessons with personally vetted Sri Lankan tutors, and a portal for students, tutors and a vetted community.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

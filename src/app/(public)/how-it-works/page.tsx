@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import { ButtonLink } from "@/components/ui/button";
 import { Badge, Card, SectionHeading } from "@/components/ui/primitives";
 import { tutorProfiles } from "@/data/tutors";
-import { allChapters, totalPhraseCount } from "@/data/vocabulary";
+// GAMES-HIDDEN: deck counts, only used by the commented-out detail line below.
+// import { allChapters, totalPhraseCount } from "@/data/vocabulary";
 
 export const metadata: Metadata = {
   title: "How it works",
@@ -44,11 +45,12 @@ const stages = [
   {
     step: "04",
     title: "Practise in between",
-    body: "Your tutor puts worksheets, recordings and homework in your learning hub. On the days you have no lesson, the games keep the vocabulary from going cold.",
+    body: "Your tutor puts worksheets, recordings and homework in your learning hub, organised by chapter. On the days you have no lesson, practise with other vetted members of the community.",
     detail: [
       "Materials assigned to you personally",
       "Homework with written feedback and a score",
-      `${totalPhraseCount} free phrases across ${allChapters.length} chapters`,
+      "Practise with vetted members in the community",
+      // GAMES-HIDDEN: `${totalPhraseCount} free phrases across ${allChapters.length} chapters`,
     ],
   },
 ];
@@ -68,7 +70,7 @@ const faqs = [
   },
   {
     q: "What does it cost?",
-    a: `Between $${Math.min(...tutorProfiles.map((tutor) => tutor.hourlyRateUsd))} and $${Math.max(...tutorProfiles.map((tutor) => tutor.hourlyRateUsd))} an hour depending on the tutor, paid per session. The games and phrase decks are free and always will be.`,
+    a: `Between $${Math.min(...tutorProfiles.map((tutor) => tutor.hourlyRateUsd))} and $${Math.max(...tutorProfiles.map((tutor) => tutor.hourlyRateUsd))} an hour depending on the tutor, paid per session.`,
   },
   {
     q: "Can I change tutors?",
@@ -142,15 +144,20 @@ export default function HowItWorksPage() {
           <div>
             <h2 className="text-2xl">Ready when you are.</h2>
             <p className="mt-2 max-w-md text-sm leading-relaxed text-ink-500">
-              Create an account and look through real availability, or play a chapter
+              Create an account and look through real availability, or meet the tutors
               first and decide afterwards.
             </p>
           </div>
           <div className="flex shrink-0 flex-wrap gap-3">
             <ButtonLink href="/portal/signup">Create an account</ButtonLink>
+            <ButtonLink href="/tutors" variant="secondary">
+              Meet the tutors
+            </ButtonLink>
+            {/* GAMES-HIDDEN
             <ButtonLink href="/games/languages" variant="secondary">
               Try a chapter
             </ButtonLink>
+            */}
           </div>
         </Card>
       </section>

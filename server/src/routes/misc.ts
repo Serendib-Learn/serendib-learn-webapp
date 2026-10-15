@@ -50,7 +50,7 @@ waitlistRouter.post(
     await deliver({
       to: created.email,
       subject: "You're on the Serendib Learn list",
-      body: `Thanks ${created.name}. We will write to you as soon as we have a tutor who fits.\n\nIn the meantime, the Survival Sri Lanka decks in Games are free and need no account.`,
+      body: `Thanks ${created.name}. We will write to you as soon as we have a tutor who fits.\n\nIn the meantime, the Sinhala and Tamil alphabet sheet on the site is free and needs no account.`,
       kind: "welcome",
     });
 

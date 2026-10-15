@@ -12,7 +12,8 @@ import { cn } from "@/lib/cn";
 const navigation = [
   { href: "/how-it-works", label: "How it works" },
   { href: "/tutors", label: "Tutors" },
-  { href: "/games", label: "Games" },
+  // GAMES-HIDDEN: games are parked for now — see src/lib/features.ts.
+  // { href: "/games", label: "Games" },
   { href: "/portal/community", label: "Community" },
 ];
 

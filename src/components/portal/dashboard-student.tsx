@@ -7,8 +7,10 @@ import { api } from "@/lib/api";
 import { useQuery } from "@/lib/hooks";
 import { formatDate, formatDateTime, isPast, relativeTime } from "@/lib/format";
 import { ButtonLink } from "@/components/ui/button";
-import { Badge, Card, EmptyState, Loading, Progress, Stat } from "@/components/ui/primitives";
-import { getChapter, phaseOne } from "@/data/vocabulary";
+// GAMES-HIDDEN: add Progress back to this import when the games progress card returns.
+import { Badge, Card, EmptyState, Loading, Stat } from "@/components/ui/primitives";
+// GAMES-HIDDEN: used by the games progress card below.
+// import { getChapter, phaseOne } from "@/data/vocabulary";
 import type { User } from "@/lib/types";
 
 export function StudentDashboard({ user }: { user: User }) {
@@ -17,7 +19,8 @@ export function StudentDashboard({ user }: { user: User }) {
   const materials = useQuery(() => api.materials.forStudent(user.id), [user.id]);
   const tutors = useQuery(() => api.users.tutorsOf(user.id), [user.id]);
   const notes = useQuery(() => api.lessonNotes.forStudent(user.id), [user.id]);
-  const results = useQuery(() => api.games.resultsFor(user.id), [user.id]);
+  // GAMES-HIDDEN: games progress is parked with the games — see src/lib/features.ts.
+  // const results = useQuery(() => api.games.resultsFor(user.id), [user.id]);
 
   if (bookings.loading || homework.loading) {
     return <Loading label="Gathering your lessons" />;
@@ -32,7 +35,8 @@ export function StudentDashboard({ user }: { user: User }) {
   const outstanding = (homework.data ?? []).filter((item) => item.status !== "reviewed");
   const tutorsById = new Map((tutors.data ?? []).map((tutor) => [tutor.id, tutor]));
 
-  const chaptersPlayed = new Set((results.data ?? []).map((result) => result.chapterId));
+  // GAMES-HIDDEN
+  // const chaptersPlayed = new Set((results.data ?? []).map((result) => result.chapterId));
   const next = upcoming[0];
 
   const firstName = user.name.split(" ")[0];
@@ -53,10 +57,13 @@ export function StudentDashboard({ user }: { user: User }) {
           value={outstanding.length}
           hint={outstanding.length > 0 ? "Needs your attention" : "All caught up"}
         />
+        <Stat label="Materials" value={(materials.data ?? []).length} hint="Shared by your tutors" />
+        {/* GAMES-HIDDEN
         <Stat
           label="Chapters played"
           value={`${chaptersPlayed.size}/${phaseOne.chapters.length}`}
         />
+        */}
       </div>
 
       {awaitingPayment.length > 0 ? (
@@ -208,6 +215,7 @@ export function StudentDashboard({ user }: { user: User }) {
             )}
           </Card>
 
+          {/* GAMES-HIDDEN: games are parked for now — see src/lib/features.ts.
           <Card className="p-6">
             <h2 className="text-lg">Games progress</h2>
             <Progress
@@ -249,6 +257,7 @@ export function StudentDashboard({ user }: { user: User }) {
               Play a chapter
             </ButtonLink>
           </Card>
+          */}
 
           {(notes.data ?? []).length > 0 ? (
             <Card className="p-6">

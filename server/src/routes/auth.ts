@@ -159,7 +159,7 @@ authRouter.post(
       body:
         user.role === "tutor"
           ? "Your tutor account is live. Set your availability in the portal calendar so students can book you, then upload your first material to the learning hub."
-          : "Your account is live. Find a tutor in the portal calendar, or warm up with the Survival Sri Lanka decks in Games.",
+          : "Your account is live. Find a tutor in the portal calendar, and say hello in the community while you wait for your first lesson.",
       kind: "welcome",
     });
 
@@ -299,7 +299,7 @@ authRouter.post(
       body:
         created.role === "tutor"
           ? "Your tutor account is live, signed in with Google. Set your availability in the portal calendar so students can book you."
-          : "Your account is live, signed in with Google. Find a tutor in the portal calendar, or warm up with the Survival Sri Lanka decks in Games.",
+          : "Your account is live, signed in with Google. Find a tutor in the portal calendar, and say hello in the community while you wait for your first lesson.",
       kind: "welcome",
     });
 

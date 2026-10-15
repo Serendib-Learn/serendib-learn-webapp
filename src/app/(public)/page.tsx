@@ -1,10 +1,13 @@
-import Link from "next/link";
-import { PhraseCardStack } from "@/components/home/phrase-card-stack";
+// GAMES-HIDDEN: Link is only used by the commented-out games section below.
+// import Link from "next/link";
+// Decks are off the landing page for now. The component is kept for later.
+// import { PhraseCardStack } from "@/components/home/phrase-card-stack";
 import { WaitlistForm } from "@/components/home/waitlist-form";
 import { ButtonLink } from "@/components/ui/button";
 import { Badge, Card, SectionHeading } from "@/components/ui/primitives";
-import { allChapters, totalPhraseCount } from "@/data/vocabulary";
-import { heritageSites } from "@/data/heritage";
+// GAMES-HIDDEN: deck and heritage counts, used only by commented-out sections.
+// import { allChapters, totalPhraseCount } from "@/data/vocabulary";
+// import { heritageSites } from "@/data/heritage";
 import { tutorProfiles } from "@/data/tutors";
 
 const steps = [
@@ -21,7 +24,7 @@ const steps = [
   {
     number: "03",
     title: "Practise between lessons",
-    body: "Your tutor leaves material and homework in your hub. The games keep the words warm on the days you have no lesson.",
+    body: "Your tutor leaves material and homework in your hub, chapter by chapter, and the community gives you people to practise with on the days you have no lesson.",
   },
 ];
 
@@ -49,7 +52,8 @@ const reasons = [
 ];
 
 export default function HomePage() {
-  const colomboSites = heritageSites.filter((site) => site.region === "Colombo");
+  // GAMES-HIDDEN
+  // const colomboSites = heritageSites.filter((site) => site.region === "Colombo");
 
   return (
     <>
@@ -87,16 +91,25 @@ export default function HomePage() {
               <ButtonLink href="/portal/signup" size="lg">
                 Start learning
               </ButtonLink>
+              <ButtonLink href="/tutors" variant="secondary" size="lg">
+                Meet the tutors
+              </ButtonLink>
+              {/* Decks are off the landing page for now.
               <ButtonLink href="/games/languages" variant="secondary" size="lg">
                 Play the free decks
               </ButtonLink>
+              */}
             </div>
 
             <dl className="mt-12 grid max-w-lg grid-cols-3 gap-6 border-t border-white/15 pt-7">
               {[
-                { value: totalPhraseCount, label: "phrases, free" },
-                { value: allChapters.length, label: "story chapters" },
-                { value: heritageSites.length, label: "heritage sites" },
+                { value: "2", label: "languages, Sinhala and Tamil" },
+                { value: "1:1", label: "live lessons on Google Meet" },
+                { value: "100%", label: "tutors personally vetted" },
+                // Deck stats, parked with the games:
+                // { value: totalPhraseCount, label: "phrases, free" },
+                // { value: allChapters.length, label: "story chapters" },
+                // { value: heritageSites.length, label: "heritage sites" },
               ].map((item) => (
                 <div key={item.label}>
                   <dt className="font-display text-3xl text-sand-50">{item.value}</dt>
@@ -107,7 +120,10 @@ export default function HomePage() {
           </div>
 
           <div className="animate-rise lg:pl-6">
+            <WelcomeCard />
+            {/* Decks are off the landing page for now.
             <PhraseCardStack />
+            */}
           </div>
         </div>
       </section>
@@ -210,6 +226,8 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* GAMES-HIDDEN: games are parked for now — see src/lib/features.ts.
+          Uncomment this section (and the colomboSites line above) to bring it back.
       <section className="border-y border-white/10 bg-jade-700 text-sand-100">
         <div className="mx-auto max-w-6xl px-5 py-20 sm:px-8">
           <div className="max-w-2xl">
@@ -289,6 +307,7 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+      */}
 
       <section id="waitlist" className="mx-auto max-w-6xl scroll-mt-20 px-5 py-20 sm:px-8">
         <div className="grid gap-14 lg:grid-cols-[0.9fr_1.1fr]">
@@ -303,7 +322,7 @@ export default function HomePage() {
               {[
                 "You pick the tutor, not the other way round",
                 "Sessions are one at a time — no bundles to commit to",
-                "Free games and phrase decks while you wait",
+                "A free Sinhala and Tamil alphabet sheet while you wait",
               ].map((line) => (
                 <p key={line} className="flex items-start gap-3 text-sm text-ink-600">
                   <span className="mt-0.5 grid size-5 shrink-0 place-items-center rounded-full bg-jade-100 text-jade-700">
@@ -323,5 +342,52 @@ export default function HomePage() {
         </div>
       </section>
     </>
+  );
+}
+
+/** Hero companion now that the phrase decks are off the landing page. */
+function WelcomeCard() {
+  return (
+    <div className="relative">
+      <div aria-hidden className="absolute inset-x-6 -bottom-3 h-full rounded-3xl bg-jade-600/12" />
+      <div aria-hidden className="absolute inset-x-3 -bottom-1.5 h-full rounded-3xl bg-saffron-400/25" />
+
+      <div className="relative rounded-3xl bg-white p-7 shadow-lifted ring-1 ring-ink-900/8">
+        <div className="grid gap-5 sm:grid-cols-2">
+          <div>
+            <p className="text-[0.7rem] font-semibold tracking-[0.18em] text-jade-600 uppercase">
+              Sinhala
+            </p>
+            <p className="text-sinhala mt-1 text-3xl leading-snug text-ink-900">ආයුබෝවන්</p>
+            <p className="text-sm text-ink-500">ā-yu-bō-wan · &ldquo;may you live long&rdquo;</p>
+          </div>
+          <div>
+            <p className="text-[0.7rem] font-semibold tracking-[0.18em] text-clay-500 uppercase">
+              Tamil
+            </p>
+            <p className="text-tamil mt-1 text-3xl leading-snug text-ink-900">வணக்கம்</p>
+            <p className="text-sm text-ink-500">va-ṇak-kam · &ldquo;I greet you&rdquo;</p>
+          </div>
+        </div>
+
+        <ul className="mt-7 space-y-3 border-t border-ink-900/8 pt-6">
+          {[
+            "A tutor who grew up speaking the language, chosen with you",
+            "Live one-to-one lessons with a Google Meet link for every booking",
+            "Materials, homework and feedback kept in one portal",
+            "A vetted community to practise with between lessons",
+          ].map((line) => (
+            <li key={line} className="flex items-start gap-3 text-sm text-ink-600">
+              <span className="mt-0.5 grid size-5 shrink-0 place-items-center rounded-full bg-jade-100 text-jade-700">
+                <svg viewBox="0 0 16 16" className="size-3" fill="none" stroke="currentColor" strokeWidth="2.2">
+                  <path d="M3.5 8.5l3 3 6-7" strokeLinecap="round" />
+                </svg>
+              </span>
+              {line}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
   );
 }

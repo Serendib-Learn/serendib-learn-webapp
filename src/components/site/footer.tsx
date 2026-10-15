@@ -11,14 +11,15 @@ const columns = [
       { href: "/portal/calendar", label: "Book a session" },
     ],
   },
-  {
-    title: "Play",
-    links: [
-      { href: "/games", label: "Games" },
-      { href: "/games/languages", label: "Survival Sri Lanka" },
-      { href: "/games/heritage", label: "Explore heritage" },
-    ],
-  },
+  // GAMES-HIDDEN: games are parked for now — see src/lib/features.ts.
+  // {
+  //   title: "Play",
+  //   links: [
+  //     { href: "/games", label: "Games" },
+  //     { href: "/games/languages", label: "Survival Sri Lanka" },
+  //     { href: "/games/heritage", label: "Explore heritage" },
+  //   ],
+  // },
   {
     title: "Community",
     links: [
