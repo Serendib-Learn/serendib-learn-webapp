@@ -488,6 +488,6 @@ The site is installable like the prototype was ("Add to Home Screen" /
 - [ ] Owners' super admin created (`SUPER_ADMIN_EMAIL` or `create-admin`), and any demo accounts left over from a demo-mode start deleted (step 9)
 - [ ] Payments.lk sandbox profile created, `PAYMENTS_LK_SECRET_KEY` + `PAYMENTS_LK_WEBHOOK_SECRET` in Secret Manager and referenced in `deploy-backend.yml`, webhook registered (step 7) — test with a sandbox card before swapping in the live key
 - [ ] (recommended) Serendib Google account connected under Administration → Google, so every booking gets a Meet link
-- [ ] (recommended) `CRON_SECRET` + the Cloud Scheduler job for feedback reminders (step 8)
+- [x] `CRON_SECRET` + the Cloud Scheduler job for lesson and feedback reminders (step 8) — set up
 - [ ] Real tutors invited or approved, with their profiles filled in
 - [ ] Push to `main` → CI runs → deploy workflow runs → visit your domain
