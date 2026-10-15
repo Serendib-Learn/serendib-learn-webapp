@@ -144,3 +144,23 @@ test("profile patch: validated, and limited to profile fields", async () => {
   const bad = await tutor.client.patch(`/users/${tutor.user.id}`, { languages: [] });
   assert.equal(bad.status, 400);
 });
+
+test("avatars: only the shared characters are accepted, at signup and on the profile", async () => {
+  const student = await signedUpUser(harness, "student", "leopard-fan@example.com", {
+    extra: { avatarId: "kotiya" },
+  });
+  assert.equal(student.user.avatarId, "kotiya");
+
+  const changed = await student.client.patch(`/users/${student.user.id}`, { avatarId: "aliya" });
+  assert.equal(changed.status, 200);
+  assert.equal(changed.body.avatarId, "aliya");
+
+  const madeUp = await student.client.patch(`/users/${student.user.id}`, { avatarId: "dragon" });
+  assert.equal(madeUp.status, 400);
+
+  const directory = await student.client.get("/users/directory");
+  const me = (directory.body as { id: string; avatarId?: string }[]).find(
+    (person) => person.id === student.user.id,
+  );
+  assert.equal(me?.avatarId, "aliya");
+});

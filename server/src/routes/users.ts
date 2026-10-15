@@ -10,6 +10,7 @@ import { newId, nowIso } from "../lib/ids.ts";
 import { deliver } from "../lib/mail.ts";
 import { requireAdmin, requireAuth, requireSelfOrAdmin, requireUser } from "../lib/sessions.ts";
 import { parseBody } from "../lib/validate.ts";
+import { characterIds } from "../../../shared/avatars.ts";
 import type {
   AuditLogEntry,
   MembershipStatus,
@@ -35,6 +36,7 @@ const profilePatchSchema = z
     yearsTeaching: z.coerce.number().int().min(0).max(70),
     homeTown: z.string().trim().max(80),
     specialties: z.array(z.string().trim().min(1).max(40)).max(8, "Up to eight specialties."),
+    avatarId: z.enum(characterIds as [string, ...string[]], { error: "That is not one of the characters." }),
   })
   .partial();
 
@@ -73,6 +75,7 @@ usersRouter.get(
         name: user.name,
         role: user.role,
         headline: user.headline,
+        avatarId: user.avatarId,
       })),
     );
   }),

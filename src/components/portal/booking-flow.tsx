@@ -73,7 +73,7 @@ export function BookingFlow({ student }: { student: User }) {
                 )}
               >
                 <div className="flex items-start gap-3">
-                  <Avatar name={tutor.name} />
+                  <Avatar name={tutor.name} avatarId={tutor.avatarId} />
                   <div className="min-w-0 flex-1">
                     <p className="font-display text-base text-ink-900">{tutor.name}</p>
                     <p className="text-xs text-ink-400">

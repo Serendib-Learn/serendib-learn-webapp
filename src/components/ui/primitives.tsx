@@ -1,4 +1,5 @@
 import { cn } from "@/lib/cn";
+import { CharacterArt, hasCharacterDrawing } from "./characters";
 
 export function Card({
   className,
@@ -75,18 +76,30 @@ function paletteFor(name: string): string {
 
 export function Avatar({
   name,
+  avatarId,
   size = "md",
   className,
 }: {
   name: string;
-  size?: "sm" | "md" | "lg";
+  /** A character from shared/avatars.ts; falls back to initials without one. */
+  avatarId?: string;
+  size?: "sm" | "md" | "lg" | "xl";
   className?: string;
 }) {
   const dimensions = {
     sm: "size-8 text-xs",
     md: "size-10 text-sm",
     lg: "size-14 text-base",
+    xl: "size-20 text-xl",
   }[size];
+
+  if (hasCharacterDrawing(avatarId)) {
+    return (
+      <span aria-hidden className={cn("inline-flex shrink-0 rounded-full", dimensions, className)}>
+        <CharacterArt id={avatarId} className="size-full" />
+      </span>
+    );
+  }
 
   return (
     <span

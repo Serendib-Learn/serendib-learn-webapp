@@ -72,7 +72,7 @@ export default function MessagesPage() {
                           selected ? "bg-sand-100" : "hover:bg-sand-50",
                         )}
                       >
-                        <Avatar name={summary.other.name} size="sm" />
+                        <Avatar name={summary.other.name} avatarId={summary.other.avatarId} size="sm" />
                         <span className="min-w-0 flex-1">
                           <span className="flex items-center justify-between gap-2">
                             <span className="truncate text-sm font-medium text-ink-800">
@@ -166,7 +166,7 @@ function Conversation({
   return (
     <Card className="flex min-h-[26rem] flex-col p-0">
       <div className="flex items-center gap-3 border-b border-ink-900/8 px-5 py-4">
-        <Avatar name={other.name} size="sm" />
+        <Avatar name={other.name} avatarId={other.avatarId} size="sm" />
         <div className="min-w-0">
           <p className="truncate font-display text-base text-ink-900">{other.name}</p>
           <p className="text-xs text-ink-400">

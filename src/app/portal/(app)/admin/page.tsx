@@ -156,7 +156,7 @@ function People({ me }: { me: User }) {
 
       {everyone.map((person) => (
         <Card key={person.id} className="flex flex-wrap items-center gap-4 p-5">
-          <Avatar name={person.name} />
+          <Avatar name={person.name} avatarId={person.avatarId} />
 
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
@@ -385,7 +385,7 @@ function TutorApplicationRow({ tutor }: { tutor: User }) {
   return (
     <Card className="p-6">
       <div className="flex flex-wrap items-center gap-3">
-        <Avatar name={tutor.name} />
+        <Avatar name={tutor.name} avatarId={tutor.avatarId} />
         <div className="min-w-0 flex-1">
           <p className="font-medium text-ink-800">{tutor.name}</p>
           <p className="truncate text-xs text-ink-400">

@@ -44,6 +44,8 @@ export interface User {
   googleId?: string;
   /** Profile picture from Google, when there is one. */
   avatarUrl?: string;
+  /** A character from shared/avatars.ts chosen to represent them. */
+  avatarId?: string;
 }
 
 /**
@@ -56,6 +58,7 @@ export interface PublicProfile {
   name: string;
   role: Role;
   headline?: string;
+  avatarId?: string;
 }
 
 /**
@@ -76,6 +79,7 @@ export type PublicTutor = Pick<
   | "homeTown"
   | "specialties"
   | "avatarUrl"
+  | "avatarId"
   | "createdAt"
 >;
 
@@ -259,6 +263,8 @@ export interface SignUpInput {
   timezone: string;
   /** Only read when `role` is `tutor`. */
   application?: TutorApplication;
+  /** A character from shared/avatars.ts. */
+  avatarId?: string;
   /** Cloudflare Turnstile token. Required only when the server has CAPTCHA configured. */
   turnstileToken?: string;
 }
@@ -287,6 +293,7 @@ export interface GoogleSignInInput {
   role?: Exclude<Role, "admin">;
   languages?: LanguageCode[];
   timezone?: string;
+  avatarId?: string;
 }
 
 export interface BookingInput {

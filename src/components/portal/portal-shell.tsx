@@ -140,7 +140,7 @@ export function PortalShell({ children }: { children: React.ReactNode }) {
       <aside className="lg:sticky lg:top-24 lg:self-start">
         <div className="rounded-2xl bg-white p-5 ring-1 ring-ink-900/8">
           <div className="flex items-center gap-3">
-            <Avatar name={user.name} />
+            <Avatar name={user.name} avatarId={user.avatarId} />
             <div className="min-w-0">
               <p className="truncate font-display text-base font-semibold text-ink-900">
                 {user.name}

@@ -202,7 +202,7 @@ export default async function HomePage() {
             {tutors.map((tutor) => (
               <Card key={tutor.id} className="flex h-full flex-col p-7">
                 <div className="flex items-center gap-3">
-                  <Avatar name={tutor.name} size="lg" />
+                  <Avatar name={tutor.name} avatarId={tutor.avatarId} size="lg" />
                   <div>
                     <h3 className="text-lg leading-tight">{tutor.name}</h3>
                     <p className="text-xs text-ink-400">

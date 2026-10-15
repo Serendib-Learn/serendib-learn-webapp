@@ -10,6 +10,7 @@ import { hashPassword, sixDigitCode, verifyPassword } from "../lib/passwords.ts"
 import { endSession, startSession } from "../lib/sessions.ts";
 import { requireTurnstile } from "../lib/turnstile.ts";
 import { parseBody } from "../lib/validate.ts";
+import { characterIds } from "../../../shared/avatars.ts";
 import type { Role, User } from "../../../shared/types.ts";
 
 export const authRouter = Router();
@@ -56,6 +57,7 @@ const signUpSchema = z.object({
   languages: languagesSchema,
   timezone: z.string().trim().min(1).default("UTC"),
   application: applicationSchema,
+  avatarId: z.enum(characterIds as [string, ...string[]]).optional(),
   turnstileToken: z.string().optional(),
 });
 
@@ -84,6 +86,7 @@ const googleSignInSchema = z.object({
   role: z.enum(["student", "tutor"]).optional(),
   languages: z.array(z.enum(["sinhala", "tamil"])).optional(),
   timezone: z.string().trim().optional(),
+  avatarId: z.enum(characterIds as [string, ...string[]]).optional(),
 });
 
 const RESET_LINK_INVALID = "That reset link has already been used, or never existed.";
@@ -143,6 +146,7 @@ authRouter.post(
       createdAt: nowIso(),
       timezone: input.timezone,
       languages: input.languages,
+      ...(input.avatarId ? { avatarId: input.avatarId } : {}),
     };
 
     if (input.role === "tutor") {
@@ -326,6 +330,7 @@ authRouter.post(
       languages,
       googleId: identity.googleId,
       avatarUrl: identity.avatarUrl,
+      ...(body.avatarId ? { avatarId: body.avatarId } : {}),
       ...(role === "tutor" ? { tutorStatus: "pending" as const } : {}),
     };
 

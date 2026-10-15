@@ -60,7 +60,7 @@ export function Header() {
               href="/portal"
               className="flex items-center gap-2.5 rounded-full py-1 pr-4 pl-1 ring-1 ring-white/15 transition hover:bg-white/10"
             >
-              <Avatar name={user.name} size="sm" />
+              <Avatar name={user.name} avatarId={user.avatarId} size="sm" />
               <span className="text-sm font-medium text-sand-100">Portal</span>
             </Link>
           ) : (

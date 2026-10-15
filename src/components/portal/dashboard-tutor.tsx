@@ -188,7 +188,7 @@ export function TutorDashboard({ user }: { user: User }) {
               <ul className="mt-4 space-y-4">
                 {(progress.data ?? []).map((entry) => (
                   <li key={entry.student.id} className="flex items-start gap-3">
-                    <Avatar name={entry.student.name} size="sm" />
+                    <Avatar name={entry.student.name} avatarId={entry.student.avatarId} size="sm" />
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium text-ink-800">
                         {entry.student.name}

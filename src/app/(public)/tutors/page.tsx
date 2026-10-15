@@ -47,7 +47,7 @@ export default async function TutorsPage() {
             {tutors.map((tutor) => (
               <Card key={tutor.id} className="grid gap-8 p-8 md:grid-cols-[auto_1fr] md:p-10">
                 <div className="flex items-start gap-4 md:w-56 md:flex-col">
-                  <Avatar name={tutor.name} size="lg" />
+                  <Avatar name={tutor.name} avatarId={tutor.avatarId} size="lg" />
                   <div>
                     <h2 className="text-xl leading-tight">{tutor.name}</h2>
                     {tutor.homeTown ? (

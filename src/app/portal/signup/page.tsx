@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { AuthCard, AuthFooterLink } from "@/components/portal/auth-card";
+import { CharacterPicker } from "@/components/portal/character-picker";
 import { GoogleButton } from "@/components/portal/google-button";
 import { Button } from "@/components/ui/button";
 import { Checkbox, Field, Input, Textarea } from "@/components/ui/field";
@@ -49,6 +50,7 @@ function SignUpForm() {
   const [homeTown, setHomeTown] = useState("");
   const [yearsTeaching, setYearsTeaching] = useState("");
   const [bio, setBio] = useState("");
+  const [avatarId, setAvatarId] = useState<string | undefined>();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -72,6 +74,7 @@ function SignUpForm() {
         role,
         languages,
         timezone: timezone || "UTC",
+        avatarId,
       });
       // Google has already confirmed the address, so there is no code to enter.
       router.push("/portal");
@@ -145,6 +148,7 @@ function SignUpForm() {
                     yearsTeaching: yearsTeaching ? Number(yearsTeaching) : undefined,
                   }
                 : undefined,
+            avatarId,
             turnstileToken: turnstileToken ?? undefined,
           });
           if (result) {
@@ -240,6 +244,14 @@ function SignUpForm() {
               ? "Pick both if you teach both."
               : "Pick both if you want both — some of our tutors teach Sinhala and Tamil together."}
           </p>
+        </fieldset>
+
+        <fieldset>
+          <legend className="mb-1 text-sm font-medium text-ink-700">Pick a character to represent you</legend>
+          <p className="mb-3 text-xs leading-relaxed text-ink-500">
+            Each one comes with its name in Sinhala and Tamil — your first two words.
+          </p>
+          <CharacterPicker value={avatarId} onChange={setAvatarId} languages={languages} />
         </fieldset>
 
         {role === "tutor" ? (

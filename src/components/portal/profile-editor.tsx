@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { api } from "@/lib/api";
+import { CharacterPicker } from "@/components/portal/character-picker";
 import { useAction } from "@/lib/hooks";
 import { Button } from "@/components/ui/button";
 import { Checkbox, Field, Input, Textarea } from "@/components/ui/field";
@@ -26,6 +27,7 @@ export function ProfileEditor({ user, onSaved }: { user: User; onSaved?: (user: 
   );
   const [rate, setRate] = useState(user.hourlyRateUsd !== undefined ? String(user.hourlyRateUsd) : "");
   const [specialties, setSpecialties] = useState((user.specialties ?? []).join(", "));
+  const [avatarId, setAvatarId] = useState<string | undefined>(user.avatarId);
   const [saved, setSaved] = useState(false);
 
   const save = useAction(() =>
@@ -36,6 +38,7 @@ export function ProfileEditor({ user, onSaved }: { user: User; onSaved?: (user: 
       headline: headline.trim(),
       bio: bio.trim(),
       homeTown: homeTown.trim(),
+      ...(avatarId ? { avatarId } : {}),
       ...(isTutor
         ? {
             yearsTeaching: yearsTeaching ? Number(yearsTeaching) : undefined,
@@ -62,6 +65,11 @@ export function ProfileEditor({ user, onSaved }: { user: User; onSaved?: (user: 
         }
       }}
     >
+      <fieldset>
+        <legend className="mb-3 text-sm font-medium text-ink-700">Your character</legend>
+        <CharacterPicker value={avatarId} onChange={setAvatarId} languages={languages} />
+      </fieldset>
+
       <div className="grid gap-5 sm:grid-cols-2">
         <Field label="Name" htmlFor="profile-name">
           <Input id="profile-name" value={name} onChange={(event) => setName(event.target.value)} />

@@ -106,7 +106,7 @@ function PostCard({
   return (
     <Card className="p-6">
       <div className="flex items-center gap-3">
-        <Avatar name={author?.name ?? "Member"} size="sm" />
+        <Avatar name={author?.name ?? "Member"} avatarId={author?.avatarId} size="sm" />
         <div className="min-w-0">
           <p className="truncate text-sm font-medium text-ink-800">
             {author?.name ?? "Former member"}
@@ -151,7 +151,11 @@ function PostCard({
             <ul className="space-y-3">
               {(replies.data ?? []).map((item) => (
                 <li key={item.id} className="flex gap-3">
-                  <Avatar name={people.get(item.authorId)?.name ?? "Member"} size="sm" />
+                  <Avatar
+                    name={people.get(item.authorId)?.name ?? "Member"}
+                    avatarId={people.get(item.authorId)?.avatarId}
+                    size="sm"
+                  />
                   <div className="min-w-0 flex-1 rounded-xl bg-sand-100 px-4 py-2.5">
                     <p className="text-xs font-medium text-ink-700">
                       {people.get(item.authorId)?.name ?? "Member"}

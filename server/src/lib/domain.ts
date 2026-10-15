@@ -46,6 +46,7 @@ export function publicTutor(user: User): PublicTutor {
     homeTown: user.homeTown,
     specialties: user.specialties,
     avatarUrl: user.avatarUrl,
+    avatarId: user.avatarId,
     createdAt: user.createdAt,
   };
 }
