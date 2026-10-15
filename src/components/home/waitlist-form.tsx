@@ -22,7 +22,7 @@ export function WaitlistForm() {
 
   if (done) {
     return (
-      <div className="rounded-2xl bg-jade-50 p-8 text-center ring-1 ring-jade-200">
+      <div className="rounded-xl border border-forest/10 bg-white p-8 text-center">
         <p className="text-3xl" aria-hidden>
           🌴
         </p>
@@ -134,14 +134,15 @@ export function WaitlistForm() {
 
       <Button
         type="submit"
+        variant="forest"
         size="lg"
-        className="w-full"
+        className="w-full rounded-xl"
         disabled={pending || (turnstileAvailable && !turnstileToken)}
       >
-        {pending ? "Adding you…" : "Join the waitlist"}
+        {pending ? "Adding you…" : "Register my interest"}
       </Button>
-      <p className="text-center text-xs text-ink-400">
-        No card, no spam. We only write when we have a tutor who fits.
+      <p className="pt-1 text-center text-xs text-fern">
+        No spam. No commitment. We&rsquo;ll reach out personally.
       </p>
     </form>
   );

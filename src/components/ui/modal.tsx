@@ -49,7 +49,7 @@ export function Modal({
         aria-modal="true"
         aria-label={title}
         className={cn(
-          "relative z-10 max-h-[90vh] w-full overflow-y-auto rounded-t-3xl bg-white p-6 shadow-lifted sm:max-w-lg sm:rounded-3xl",
+          "relative z-10 max-h-[90vh] w-full overflow-y-auto rounded-t-2xl border border-forest/10 bg-white p-6 sm:max-w-lg sm:rounded-xl",
           "animate-rise",
           className,
         )}

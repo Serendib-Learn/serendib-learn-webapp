@@ -255,7 +255,7 @@ function SignUpForm() {
         </fieldset>
 
         {role === "tutor" ? (
-          <fieldset className="space-y-4 rounded-2xl bg-sand-100/70 p-4 ring-1 ring-ink-900/6">
+          <fieldset className="space-y-4 rounded-2xl bg-sand-100/70 p-4 border border-forest/8">
             <legend className="px-1 text-sm font-medium text-ink-700">
               Your application <span className="font-normal text-ink-400">(you can finish it later)</span>
             </legend>

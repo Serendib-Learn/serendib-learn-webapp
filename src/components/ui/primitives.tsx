@@ -9,7 +9,7 @@ export function Card({
   return (
     <div
       className={cn(
-        "rounded-2xl bg-white ring-1 ring-ink-900/8 shadow-card",
+        "rounded-xl border border-forest/10 bg-white",
         className,
       )}
       {...rest}
@@ -51,13 +51,8 @@ export function Badge({
   );
 }
 
-const avatarPalette = [
-  "bg-jade-500",
-  "bg-saffron-500",
-  "bg-clay-500",
-  "bg-ocean-500",
-  "bg-ink-700",
-];
+// The brand's own colours, so initials sit with the rest of the palette.
+const avatarPalette = ["bg-forest", "bg-fern", "bg-amber-spice", "bg-jade-400", "bg-ink-700"];
 
 function initials(name: string): string {
   return name
@@ -150,9 +145,9 @@ export function EmptyState({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="rounded-2xl border border-dashed border-ink-900/15 bg-sand-100/60 px-6 py-12 text-center">
+    <div className="rounded-xl border border-dashed border-forest/20 bg-white/60 px-6 py-12 text-center">
       {icon ? <div className="mb-3 text-3xl">{icon}</div> : null}
-      <p className="font-display text-lg text-ink-900">{title}</p>
+      <p className="font-display text-lg text-forest">{title}</p>
       {children ? (
         <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-ink-500">{children}</p>
       ) : null}
@@ -221,8 +216,8 @@ export function Stat({
   hint?: string;
 }) {
   return (
-    <div className="rounded-2xl bg-white px-5 py-4 ring-1 ring-ink-900/8">
-      <p className="text-xs font-medium uppercase tracking-wider text-ink-400">{label}</p>
+    <div className="rounded-xl border border-forest/10 bg-white px-5 py-4">
+      <p className="label-eyebrow">{label}</p>
       <p className="mt-1.5 font-display text-2xl text-ink-900">{value}</p>
       {hint ? <p className="mt-1 text-xs text-ink-400">{hint}</p> : null}
     </div>
@@ -242,14 +237,10 @@ export function SectionHeading({
 }) {
   return (
     <div className={cn("max-w-2xl", className)}>
-      {eyebrow ? (
-        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-jade-600">
-          {eyebrow}
-        </p>
-      ) : null}
-      <h2 className="text-3xl leading-tight sm:text-4xl">{title}</h2>
+      {eyebrow ? <p className="label-eyebrow mb-3">{eyebrow}</p> : null}
+      <h2 className="font-display text-3xl leading-tight text-forest md:text-4xl">{title}</h2>
       {children ? (
-        <p className="mt-4 text-base leading-relaxed text-ink-500">{children}</p>
+        <p className="mt-3 text-lg leading-relaxed text-fern">{children}</p>
       ) : null}
     </div>
   );

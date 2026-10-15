@@ -104,7 +104,7 @@ export function VoiceRecorder({
   }
 
   return (
-    <div className="rounded-2xl bg-sand-100/70 p-4 ring-1 ring-ink-900/6">
+    <div className="rounded-2xl bg-sand-100/70 p-4 border border-forest/8">
       {value && !recording ? (
         <div className="flex flex-wrap items-center gap-3">
           <audio controls src={value.url} className="h-10 max-w-full flex-1" />

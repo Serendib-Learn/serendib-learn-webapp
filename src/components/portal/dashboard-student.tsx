@@ -144,7 +144,7 @@ export function StudentDashboard({ user }: { user: User }) {
                   <Link
                     key={item.id}
                     href="/portal/homework"
-                    className="block rounded-xl bg-white p-5 ring-1 ring-ink-900/8 transition hover:shadow-card"
+                    className="block rounded-xl bg-white p-5 border border-forest/10 transition hover:shadow-card"
                   >
                     <div className="flex flex-wrap items-center gap-2">
                       <Badge tone={item.status === "submitted" ? "ocean" : "saffron"}>

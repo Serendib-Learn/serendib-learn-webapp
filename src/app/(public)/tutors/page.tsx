@@ -22,7 +22,7 @@ export default async function TutorsPage() {
     <>
       <section className="bg-weave border-b border-ink-900/8">
         <div className="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-20">
-          <Badge tone="jade">Tutors</Badge>
+          <p className="label-eyebrow">Tutors</p>
           <h1 className="mt-6 max-w-3xl text-4xl leading-[1.1] sm:text-5xl">
             Everyone here grew up speaking it.
           </h1>

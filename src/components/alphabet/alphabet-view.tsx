@@ -3,7 +3,7 @@
 import { useState, useSyncExternalStore } from "react";
 import { alphabetSheets, type AlphabetSheet, type Letter } from "@/data/alphabet";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/primitives";
+
 import { cn } from "@/lib/cn";
 
 function subscribeToVoices(onChange: () => void) {
@@ -49,7 +49,7 @@ export function AlphabetView({ initial }: { initial: "sinhala" | "tamil" }) {
     <>
       <section className="bg-weave border-b border-ink-900/8 print:border-0 print:bg-none">
         <div className="mx-auto max-w-6xl px-5 py-14 sm:px-8 sm:py-16 print:py-4">
-          <Badge tone="jade" className="print:hidden">Free · printable</Badge>
+          <p className="label-eyebrow print:hidden">Free · printable</p>
           <h1 className="mt-5 text-4xl leading-[1.1] sm:text-5xl print:mt-0 print:text-3xl">
             The {sheet.name} alphabet{" "}
             <span className={cn("block text-3xl text-jade-700 sm:text-4xl print:inline print:text-2xl", language === "sinhala" ? "text-sinhala" : "text-tamil")}>
@@ -59,7 +59,7 @@ export function AlphabetView({ initial }: { initial: "sinhala" | "tamil" }) {
           <p className="mt-5 max-w-3xl leading-relaxed text-ink-600 print:mt-2 print:text-sm">{sheet.intro}</p>
 
           <div className="mt-7 flex flex-wrap items-center gap-3 print:hidden">
-            <div className="flex gap-1 rounded-full bg-white p-1 ring-1 ring-ink-900/8">
+            <div className="flex gap-1 rounded-full bg-white p-1 border border-forest/10">
               {alphabetSheets.map((item) => (
                 <button
                   key={item.language}
@@ -108,7 +108,7 @@ export function AlphabetView({ initial }: { initial: "sinhala" | "tamil" }) {
           <p className="mt-1.5 max-w-3xl text-sm text-ink-500">{sheet.vowelSigns.intro}</p>
           <div className="mt-5 flex flex-wrap gap-2 print:mt-2">
             {sheet.vowelSigns.signs.map((sign) => (
-              <div key={sign.form} className="min-w-16 rounded-xl bg-white px-3 py-2 text-center ring-1 ring-ink-900/8">
+              <div key={sign.form} className="min-w-16 rounded-xl bg-white px-3 py-2 text-center border border-forest/10">
                 <p className={cn("text-2xl text-ink-900", language === "sinhala" ? "text-sinhala" : "text-tamil")}>{sign.form}</p>
                 <p className="text-xs text-ink-500">{sign.roman}</p>
               </div>
@@ -138,7 +138,7 @@ function LetterCard({
 }) {
   const scriptClass = sheet.language === "sinhala" ? "text-sinhala" : "text-tamil";
   return (
-    <div className="flex gap-4 rounded-2xl bg-white p-4 ring-1 ring-ink-900/8 print:gap-2 print:rounded-lg print:p-2">
+    <div className="flex gap-4 rounded-2xl bg-white p-4 border border-forest/10 print:gap-2 print:rounded-lg print:p-2">
       <div className="w-16 shrink-0 text-center print:w-10">
         <p className={cn("text-4xl leading-tight text-ink-900 print:text-2xl", scriptClass)}>{letter.letter}</p>
         <p className="font-medium text-jade-700 print:text-xs">{letter.roman}</p>

@@ -59,7 +59,7 @@ function StudentHub({ student }: { student: User }) {
           <h2 className="text-xl">Lesson notes</h2>
           <div className="mt-4 space-y-4">
             {(notes.data ?? []).map((note) => (
-              <div key={note.id} className="rounded-2xl bg-white p-5 ring-1 ring-ink-900/8">
+              <div key={note.id} className="rounded-2xl bg-white p-5 border border-forest/10">
                 <p className="text-xs font-medium uppercase tracking-wider text-ink-400">
                   {new Date(note.date).toLocaleDateString(undefined, {
                     day: "numeric",
@@ -552,7 +552,7 @@ function ChapterRow({ chapter }: { chapter: CourseChapter }) {
     title !== chapter.title || summary !== chapter.summary || order !== String(chapter.order);
 
   return (
-    <li className="grid gap-2 rounded-xl px-3 py-2.5 ring-1 ring-ink-900/8 sm:grid-cols-[4rem_1fr_1.4fr_auto] sm:items-center">
+    <li className="grid gap-2 rounded-xl px-3 py-2.5 border border-forest/10 sm:grid-cols-[4rem_1fr_1.4fr_auto] sm:items-center">
       <Input
         aria-label={`Order of ${chapter.title}`}
         type="number"

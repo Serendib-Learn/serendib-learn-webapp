@@ -45,7 +45,7 @@ export function PhraseCardStack() {
         className="absolute inset-x-3 -bottom-1.5 h-full rounded-3xl bg-saffron-400/25"
       />
 
-      <div className="relative rounded-3xl bg-white p-7 shadow-lifted ring-1 ring-ink-900/8">
+      <div className="relative rounded-3xl bg-white p-7 shadow-lifted border border-forest/10">
         <div className="flex items-center justify-between">
           <span className="inline-flex items-center gap-2 rounded-full bg-sand-100 px-3 py-1.5 text-xs font-medium text-ink-600">
             <span aria-hidden>{active.emoji}</span>

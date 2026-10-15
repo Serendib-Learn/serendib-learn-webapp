@@ -67,7 +67,7 @@ export default function CalendarPage() {
         </Suspense>
       ) : null}
 
-      <div className="mb-6 flex gap-1 rounded-full bg-white p-1 ring-1 ring-ink-900/8 sm:w-fit">
+      <div className="mb-6 flex gap-1 rounded-full bg-white p-1 border border-forest/10 sm:w-fit">
         {[{ id: "schedule" as const, label: "Schedule" }, secondary].map((item) => (
           <button
             key={item.id}

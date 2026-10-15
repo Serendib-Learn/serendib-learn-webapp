@@ -27,7 +27,7 @@ export function ChapterMap() {
   return (
     <div>
       {user ? (
-        <div className="mb-10 rounded-2xl bg-white p-6 ring-1 ring-ink-900/8">
+        <div className="mb-10 rounded-2xl bg-white p-6 border border-forest/10">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <p className="font-display text-lg text-ink-900">Your progress</p>
@@ -73,7 +73,7 @@ export function ChapterMap() {
             <li key={chapter.id} className="relative">
               <Link
                 href={`/games/languages/${chapter.id}`}
-                className="group flex items-start gap-4 rounded-2xl bg-white p-6 ring-1 ring-ink-900/8 transition hover:-translate-y-0.5 hover:shadow-lifted sm:gap-6 sm:pl-6"
+                className="group flex items-start gap-4 rounded-2xl bg-white p-6 border border-forest/10 transition hover:-translate-y-0.5 hover:shadow-lifted sm:gap-6 sm:pl-6"
               >
                 <span
                   aria-hidden

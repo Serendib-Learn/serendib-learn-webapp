@@ -29,7 +29,7 @@ export function BookingRow({
   actions?: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-wrap items-start justify-between gap-4 rounded-xl bg-white p-5 ring-1 ring-ink-900/8">
+    <div className="flex flex-wrap items-start justify-between gap-4 rounded-xl bg-white p-5 border border-forest/10">
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
           <Badge tone={statusTone[booking.status]}>{statusLabel[booking.status]}</Badge>

@@ -80,7 +80,7 @@ export default function LoginPage() {
                         setEmail(account.email);
                         setPassword(DEMO_PASSWORD);
                       }}
-                      className="w-full rounded-xl bg-sand-100/70 px-3.5 py-3 text-left ring-1 ring-inset ring-ink-900/6 transition hover:bg-jade-50 hover:ring-jade-200"
+                      className="w-full rounded-xl bg-sand-100/70 px-3.5 py-3 text-left border border-forest/8 transition hover:bg-jade-50 hover:ring-jade-200"
                     >
                       <span className="block text-sm font-medium text-ink-800">{account.role}</span>
                       <span className="block truncate text-xs text-ink-400">{account.email}</span>

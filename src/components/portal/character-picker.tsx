@@ -39,7 +39,7 @@ export function CharacterPicker({
               onClick={() => onChange(active ? undefined : character.id)}
               className={cn(
                 "group flex flex-col items-center gap-1.5 rounded-2xl p-2 transition",
-                active ? "bg-jade-50 ring-2 ring-jade-500" : "ring-1 ring-ink-900/8 hover:bg-sand-100",
+                active ? "bg-jade-50 ring-2 ring-jade-500" : "border border-forest/10 hover:bg-sand-100",
               )}
             >
               <CharacterArt id={character.id} className="size-12 transition group-hover:scale-105" />
@@ -50,7 +50,7 @@ export function CharacterPicker({
       </div>
 
       {chosen ? (
-        <div className="mt-3 flex items-start gap-4 rounded-2xl bg-sand-100/70 p-4 ring-1 ring-ink-900/6">
+        <div className="mt-3 flex items-start gap-4 rounded-2xl bg-sand-100/70 p-4 border border-forest/8">
           <CharacterArt id={chosen.id} className="size-14 shrink-0" />
           <div className="min-w-0 text-sm">
             <p className="font-medium text-ink-800">{chosen.english}</p>

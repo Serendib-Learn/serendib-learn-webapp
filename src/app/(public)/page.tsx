@@ -1,255 +1,152 @@
-// GAMES-HIDDEN: Link is only used by the commented-out games section below.
-// import Link from "next/link";
-// Decks are off the landing page for now. The component is kept for later.
-// import { PhraseCardStack } from "@/components/home/phrase-card-stack";
 import { WaitlistForm } from "@/components/home/waitlist-form";
-import { ButtonLink } from "@/components/ui/button";
-import { Avatar, Badge, Card, SectionHeading } from "@/components/ui/primitives";
-// GAMES-HIDDEN: deck and heritage counts, used only by commented-out sections.
-// import { allChapters, totalPhraseCount } from "@/data/vocabulary";
-// import { heritageSites } from "@/data/heritage";
-import { fetchPublicTutors } from "@/lib/api/public";
-import { learningLanguage } from "@/lib/learning-language-server";
-import type { LearningLanguage } from "@/lib/learning-language";
+import { AraliyaFlower } from "@/components/site/araliya-flower";
+
+/*
+ * The home page, as on the original serendib.learn site (the Lovable
+ * prototype this replaces): the same sections, copy and layout. The one
+ * difference is that "Register your interest" is an in-site form — entries
+ * land in Administration → Waitlist — instead of an external Google Form.
+ */
+
+function Hero() {
+  return (
+    <section id="top" className="relative scroll-mt-16 overflow-hidden bg-forest">
+      <AraliyaFlower className="absolute -right-24 -bottom-24 hidden h-[520px] w-[520px] opacity-[0.06] md:block" />
+      <div className="relative mx-auto max-w-4xl px-6 py-24 text-center md:py-32">
+        <p className="label-eyebrow mb-5">&nbsp;TUTORS FOR SRI LANKANS WHEREVER THEY CALL HOME&nbsp;</p>
+        <h1 className="font-display text-4xl leading-[1.1] tracking-tight text-cream md:text-6xl">
+          The language you speak with your grandmother is worth fighting for.
+        </h1>
+        <p className="mx-auto mt-7 max-w-2xl text-lg leading-relaxed text-sage md:text-xl">
+          serendib.learn connects Sri Lankan communities around the world with exceptional,
+          personally vetted tutors with the purpose of keeping the Sinhala and Tamil languages
+          alive.&nbsp;
+        </p>
+        <div className="mt-10 flex flex-col justify-center gap-3 sm:flex-row">
+          <a
+            href="#waitlist"
+            className="rounded-md bg-amber-spice px-7 py-3.5 font-medium text-white transition-colors hover:bg-amber-light"
+          >
+            Register your interest
+          </a>
+        </div>
+        <p className="mt-8 text-sm text-sage">Personally vetted tutors · Free intro call · No commitment</p>
+      </div>
+    </section>
+  );
+}
 
 const steps = [
   {
-    number: "01",
-    title: "Tell us why you're learning",
-    body: "A wedding, a move, a grandmother, a passport application. The reason decides the vocabulary, so we ask first.",
+    t: "Tell us what you need",
+    d: "Fill in a short form - subject, level, goals, schedule, and the language you would like to learn.\u00a0",
   },
   {
-    number: "02",
-    title: "Book a tutor who fits",
-    body: "Pick from real availability in your own timezone, pay for the session, and get a link. No packages, no lock-in.",
+    t: "We match you",
+    d: "Our team handpicks 2-3 tutors from our vetted roster. You see their full profiles, subjects, and experience.",
   },
   {
-    number: "03",
-    title: "Practise between lessons",
-    body: "Your tutor leaves material and homework in your hub, chapter by chapter, and the community gives you people to practise with on the days you have no lesson.",
+    t: "Free intro call",
+    d: "Meet your tutor. No commitment, no charge. If the fit isn't right, we rematch until it is.",
+  },
+  {
+    t: "Sessions begin",
+    d: "Book and pay through the platform. Your tutor sends a short note after every session. You submit your feedback.\u00a0",
   },
 ];
 
-const reasons = [
-  {
-    emoji: "🇱🇰",
-    title: "Tutors who actually live there",
-    body: "Everyone teaching here grew up speaking the language in Sri Lanka. You get the phrasing people use, not the phrasing textbooks prefer.",
-  },
-  {
-    emoji: "⚖️",
-    title: "Both languages, no favourites",
-    body: "Sinhala and Tamil, taught with equal care and side by side. Every phrase in our course carries both, in script and in romanisation.",
-  },
-  {
-    emoji: "👋",
-    title: "Built for heritage learners",
-    body: "Most of our students understand more than they can say. We start by getting the words out of your head and into your mouth.",
-  },
-  {
-    emoji: "🗂️",
-    title: "Everything in one place",
-    body: "Booking, payment, materials, homework, feedback and your tutor's messages all live in one portal. Nothing in a spreadsheet.",
-  },
-];
-
-export default async function HomePage() {
-  // The roster is cached for a minute (see fetchPublicTutors); the page itself
-  // follows the visitor's learning-language choice.
-  const choice = await learningLanguage();
-  const tutors = (await fetchPublicTutors())
-    .filter((tutor) => choice === "both" || tutor.languages.includes(choice))
-    .slice(0, 3);
-
-  // GAMES-HIDDEN
-  // const colomboSites = heritageSites.filter((site) => site.region === "Colombo");
-
+function HowItWorks() {
   return (
-    <>
-      <section className="relative overflow-hidden bg-jade-700">
-        <svg
-          aria-hidden
-          viewBox="0 0 24 24"
-          className="pointer-events-none absolute -right-24 -bottom-24 size-[32rem] fill-white/5"
-        >
-          <path d="M12 20V9" />
-          <path d="M12 9c0-3.2 2.4-5.6 5.6-5.6C17.6 6.6 15.2 9 12 9Z" />
-          <path d="M12 9C12 5.8 9.6 3.4 6.4 3.4 6.4 6.6 8.8 9 12 9Z" />
-          <path d="M12 9c3.2 0 5.6 2.4 5.6 5.6C14.4 14.6 12 12.2 12 9Z" />
-          <path d="M12 9c-3.2 0-5.6 2.4-5.6 5.6C9.6 14.6 12 12.2 12 9Z" />
-        </svg>
-
-        <div className="relative mx-auto grid max-w-6xl items-center gap-14 px-5 py-16 sm:px-8 sm:py-24 lg:grid-cols-[1.05fr_0.95fr]">
-          <div className="animate-rise">
-            <p className="text-xs font-semibold tracking-[0.28em] text-jade-200 uppercase">
-              Tutors for Sri Lankans wherever they call home
-            </p>
-
-            <h1 className="mt-6 max-w-xl text-3xl leading-[1.12] text-sand-50 sm:text-4xl lg:text-5xl">
-              The language you speak with your grandmother is worth fighting
-              for.
-            </h1>
-
-            <p className="mt-6 max-w-xl text-lg leading-relaxed text-jade-100">
-              serendib.learn connects Sri Lankan communities around the world
-              with exceptional, personally vetted tutors with the purpose of
-              keeping the Sinhala and Tamil languages alive.
-            </p>
-
-            <div className="mt-9 flex flex-wrap gap-3">
-              <ButtonLink href="/portal/signup" size="lg">
-                Start learning
-              </ButtonLink>
-              <ButtonLink href="/tutors" variant="secondary" size="lg">
-                Meet the tutors
-              </ButtonLink>
-              {/* Decks are off the landing page for now.
-              <ButtonLink href="/games/languages" variant="secondary" size="lg">
-                Play the free decks
-              </ButtonLink>
-              */}
-            </div>
-
-            <dl className="mt-12 grid max-w-lg grid-cols-3 gap-6 border-t border-white/15 pt-7">
-              {[
-                { value: "2", label: "languages, Sinhala and Tamil" },
-                { value: "1:1", label: "live lessons on Google Meet" },
-                { value: "100%", label: "tutors personally vetted" },
-                // Deck stats, parked with the games:
-                // { value: totalPhraseCount, label: "phrases, free" },
-                // { value: allChapters.length, label: "story chapters" },
-                // { value: heritageSites.length, label: "heritage sites" },
-              ].map((item) => (
-                <div key={item.label}>
-                  <dt className="font-display text-3xl text-sand-50">{item.value}</dt>
-                  <dd className="mt-0.5 text-xs leading-snug text-jade-200">{item.label}</dd>
-                </div>
-              ))}
-            </dl>
-          </div>
-
-          <div className="animate-rise lg:pl-6">
-            <WelcomeCard choice={choice} />
-            {/* Decks are off the landing page for now.
-            <PhraseCardStack />
-            */}
-          </div>
+    <section id="how" className="scroll-mt-16 bg-white px-6 py-24">
+      <div className="mx-auto max-w-6xl">
+        <div className="mb-14 text-center">
+          <p className="label-eyebrow mb-3">The process</p>
+          <h2 className="mb-3 font-display text-3xl text-forest md:text-4xl">About us</h2>
+          <p className="text-lg text-fern">From first enquiry to first session in under a week.</p>
         </div>
-      </section>
-
-      <section className="mx-auto max-w-6xl px-5 py-20 sm:px-8">
-        <SectionHeading eyebrow="How it works" title="Three steps, and the first one is a sentence.">
-          We match people to tutors by hand. It is slower than an algorithm and it
-          works considerably better.
-        </SectionHeading>
-
-        <ol className="mt-12 grid gap-6 md:grid-cols-3">
-          {steps.map((step) => (
-            <li key={step.number}>
-              <Card className="h-full p-7">
-                <span className="font-display text-sm font-semibold tracking-widest text-saffron-500">
-                  {step.number}
-                </span>
-                <h3 className="mt-4 text-xl">{step.title}</h3>
-                <p className="mt-3 text-sm leading-relaxed text-ink-500">{step.body}</p>
-              </Card>
+        <ol className="grid gap-8 md:grid-cols-4">
+          {steps.map((step, index) => (
+            <li key={step.t}>
+              <div className="mb-4 flex h-9 w-9 items-center justify-center rounded-full bg-forest font-display text-sm text-cream">
+                {index + 1}
+              </div>
+              <h3 className="mb-2 font-display text-lg text-forest">{step.t}</h3>
+              <p className="text-sm leading-relaxed text-earth/70">{step.d}</p>
             </li>
           ))}
         </ol>
-      </section>
+      </div>
+    </section>
+  );
+}
 
-      <section className="border-y border-ink-900/8 bg-white">
-        <div className="mx-auto max-w-6xl px-5 py-20 sm:px-8">
-          <SectionHeading eyebrow="Why us" title="Why people stay after the trial lesson.">
-            There is no shortage of language apps. There is a shortage of people who
-            will teach you how your own family talks.
-          </SectionHeading>
+const promises = [
+  {
+    t: "Personally vetted",
+    d: "Every tutor is interviewed by us. We assess fluency, warmth, subject depth, and reliability. Our acceptance rate is under 50%.",
+  },
+  {
+    t: "Quality guaranteed",
+    d: "Free rematching if the fit isn't right. Post-session notes after every class. A platform that stands behind every tutor on it.",
+  },
+];
 
-          <div className="mt-12 grid gap-6 sm:grid-cols-2">
-            {reasons.map((reason) => (
-              <div
-                key={reason.title}
-                className="rounded-2xl bg-sand-50 p-7 ring-1 ring-ink-900/6"
-              >
-                <span className="text-2xl" aria-hidden>
-                  {reason.emoji}
-                </span>
-                <h3 className="mt-4 text-lg">{reason.title}</h3>
-                <p className="mt-2.5 text-sm leading-relaxed text-ink-500">{reason.body}</p>
-              </div>
-            ))}
-          </div>
+function WhyUs() {
+  return (
+    <section id="why" className="scroll-mt-16 bg-forest px-6 py-24">
+      <div className="mx-auto max-w-6xl">
+        <div className="mb-14 text-center">
+          <p className="label-eyebrow mb-3">Our promise</p>
+          <h2 className="font-display text-3xl text-cream md:text-4xl">Why families choose Serendib</h2>
         </div>
-      </section>
-
-      <section className="mx-auto max-w-6xl px-5 py-20 sm:px-8">
-        <div className="flex flex-wrap items-end justify-between gap-6">
-          <SectionHeading eyebrow="Tutors" title="The people you would actually be talking to.">
-            Small on purpose. We would rather have a handful of tutors we trust than
-            forty we have never met.
-          </SectionHeading>
-          <ButtonLink href="/tutors" variant="secondary">
-            Meet everyone
-          </ButtonLink>
+        <div className="mx-auto grid max-w-4xl gap-10 md:grid-cols-2">
+          {promises.map((item) => (
+            <div key={item.t}>
+              <div className="mb-5 h-0.5 w-8 bg-amber-spice" />
+              <h3 className="mb-3 font-display text-xl text-cream">{item.t}</h3>
+              <p className="leading-relaxed text-sage">{item.d}</p>
+            </div>
+          ))}
         </div>
+      </div>
+    </section>
+  );
+}
 
-        {tutors.length === 0 ? (
-          <Card className="mt-12 p-8 text-center">
-            <p className="font-display text-xl text-ink-900">Our first tutors are joining now.</p>
-            <p className="mx-auto mt-2 max-w-xl text-sm leading-relaxed text-ink-500">
-              Every one of them is interviewed by us before they appear here. Register your
-              interest below and we will introduce you personally.
-            </p>
-          </Card>
-        ) : (
-          <div className="mt-12 grid gap-6 md:grid-cols-3">
-            {tutors.map((tutor) => (
-              <Card key={tutor.id} className="flex h-full flex-col p-7">
-                <div className="flex items-center gap-3">
-                  <Avatar name={tutor.name} avatarId={tutor.avatarId} size="lg" />
-                  <div>
-                    <h3 className="text-lg leading-tight">{tutor.name}</h3>
-                    <p className="text-xs text-ink-400">
-                      {[
-                        tutor.homeTown,
-                        tutor.yearsTeaching ? `${tutor.yearsTeaching} years teaching` : null,
-                      ]
-                        .filter(Boolean)
-                        .join(" · ")}
-                    </p>
-                  </div>
-                </div>
+function Waitlist() {
+  return (
+    <section id="waitlist" className="scroll-mt-16 bg-cream px-6 py-24">
+      <div className="mx-auto max-w-2xl text-center">
+        <h2 className="mb-3 font-display text-3xl text-forest md:text-4xl">Register your interest</h2>
+        <p className="mb-10 text-fern">
+          We&apos;re onboarding our first families now. Secure your spot - we&apos;ll be in touch
+          within 48 hours.
+        </p>
+      </div>
+      <div className="mx-auto max-w-[480px] text-left">
+        <WaitlistForm />
+      </div>
+    </section>
+  );
+}
 
-                {tutor.headline ? (
-                  <p className="mt-5 font-display text-base leading-snug text-ink-800">
-                    &ldquo;{tutor.headline}&rdquo;
-                  </p>
-                ) : null}
-                <p className="mt-3 line-clamp-5 flex-1 text-sm leading-relaxed text-ink-500">
-                  {tutor.bio}
-                </p>
+export default function HomePage() {
+  return (
+    <>
+      <Hero />
+      <HowItWorks />
+      <WhyUs />
+      <Waitlist />
+    </>
+  );
+}
 
-                <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-ink-900/8 pt-5">
-                  {tutor.languages.map((language) => (
-                    <Badge key={language} tone={language === "sinhala" ? "jade" : "clay"}>
-                      {language === "sinhala" ? "Sinhala" : "Tamil"}
-                    </Badge>
-                  ))}
-                  {tutor.hourlyRateUsd ? (
-                    <span className="ml-auto text-sm font-medium text-ink-700">
-                      ${tutor.hourlyRateUsd}
-                      <span className="text-xs font-normal text-ink-400">/hr</span>
-                    </span>
-                  ) : null}
-                </div>
-              </Card>
-            ))}
-          </div>
-        )}
-      </section>
-
-      {/* GAMES-HIDDEN: games are parked for now — see src/lib/features.ts.
-          Uncomment this section (and the colomboSites line above) to bring it back.
+/*
+ * GAMES-HIDDEN: the games teaser that sat on the previous home page. To bring
+ * it back, set features.games in src/lib/features.ts, render this inside
+ * HomePage, and restore its imports (Link, allChapters, totalPhraseCount,
+ * heritageSites, and a colomboSites constant filtered from heritageSites).
+ *
       <section className="border-y border-white/10 bg-jade-700 text-sand-100">
         <div className="mx-auto max-w-6xl px-5 py-20 sm:px-8">
           <div className="max-w-2xl">
@@ -329,103 +226,4 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
-      */}
-
-      <section id="waitlist" className="mx-auto max-w-6xl scroll-mt-20 px-5 py-20 sm:px-8">
-        <div className="grid gap-14 lg:grid-cols-[0.9fr_1.1fr]">
-          <div>
-            <SectionHeading eyebrow="Waitlist" title="Not ready to book? Get in the queue.">
-              We take on a handful of new students each month so nobody ends up with a
-              tutor who does not suit them. Tell us what you need and we will write when
-              we have the right match.
-            </SectionHeading>
-
-            <div className="mt-9 space-y-4">
-              {[
-                "You pick the tutor, not the other way round",
-                "Sessions are one at a time — no bundles to commit to",
-                "A free Sinhala and Tamil alphabet sheet while you wait",
-              ].map((line) => (
-                <p key={line} className="flex items-start gap-3 text-sm text-ink-600">
-                  <span className="mt-0.5 grid size-5 shrink-0 place-items-center rounded-full bg-jade-100 text-jade-700">
-                    <svg viewBox="0 0 16 16" className="size-3" fill="none" stroke="currentColor" strokeWidth="2.2">
-                      <path d="M3.5 8.5l3 3 6-7" strokeLinecap="round" />
-                    </svg>
-                  </span>
-                  {line}
-                </p>
-              ))}
-            </div>
-          </div>
-
-          <Card className="p-7 sm:p-9">
-            <WaitlistForm />
-          </Card>
-        </div>
-      </section>
-    </>
-  );
-}
-
-/** Hero companion now that the phrase decks are off the landing page. */
-function WelcomeCard({ choice }: { choice: LearningLanguage }) {
-  const greetings = [
-    {
-      language: "sinhala",
-      label: "Sinhala",
-      labelClass: "text-jade-600",
-      scriptClass: "text-sinhala",
-      word: "ආයුබෝවන්",
-      say: "ā-yu-bō-wan · “may you live long”",
-    },
-    {
-      language: "tamil",
-      label: "Tamil",
-      labelClass: "text-clay-500",
-      scriptClass: "text-tamil",
-      word: "வணக்கம்",
-      say: "va-ṇak-kam · “I greet you”",
-    },
-  ];
-  // The language they are here for comes first; with a single choice, only that one.
-  const shown = choice === "both" ? greetings : greetings.filter((item) => item.language === choice);
-
-  return (
-    <div className="relative">
-      <div aria-hidden className="absolute inset-x-6 -bottom-3 h-full rounded-3xl bg-jade-600/12" />
-      <div aria-hidden className="absolute inset-x-3 -bottom-1.5 h-full rounded-3xl bg-saffron-400/25" />
-
-      <div className="relative rounded-3xl bg-white p-7 shadow-lifted ring-1 ring-ink-900/8">
-        <div className={shown.length > 1 ? "grid gap-5 sm:grid-cols-2" : ""}>
-          {shown.map((item) => (
-            <div key={item.language}>
-              <p className={`text-[0.7rem] font-semibold tracking-[0.18em] uppercase ${item.labelClass}`}>
-                {item.label}
-              </p>
-              <p className={`mt-1 text-3xl leading-snug text-ink-900 ${item.scriptClass}`}>{item.word}</p>
-              <p className="text-sm text-ink-500">{item.say}</p>
-            </div>
-          ))}
-        </div>
-
-        <ul className="mt-7 space-y-3 border-t border-ink-900/8 pt-6">
-          {[
-            "A tutor who grew up speaking the language, chosen with you",
-            "Live one-to-one lessons with a Google Meet link for every booking",
-            "Materials, homework and feedback kept in one portal",
-            "A vetted community to practise with between lessons",
-          ].map((line) => (
-            <li key={line} className="flex items-start gap-3 text-sm text-ink-600">
-              <span className="mt-0.5 grid size-5 shrink-0 place-items-center rounded-full bg-jade-100 text-jade-700">
-                <svg viewBox="0 0 16 16" className="size-3" fill="none" stroke="currentColor" strokeWidth="2.2">
-                  <path d="M3.5 8.5l3 3 6-7" strokeLinecap="round" />
-                </svg>
-              </span>
-              {line}
-            </li>
-          ))}
-        </ul>
-      </div>
-    </div>
-  );
-}
+ */

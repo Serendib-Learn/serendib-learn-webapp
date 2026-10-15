@@ -66,7 +66,7 @@ export default function CommunityPage() {
         </p>
       </div>
 
-      <div className="mb-6 flex gap-1 overflow-x-auto rounded-full bg-white p-1 ring-1 ring-ink-900/8 sm:w-fit">
+      <div className="mb-6 flex gap-1 overflow-x-auto rounded-full bg-white p-1 border border-forest/10 sm:w-fit">
         {tabs.map((item) => (
           <button
             key={item.id}

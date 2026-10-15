@@ -1,7 +1,8 @@
 import { cn } from "@/lib/cn";
 
+// The original site's inputs: a thin forest border, an amber focus ring.
 const control =
-  "w-full rounded-xl bg-white px-4 py-2.5 text-[0.95rem] text-ink-900 ring-1 ring-inset ring-ink-900/12 transition placeholder:text-ink-300 hover:ring-ink-900/20 focus:ring-2 focus:ring-jade-500 disabled:bg-sand-100 disabled:text-ink-400";
+  "w-full rounded-lg border border-forest/15 bg-white px-3 py-2 text-sm text-earth transition placeholder:text-earth/40 focus:border-forest/25 focus:ring-2 focus:ring-amber-spice/40 focus:outline-none disabled:bg-cream disabled:text-ink-400";
 
 export function Field({
   label,
@@ -18,11 +19,11 @@ export function Field({
 }) {
   return (
     <div className={cn("space-y-1.5", className)}>
-      <label htmlFor={htmlFor} className="block text-sm font-medium text-ink-700">
+      <label htmlFor={htmlFor} className="block text-xs text-earth/70">
         {label}
       </label>
       {children}
-      {hint ? <p className="text-xs leading-relaxed text-ink-400">{hint}</p> : null}
+      {hint ? <p className="text-[11px] leading-relaxed text-earth/50">{hint}</p> : null}
     </div>
   );
 }
@@ -61,7 +62,7 @@ export function Checkbox({
   return (
     <label
       className={cn(
-        "flex cursor-pointer items-start gap-3 rounded-xl px-3 py-2.5 ring-1 ring-inset ring-ink-900/10 transition hover:bg-sand-100 has-checked:bg-jade-50 has-checked:ring-jade-200",
+        "flex cursor-pointer items-start gap-3 rounded-lg border border-forest/10 bg-white px-3 py-2.5 transition hover:bg-mist/50 has-checked:border-forest/25 has-checked:bg-mist",
         className,
       )}
     >
@@ -83,7 +84,7 @@ export function Radio({
   return (
     <label
       className={cn(
-        "flex cursor-pointer items-start gap-3 rounded-xl px-3 py-2.5 ring-1 ring-inset ring-ink-900/10 transition hover:bg-sand-100 has-checked:bg-jade-50 has-checked:ring-jade-200",
+        "flex cursor-pointer items-start gap-3 rounded-lg border border-forest/10 bg-white px-3 py-2.5 transition hover:bg-mist/50 has-checked:border-forest/25 has-checked:bg-mist",
         className,
       )}
     >

@@ -5,143 +5,94 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { LanguageToggle } from "./language-toggle";
 import { Logo } from "./logo";
-import { Button, ButtonLink } from "@/components/ui/button";
-import { Avatar } from "@/components/ui/primitives";
 import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/cn";
 
-const navigation = [
-  { href: "/how-it-works", label: "How it works" },
+/**
+ * The original site's navigation bar: forest green, the flower and wordmark
+ * on the left, quiet sage links, and one amber call to action on the right.
+ */
+const links = [
+  { href: "/#how", label: "About us" },
   { href: "/tutors", label: "Tutors" },
   { href: "/alphabet", label: "Alphabet" },
-  // GAMES-HIDDEN: games are parked for now — see src/lib/features.ts.
-  // { href: "/games", label: "Games" },
-  { href: "/portal/community", label: "Community" },
-  // In the mobile menu and the footer always; in the top bar only when wide.
-  { href: "/portal/signup?role=tutor", label: "Teach with us", wideOnly: true },
+  // GAMES-HIDDEN: the original nav had "Play" here — see src/lib/features.ts.
+  // { href: "/games", label: "Play" },
 ];
 
 export function Header() {
   const pathname = usePathname();
   const { user } = useAuth();
-  const [menuOpen, setMenuOpen] = useState(false);
-  const closeMenu = () => setMenuOpen(false);
+  const [open, setOpen] = useState(false);
+  const close = () => setOpen(false);
 
   useEffect(() => {
-    document.body.style.overflow = menuOpen ? "hidden" : "";
+    document.body.style.overflow = open ? "hidden" : "";
     return () => {
       document.body.style.overflow = "";
     };
-  }, [menuOpen]);
+  }, [open]);
+
+  const portal = { href: user ? "/portal" : "/portal/login", label: "Portal" };
 
   return (
-    <header className="sticky top-0 z-40 border-b border-white/10 bg-jade-700 print:hidden">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5 sm:px-8">
-        <Logo tone="light" />
+    <header className="sticky top-0 z-50 border-b border-white/5 bg-forest print:hidden">
+      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
+        <Logo />
 
-        <nav className="hidden items-center gap-1 lg:flex" aria-label="Main">
-          {navigation.map((item) => {
-            const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={cn(
-                  "rounded-full px-3.5 py-2 text-sm font-medium whitespace-nowrap transition",
-                  "wideOnly" in item && item.wideOnly && "hidden xl:block",
-                  active ? "bg-white/10 text-sand-50" : "text-jade-100 hover:bg-white/5 hover:text-sand-50",
-                )}
-              >
-                {item.label}
-              </Link>
-            );
-          })}
+        <nav className="hidden items-center gap-8 md:flex" aria-label="Main">
+          {[...links, portal].map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className={cn(
+                "text-sm transition-colors hover:text-cream",
+                pathname === link.href ? "text-cream" : "text-sage",
+              )}
+            >
+              {link.label}
+            </Link>
+          ))}
+          <LanguageToggle />
+          <Link
+            href="/#waitlist"
+            className="rounded-md bg-amber-spice px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-amber-light"
+          >
+            Join the waitlist
+          </Link>
         </nav>
 
-        <div className="hidden items-center gap-3 whitespace-nowrap lg:flex">
-          <LanguageToggle />
-          {user ? (
-            <Link
-              href="/portal"
-              className="flex items-center gap-2.5 rounded-full py-1 pr-4 pl-1 ring-1 ring-white/15 transition hover:bg-white/10"
-            >
-              <Avatar name={user.name} avatarId={user.avatarId} size="sm" />
-              <span className="text-sm font-medium text-sand-100">Portal</span>
-            </Link>
-          ) : (
-            <>
-              <ButtonLink href="/portal/login" variant="ghost-light" size="sm">
-                Log in
-              </ButtonLink>
-              <ButtonLink href="/portal/signup" size="sm">
-                Start learning
-              </ButtonLink>
-            </>
-          )}
-        </div>
-
-        <Button
-          variant="ghost-light"
-          size="sm"
-          className="lg:hidden"
-          aria-expanded={menuOpen}
+        <button
+          className="p-2 text-cream md:hidden"
+          onClick={() => setOpen((value) => !value)}
+          aria-label="Toggle menu"
+          aria-expanded={open}
           aria-controls="mobile-menu"
-          onClick={() => setMenuOpen((open) => !open)}
         >
-          <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="1.8">
-            {menuOpen ? (
-              <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
-            ) : (
-              <path d="M4 7h16M4 12h16M4 17h16" strokeLinecap="round" />
-            )}
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            {open ? <path d="M6 6l12 12M6 18L18 6" /> : <path d="M4 7h16M4 12h16M4 17h16" />}
           </svg>
-          <span className="sr-only">Menu</span>
-        </Button>
+        </button>
       </div>
 
-      {menuOpen ? (
-        <div id="mobile-menu" className="animate-fade border-t border-white/10 bg-jade-700 lg:hidden">
-          <nav className="mx-auto max-w-6xl px-5 py-4" aria-label="Mobile">
-            <ul className="space-y-1">
-              {navigation.map((item) => (
-                <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    onClick={closeMenu}
-                    className="block rounded-xl px-4 py-3 text-base font-medium text-sand-100 transition hover:bg-white/10"
-                  >
-                    {item.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-
-            <div className="mt-4 border-t border-white/10 pt-4">
-              <LanguageToggle variant="full" />
-            </div>
-
-            <div className="mt-4 grid gap-2 border-t border-white/10 pt-4">
-              {user ? (
-                <ButtonLink href="/portal" className="w-full" onClick={closeMenu}>
-                  Go to your portal
-                </ButtonLink>
-              ) : (
-                <>
-                  <ButtonLink href="/portal/signup" className="w-full" onClick={closeMenu}>
-                    Start learning
-                  </ButtonLink>
-                  <ButtonLink
-                    href="/portal/login"
-                    variant="secondary"
-                    className="w-full"
-                    onClick={closeMenu}
-                  >
-                    Log in
-                  </ButtonLink>
-                </>
-              )}
-            </div>
-          </nav>
+      {open ? (
+        <div id="mobile-menu" className="flex flex-col gap-4 border-t border-white/5 bg-forest px-6 pb-6 md:hidden">
+          {[...links, portal].map((link) => (
+            <Link key={link.href} href={link.href} onClick={close} className="py-2 text-sage hover:text-cream">
+              {link.label}
+            </Link>
+          ))}
+          <Link href="/portal/signup?role=tutor" onClick={close} className="py-2 text-sage hover:text-cream">
+            Teach with us
+          </Link>
+          <LanguageToggle variant="full" />
+          <Link
+            href="/#waitlist"
+            onClick={close}
+            className="rounded-md bg-amber-spice px-4 py-3 text-center text-sm font-medium text-white hover:bg-amber-light"
+          >
+            Join the waitlist
+          </Link>
         </div>
       ) : null}
     </header>

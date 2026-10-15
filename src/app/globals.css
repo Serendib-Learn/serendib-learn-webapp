@@ -6,7 +6,23 @@
   --font-sinhala: var(--font-noto-sinhala), "Nirmala UI", "Iskoola Pota", sans-serif;
   --font-tamil: var(--font-noto-tamil), "Nirmala UI", "Latha", sans-serif;
 
-  --color-sand-50: #fdfbf7;
+  /*
+   * The original serendib.learn palette (branding/brand-tokens.txt, and the
+   * Lovable prototype's src/styles.css), by name. The scales below are tuned
+   * so the older class names land on these same colours.
+   */
+  --color-forest: #1b4332;
+  --color-fern: #2d6a4f;
+  --color-sage: #95c4aa;
+  --color-amber-spice: #c9873a;
+  --color-amber-light: #e8a855;
+  --color-cream: #f7f3ed;
+  --color-earth: #2c2416;
+  --color-mist: #ebf4ef;
+  --color-lilac-mist: #eeedfe;
+
+  /* sand-50 is the cream everything sits on, and the cream text on forest. */
+  --color-sand-50: #f7f3ed;
   --color-sand-100: #f7f3ed;
   --color-sand-200: #eee6d8;
   --color-sand-300: #ddcdb3;
@@ -41,15 +57,29 @@
   --color-clay-500: #c4553d;
   --color-clay-600: #a44430;
 
-  --color-ocean-100: #d6e9f0;
-  --color-ocean-500: #22809f;
-  --color-ocean-600: #1b6c8a;
+  /* "Never use corporate blue": the old site's lilac mist instead. */
+  --color-ocean-100: #eeedfe;
+  --color-ocean-500: #5b58a6;
+  --color-ocean-600: #4a478f;
 
-  --shadow-card: 0 1px 2px rgb(44 36 22 / 0.04), 0 8px 24px -12px rgb(44 36 22 / 0.14);
-  --shadow-lifted: 0 2px 4px rgb(44 36 22 / 0.05), 0 24px 48px -20px rgb(44 36 22 / 0.22);
+  /* The brand brief says no drop shadows: cards are separated by a thin forest border. */
+  --shadow-card: none;
+  --shadow-lifted: none;
 
   --animate-rise: rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
   --animate-fade: fade 0.35s ease-out both;
+  --animate-fade-up: fade-up 0.7s ease-out both;
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes rise {
@@ -78,18 +108,24 @@
   }
 
   body {
-    background-color: var(--color-sand-50);
-    color: var(--color-ink-900);
+    background-color: var(--color-cream);
+    color: var(--color-earth);
     font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
   }
 
+  /* As on the original site: regular-weight Georgia, in forest green. */
   h1,
   h2,
   h3,
   h4 {
     font-family: var(--font-display);
-    font-weight: 600;
-    letter-spacing: -0.015em;
+    font-weight: 400;
+    color: var(--color-forest);
+  }
+
+  * {
+    border-color: rgb(27 67 50 / 0.12);
   }
 
   ::selection {
@@ -111,12 +147,16 @@
   font-family: var(--font-tamil);
 }
 
-/* Subtle woven texture used behind hero and section headers. */
+/* Section header background. Plain cream: the brand brief rules out gradients. */
 @utility bg-weave {
-  background-image:
-    radial-gradient(circle at 1px 1px, rgb(44 36 22 / 0.07) 1px, transparent 0),
-    linear-gradient(180deg, var(--color-sand-100), var(--color-sand-50));
-  background-size:
-    18px 18px,
-    100% 100%;
+  background-color: var(--color-cream);
+}
+
+/* The original site's small uppercase sage label above headings. */
+@utility label-eyebrow {
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--color-sage);
 }

@@ -163,7 +163,7 @@ export function HeritageExplorer() {
                 href={`/games/heritage/${site.slug}`}
                 onMouseEnter={() => setHovered(site.slug)}
                 onMouseLeave={() => setHovered(null)}
-                className="group flex flex-col rounded-2xl bg-white p-6 ring-1 ring-ink-900/8 transition hover:-translate-y-0.5 hover:shadow-lifted"
+                className="group flex flex-col rounded-2xl bg-white p-6 border border-forest/10 transition hover:-translate-y-0.5 hover:shadow-lifted"
               >
                 <div className="flex items-center gap-2">
                   <span className={cn("size-2 rounded-full", regionTone[site.region])} />

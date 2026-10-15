@@ -146,7 +146,7 @@ export default async function HeritageSitePage(props: PageProps<"/games/heritage
                 <Link
                   key={other.slug}
                   href={`/games/heritage/${other.slug}`}
-                  className="group rounded-xl bg-white p-5 ring-1 ring-ink-900/8 transition hover:-translate-y-0.5 hover:shadow-card"
+                  className="group rounded-xl bg-white p-5 border border-forest/10 transition hover:-translate-y-0.5 hover:shadow-card"
                 >
                   <p className="font-display text-base leading-snug text-ink-900 transition group-hover:text-jade-700">
                     {other.name}

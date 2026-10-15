@@ -51,7 +51,7 @@ export function ChapterBrowser({
               return (
                 <details
                   key={chapter.id}
-                  className="group rounded-2xl bg-white ring-1 ring-ink-900/8 open:shadow-card"
+                  className="group rounded-2xl bg-white border border-forest/10 open:shadow-card"
                 >
                   <summary className="flex cursor-pointer list-none items-center gap-4 px-5 py-4">
                     <span className="grid size-9 shrink-0 place-items-center rounded-full bg-sand-100 font-display text-sm text-ink-700">

@@ -1,28 +1,27 @@
 import Link from "next/link";
 import { cn } from "@/lib/cn";
 
-type Variant = "primary" | "secondary" | "ghost" | "ghost-light" | "danger" | "saffron";
+type Variant = "primary" | "forest" | "secondary" | "ghost" | "ghost-light" | "danger" | "saffron";
 type Size = "sm" | "md" | "lg";
 
+// The original site's buttons: squared-off (rounded-md), flat, amber or forest.
 const base =
-  "inline-flex items-center justify-center gap-2 rounded-full font-medium transition-all disabled:pointer-events-none disabled:opacity-50";
+  "inline-flex items-center justify-center gap-2 rounded-md font-medium transition-colors disabled:pointer-events-none disabled:opacity-50";
 
 const variants: Record<Variant, string> = {
-  primary:
-    "bg-saffron-500 text-white hover:bg-saffron-600 shadow-card hover:shadow-lifted active:translate-y-px",
-  secondary:
-    "bg-white text-ink-900 ring-1 ring-inset ring-ink-900/12 hover:ring-ink-900/25 hover:bg-sand-50",
-  saffron:
-    "bg-saffron-400 text-ink-900 hover:bg-saffron-300 shadow-card hover:shadow-lifted active:translate-y-px",
-  ghost: "text-ink-700 hover:bg-ink-900/6",
-  "ghost-light": "text-sand-100 hover:bg-white/10",
+  primary: "bg-amber-spice text-white hover:bg-amber-light",
+  forest: "bg-forest text-cream hover:bg-fern",
+  secondary: "bg-white text-forest border border-forest/15 hover:border-amber-spice/50",
+  saffron: "bg-amber-spice text-white hover:bg-amber-light",
+  ghost: "text-ink-700 hover:bg-forest/6",
+  "ghost-light": "text-sage hover:text-cream",
   danger: "bg-clay-500 text-white hover:bg-clay-600",
 };
 
 const sizes: Record<Size, string> = {
   sm: "h-9 px-4 text-sm",
-  md: "h-11 px-6 text-[0.95rem]",
-  lg: "h-13 px-8 text-base",
+  md: "h-10 px-5 text-sm",
+  lg: "h-12 px-7 text-base",
 };
 
 function classes(variant: Variant, size: Size, className?: string) {

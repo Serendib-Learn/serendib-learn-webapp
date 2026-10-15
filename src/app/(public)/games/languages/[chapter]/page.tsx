@@ -49,7 +49,7 @@ export default async function ChapterPage(props: PageProps<"/games/languages/[ch
       <VocabMission chapter={chapter} />
 
       {pairedSites.length > 0 ? (
-        <section className="mt-16 rounded-2xl bg-white p-8 ring-1 ring-ink-900/8">
+        <section className="mt-16 rounded-2xl bg-white p-8 border border-forest/10">
           <h2 className="text-xl">Where you would actually use this</h2>
           <p className="mt-2 text-sm text-ink-500">
             These places pair with {chapter.title.toLowerCase()}.
@@ -59,7 +59,7 @@ export default async function ChapterPage(props: PageProps<"/games/languages/[ch
               <Link
                 key={site.slug}
                 href={`/games/heritage/${site.slug}`}
-                className="group rounded-xl bg-sand-100/70 p-5 ring-1 ring-inset ring-ink-900/6 transition hover:bg-saffron-50 hover:ring-saffron-300"
+                className="group rounded-xl bg-sand-100/70 p-5 border border-forest/8 transition hover:bg-saffron-50 hover:ring-saffron-300"
               >
                 <p className="text-xs font-medium tracking-wide text-ink-400 uppercase">
                   {site.region}

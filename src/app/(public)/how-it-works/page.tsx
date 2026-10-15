@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { ButtonLink } from "@/components/ui/button";
-import { Badge, Card, SectionHeading } from "@/components/ui/primitives";
+import { Card, SectionHeading } from "@/components/ui/primitives";
 // GAMES-HIDDEN: deck counts, only used by the commented-out detail line below.
 // import { allChapters, totalPhraseCount } from "@/data/vocabulary";
 
@@ -86,7 +86,7 @@ export default function HowItWorksPage() {
     <>
       <section className="bg-weave border-b border-ink-900/8">
         <div className="mx-auto max-w-6xl px-5 py-16 sm:px-8 sm:py-20">
-          <Badge tone="jade">How it works</Badge>
+          <p className="label-eyebrow">How it works</p>
           <h1 className="mt-6 max-w-3xl text-4xl leading-[1.1] sm:text-5xl">
             A tutor, an hour, and somewhere to keep everything.
           </h1>

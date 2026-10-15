@@ -86,7 +86,7 @@ export default function AdminPage() {
         <GoogleConnectBanner />
       </Suspense>
 
-      <div className="mb-6 flex gap-1 overflow-x-auto rounded-full bg-white p-1 ring-1 ring-ink-900/8 sm:w-fit">
+      <div className="mb-6 flex gap-1 overflow-x-auto rounded-full bg-white p-1 border border-forest/10 sm:w-fit">
         {tabs.map((item) => (
           <button
             key={item.id}
@@ -517,7 +517,7 @@ function Moderation() {
       {(feed.data ?? []).length > 0 ? (
         <section className="mt-10">
           <h2 className="text-xl">Published</h2>
-          <ul className="mt-4 divide-y divide-ink-900/8 rounded-2xl bg-white px-5 ring-1 ring-ink-900/8">
+          <ul className="mt-4 divide-y divide-ink-900/8 rounded-2xl bg-white px-5 border border-forest/10">
             {(feed.data ?? []).map((post) => (
               <li key={post.id} className="flex flex-wrap items-center justify-between gap-3 py-3.5">
                 <div className="min-w-0">
@@ -688,7 +688,7 @@ function AuditLog() {
   }
 
   return (
-    <ul className="divide-y divide-ink-900/8 rounded-2xl bg-white px-5 ring-1 ring-ink-900/8">
+    <ul className="divide-y divide-ink-900/8 rounded-2xl bg-white px-5 border border-forest/10">
       {rows.map((entry) => (
         <li key={entry.id} className="flex flex-wrap items-start justify-between gap-3 py-4">
           <div className="min-w-0">

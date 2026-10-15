@@ -61,7 +61,7 @@ export function LanguageToggle({ variant = "compact" }: { variant?: "compact" | 
       )}
     >
       {variant === "full" ? (
-        <span className="px-3 text-xs font-medium text-jade-200">I&rsquo;m learning</span>
+        <span className="px-3 text-xs font-medium text-sage">I&rsquo;m learning</span>
       ) : null}
       {options.map((option) => (
         <button
@@ -75,8 +75,8 @@ export function LanguageToggle({ variant = "compact" }: { variant?: "compact" | 
             "rounded-full px-2.5 py-1 text-xs font-medium transition",
             variant === "full" && "flex-1 py-2 text-sm",
             current === option.value
-              ? "bg-sand-50 text-jade-700"
-              : "text-jade-100 hover:bg-white/10 hover:text-sand-50",
+              ? "bg-cream text-forest"
+              : "text-sage hover:text-cream",
           )}
         >
           <span className={option.className}>{variant === "full" ? option.label : option.short}</span>
