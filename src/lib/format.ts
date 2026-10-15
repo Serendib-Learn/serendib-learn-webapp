@@ -71,6 +71,11 @@ export function money(amountUsd: number): string {
   }).format(amountUsd);
 }
 
+/** Payments.lk amounts are LKR cents. */
+export function rupees(cents: number): string {
+  return `Rs. ${(cents / 100).toLocaleString("en-LK", { maximumFractionDigits: 2 })}`;
+}
+
 export function isPast(iso: string): boolean {
   return new Date(iso).getTime() < Date.now();
 }

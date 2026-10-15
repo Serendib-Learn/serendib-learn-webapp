@@ -16,6 +16,7 @@
     "node": ">=22.6"
   },
   "dependencies": {
+    "@payments-lk/node": "^0.4.1",
     "cors": "^2.8.5",
     "express": "^5.1.0",
     "express-rate-limit": "^8.6.2",

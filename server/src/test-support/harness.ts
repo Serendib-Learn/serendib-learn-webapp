@@ -30,6 +30,8 @@ export async function startTestServer(env: Record<string, string> = {}) {
     GOOGLE_CLIENT_ID: "",
     GOOGLE_CLIENT_SECRET: "",
     TURNSTILE_SECRET_KEY: "",
+    // Tests sign up far more accounts per file than the auth limit allows.
+    RATE_LIMIT_SCALE: "50",
     SUPER_ADMIN_EMAIL: "",
     SUPER_ADMIN_PASSWORD: "",
     // Per-file overrides last, so a test can switch any of the above.

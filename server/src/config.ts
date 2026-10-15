@@ -73,6 +73,22 @@ export const config = {
   turnstileSecretKey: process.env.TURNSTILE_SECRET_KEY ?? "",
 
   /**
+   * Card payments through Payments.lk. With no secret key, bookings use the
+   * demo checkout that confirms without charging anything. A key starting
+   * sk_test_ takes sandbox payments on Payable's sandbox; sk_live_ is real.
+   * The key decides the mode — the API address is the same for both.
+   */
+  payments: {
+    secretKey: process.env.PAYMENTS_LK_SECRET_KEY ?? "",
+    /** The webhook endpoint's signing secret (whsec_...). */
+    webhookSecret: process.env.PAYMENTS_LK_WEBHOOK_SECRET ?? "",
+    /** Only for pointing at a stand-in API in tests. */
+    apiBase: process.env.PAYMENTS_LK_API_BASE || undefined,
+    /** Rupees per US dollar. Tutors price in USD; Payments.lk takes LKR only. */
+    usdToLkr: Number(process.env.USD_TO_LKR ?? 300),
+  },
+
+  /**
    * The owners' own administrator account. When an email is set, every boot
    * makes sure that account exists and is a super admin: it is created if
    * missing (with SUPER_ADMIN_PASSWORD, or with no password and a

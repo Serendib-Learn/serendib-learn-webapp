@@ -18,6 +18,7 @@ import type {
   MaterialInput,
   Message,
   PostReply,
+  PaymentsConfig,
   PostStatus,
   PublicProfile,
   PublicTutor,
@@ -97,6 +98,10 @@ export interface Backend {
     auditLog(): Promise<AuditLogEntry[]>;
   };
 
+  payments: {
+    config(): Promise<PaymentsConfig>;
+  };
+
   availability: {
     forTutor(tutorId: string): Promise<AvailabilityRule[]>;
     add(rule: Omit<AvailabilityRule, "id">): Promise<AvailabilityRule>;
@@ -108,7 +113,12 @@ export interface Backend {
     forUser(userId: string): Promise<Booking[]>;
     get(id: string): Promise<Booking | null>;
     create(input: BookingInput): Promise<Booking>;
+    /** Demo checkout, or an admin marking a booking paid. Refused for students once card payments are on. */
     pay(id: string): Promise<Booking>;
+    /** Starts or resumes the Payments.lk checkout; send the browser to `url`. */
+    startCheckout(id: string): Promise<{ url: string; booking: Booking }>;
+    /** The booking after the API has checked its payment with Payments.lk. */
+    paymentStatus(id: string): Promise<Booking>;
     cancel(id: string): Promise<Booking>;
     complete(id: string): Promise<Booking>;
   };

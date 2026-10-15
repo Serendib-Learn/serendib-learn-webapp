@@ -15,6 +15,7 @@ import { homeworkRouter } from "./routes/homework.ts";
 import { integrationsRouter } from "./routes/integrations.ts";
 import { materialsRouter } from "./routes/materials.ts";
 import { messagesRouter } from "./routes/messages.ts";
+import { paymentsRouter, paymentsWebhook } from "./routes/payments.ts";
 import { demoRouter, gamesRouter, mailRouter, waitlistRouter } from "./routes/misc.ts";
 import { progressRouter } from "./routes/progress.ts";
 import { usersRouter } from "./routes/users.ts";
@@ -35,6 +36,14 @@ app.use(
     credentials: true,
   }),
 );
+// The Payments.lk webhook is verified against the exact bytes it was sent
+// with, so it gets the raw body and has to be mounted before express.json().
+app.post(
+  "/api/payments/webhook",
+  apiLimiter,
+  express.raw({ type: "application/json", limit: "1mb" }),
+  paymentsWebhook,
+);
 app.use(express.json({ limit: "256kb" }));
 app.use(parseCookies);
 app.use(loadSession);
@@ -48,6 +57,7 @@ app.use("/api/auth", authLimiter, authRouter);
 app.use("/api/users", usersRouter);
 app.use("/api/availability", availabilityRouter);
 app.use("/api/bookings", bookingsRouter);
+app.use("/api/payments", paymentsRouter);
 app.use("/api/materials", materialsRouter);
 app.use("/api/homework", homeworkRouter);
 app.use("/api/integrations", integrationsRouter);

@@ -3,10 +3,12 @@ import { db } from "../db/database.ts";
 import { ApiError, forbidden, notFound, wrap } from "../lib/errors.ts";
 import { pathParam } from "../lib/http.ts";
 import { blocksSlot, isBookableTutor, overlaps, priceFor, requireUserRecord } from "../lib/domain.ts";
-import { createGoogleMeeting, deleteGoogleMeeting } from "../lib/google.ts";
+import { confirmBooking } from "../lib/booking-confirmation.ts";
+import { deleteGoogleMeeting } from "../lib/google.ts";
 import { newId, nowIso } from "../lib/ids.ts";
-import { deliver } from "../lib/mail.ts";
+import { checkoutFor, paymentsEnabled } from "../lib/payments.ts";
 import { requireAuth, requireSelfOrAdmin, requireUser } from "../lib/sessions.ts";
+import { syncBookingPayment } from "./payments.ts";
 import type { Booking, LanguageCode, User } from "../../../shared/types.ts";
 
 export const bookingsRouter = Router();
@@ -25,42 +27,6 @@ async function load(id: string): Promise<Booking> {
   const booking = await db().bookings.findById(id);
   if (!booking) throw notFound("That booking has gone.");
   return booking;
-}
-
-/**
- * Real Meet link when the tutor has connected Google Calendar, otherwise the
- * same placeholder link the demo has always used. Either way a booking can
- * always be paid for — Calendar is an enhancement, never a hard requirement.
- */
-async function scheduleMeeting(
-  booking: Booking,
-  tutor: User,
-  student: User,
-): Promise<{ meetingUrl: string; googleEventId?: string }> {
-  const linked = await db().googleAccounts.findById(tutor.id);
-  if (!linked) return { meetingUrl: `https://meet.serendiblearn.com/${booking.id}` };
-
-  try {
-    const startsAt = new Date(booking.startsAt);
-    const endsAt = new Date(startsAt.getTime() + booking.durationMins * 60 * 1000);
-
-    const meeting = await createGoogleMeeting({
-      refreshToken: linked.refreshToken,
-      summary: `Serendib Learn: ${tutor.name} × ${student.name}`,
-      description: booking.focus,
-      startIso: startsAt.toISOString(),
-      endIso: endsAt.toISOString(),
-      timezone: tutor.timezone,
-      attendeeEmails: [tutor.email, student.email],
-    });
-
-    return { meetingUrl: meeting.meetLink, googleEventId: meeting.eventId };
-  } catch (error) {
-    // A stale/revoked refresh token or a transient API error should not stop
-    // the booking from being paid for.
-    console.error("Google Calendar event creation failed:", error);
-    return { meetingUrl: `https://meet.serendiblearn.com/${booking.id}` };
-  }
 }
 
 bookingsRouter.get(
@@ -150,6 +116,56 @@ bookingsRouter.post(
   }),
 );
 
+/**
+ * Starts (or resumes) the card payment for a booking: returns the hosted
+ * checkout to send the browser to. Only the student, or an admin.
+ */
+bookingsRouter.post(
+  "/:id/checkout",
+  requireAuth,
+  wrap(async (request, response) => {
+    const actor = requireUser(request);
+    const booking = await load(pathParam(request, "id"));
+    if (booking.studentId !== actor.id && actor.role !== "admin") {
+      throw forbidden("Only the student pays for a booking.");
+    }
+    if (!paymentsEnabled()) {
+      throw new ApiError("Card payments are not switched on.", 409, "payments_disabled");
+    }
+    if (booking.status !== "awaiting_payment") {
+      throw new ApiError("That booking is not waiting for payment.");
+    }
+
+    const student = await requireUserRecord(booking.studentId);
+    const tutor = await requireUserRecord(booking.tutorId);
+    const payment = await checkoutFor(booking, student, tutor);
+    const updated = await db().bookings.updateOne({ id: booking.id }, { payment });
+
+    response.json({ url: payment.checkoutUrl, booking: updated });
+  }),
+);
+
+/**
+ * The booking, brought up to date from Payments.lk first. The checkout page
+ * polls this after the customer comes back, because the webhook is what
+ * confirms a payment and it may arrive a moment later — or, on localhost,
+ * never.
+ */
+bookingsRouter.get(
+  "/:id/payment",
+  requireAuth,
+  wrap(async (request, response) => {
+    const booking = await load(pathParam(request, "id"));
+    assertParty(booking, requireUser(request));
+    response.json(await syncBookingPayment(booking));
+  }),
+);
+
+/**
+ * Confirms a booking without taking a card. This is the demo checkout while
+ * Payments.lk is not configured; once it is, only an administrator can do it
+ * — to record a payment taken some other way, a bank transfer say.
+ */
 bookingsRouter.post(
   "/:id/pay",
   requireAuth,
@@ -157,6 +173,10 @@ bookingsRouter.post(
     const actor = requireUser(request);
     const booking = await load(pathParam(request, "id"));
     assertParty(booking, actor);
+
+    if (paymentsEnabled() && actor.role !== "admin") {
+      throw new ApiError("Pay through the card checkout.", 409, "use_checkout");
+    }
 
     if (booking.status === "confirmed") {
       response.json(booking);
@@ -166,34 +186,7 @@ bookingsRouter.post(
       throw new ApiError("That booking is not waiting for payment.");
     }
 
-    const student = await requireUserRecord(booking.studentId);
-    const tutor = await requireUserRecord(booking.tutorId);
-
-    // A real integration would create a payment intent and confirm it here.
-    const meeting = await scheduleMeeting(booking, tutor, student);
-
-    const paid = await db().bookings.updateOne(
-      { id: booking.id },
-      {
-        status: "confirmed",
-        paidAt: nowIso(),
-        meetingUrl: meeting.meetingUrl,
-        googleEventId: meeting.googleEventId,
-      },
-    );
-
-    if (student.membership === "none") {
-      await db().users.updateOne({ id: student.id }, { membership: "active" });
-    }
-
-    await deliver({
-      to: student.email,
-      subject: `Receipt — $${booking.priceUsd} for your session with ${tutor.name}`,
-      body: `Payment received.\n\n${new Date(booking.startsAt).toLocaleString()}\n${booking.durationMins} minutes with ${tutor.name}\nFocus: ${booking.focus}\n\nYour meeting link is in the portal.`,
-      kind: "receipt",
-    });
-
-    response.json(paid);
+    response.json(await confirmBooking(booking));
   }),
 );
 

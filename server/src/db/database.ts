@@ -85,6 +85,13 @@ export interface OAuthState extends Doc {
   createdAt: string;
 }
 
+/** A Payments.lk webhook already handled. Deliveries of one event share its id. */
+export interface PaymentEvent extends Doc {
+  id: string;
+  type: string;
+  receivedAt: string;
+}
+
 export interface Database {
   users: Collection<User>;
   credentials: Collection<Credential>;
@@ -107,6 +114,7 @@ export interface Database {
   waitlist: Collection<WaitlistEntry>;
   mail: Collection<MailMessage>;
   gameResults: Collection<GameResult>;
+  paymentEvents: Collection<PaymentEvent>;
 }
 
 let store: Store | null = null;
@@ -135,6 +143,7 @@ function build(from: Store): Database {
     waitlist: from.collection<WaitlistEntry>("waitlist"),
     mail: from.collection<MailMessage>("mail"),
     gameResults: from.collection<GameResult>("gameResults"),
+    paymentEvents: from.collection<PaymentEvent>("paymentEvents"),
   };
 }
 
@@ -169,6 +178,7 @@ async function seedContents(): Promise<Record<string, Doc[]>> {
     waitlist: seed.waitlist,
     mail: seed.mail,
     gameResults: seed.gameResults,
+    paymentEvents: [],
   };
 }
 

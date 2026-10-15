@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { api } from "@/lib/api";
 import { useAction, useQuery } from "@/lib/hooks";
@@ -7,7 +8,6 @@ import { cn } from "@/lib/cn";
 import { formatLongDate, formatTime, groupByDay, money } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select } from "@/components/ui/field";
-import { Modal } from "@/components/ui/modal";
 import {
   Alert,
   Avatar,
@@ -16,7 +16,7 @@ import {
   EmptyState,
   Loading,
 } from "@/components/ui/primitives";
-import type { Booking, LanguageCode, PublicTutor, Slot, User } from "@/lib/types";
+import type { LanguageCode, PublicTutor, Slot, User } from "@/lib/types";
 
 const focusIdeas = [
   "Survival phrases for a Colombo trip",
@@ -156,7 +156,6 @@ export function BookingFlow({ student }: { student: User }) {
           student={student}
           tutor={selected}
           slot={slot}
-          onDone={() => setSlot(null)}
         />
       ) : null}
     </>
@@ -167,18 +166,16 @@ function BookingDetails({
   student,
   tutor,
   slot,
-  onDone,
 }: {
   student: User;
   tutor: PublicTutor;
   slot: Slot;
-  onDone: () => void;
 }) {
+  const router = useRouter();
   const [language, setLanguage] = useState<LanguageCode>(
     tutor.languages.includes(student.languages[0]) ? student.languages[0] : tutor.languages[0],
   );
   const [focus, setFocus] = useState(focusIdeas[0]);
-  const [checkout, setCheckout] = useState<Booking | null>(null);
 
   const create = useAction(() =>
     api.bookings.create({
@@ -254,7 +251,8 @@ function BookingDetails({
             disabled={create.pending || focus.trim().length === 0}
             onClick={async () => {
               const booking = await create.run();
-              if (booking) setCheckout(booking);
+              // The slot is held while awaiting payment; the checkout page takes it from here.
+              if (booking) router.push(`/portal/checkout/${booking.id}`);
             }}
           >
             {create.pending ? "Holding the slot…" : "Continue to payment"}
@@ -262,96 +260,6 @@ function BookingDetails({
         </div>
       </Card>
 
-      {checkout ? (
-        <Checkout
-          booking={checkout}
-          tutor={tutor}
-          onClose={() => {
-            setCheckout(null);
-            onDone();
-          }}
-        />
-      ) : null}
     </section>
-  );
-}
-
-function Checkout({
-  booking,
-  tutor,
-  onClose,
-}: {
-  booking: Booking;
-  tutor: PublicTutor;
-  onClose: () => void;
-}) {
-  const [paid, setPaid] = useState(false);
-  const pay = useAction(() => api.bookings.pay(booking.id));
-  const cancel = useAction(() => api.bookings.cancel(booking.id));
-
-  return (
-    <Modal
-      open
-      title={paid ? "You're booked" : "Checkout"}
-      onClose={() => {
-        if (!paid && !pay.pending) void cancel.run();
-        onClose();
-      }}
-    >
-      {paid ? (
-        <div className="space-y-4">
-          <p className="text-sm leading-relaxed text-ink-600">
-            Payment went through and your receipt is in the demo inbox. The meeting link
-            now sits on the booking in your calendar.
-          </p>
-          <Alert tone="jade">
-            {formatLongDate(booking.startsAt)} at {formatTime(booking.startsAt)} with{" "}
-            {tutor.name}.
-          </Alert>
-          <Button className="w-full" onClick={onClose}>
-            Back to the calendar
-          </Button>
-        </div>
-      ) : (
-        <div className="space-y-5">
-          <div className="rounded-xl bg-sand-100 px-4 py-3 text-sm">
-            <div className="flex justify-between">
-              <span className="text-ink-500">Session</span>
-              <span className="text-ink-800">{booking.durationMins} min with {tutor.name}</span>
-            </div>
-            <div className="mt-1.5 flex justify-between">
-              <span className="text-ink-500">When</span>
-              <span className="text-ink-800">
-                {formatLongDate(booking.startsAt)}, {formatTime(booking.startsAt)}
-              </span>
-            </div>
-            <div className="mt-1.5 flex justify-between border-t border-ink-900/10 pt-1.5 font-medium">
-              <span className="text-ink-700">Total</span>
-              <span className="text-ink-900">{money(booking.priceUsd)}</span>
-            </div>
-          </div>
-
-          <Alert tone="saffron">
-            This is a demo checkout. No card details are collected and nothing is charged.
-          </Alert>
-
-          {pay.error ? <Alert>{pay.error}</Alert> : null}
-
-          <Button
-            className="w-full"
-            disabled={pay.pending}
-            onClick={async () => {
-              const result = await pay.run();
-              if (result) setPaid(true);
-            }}
-          >
-            {pay.pending ? "Processing…" : `Pay ${money(booking.priceUsd)}`}
-          </Button>
-          <p className="text-center text-xs text-ink-400">
-            Closing this window releases the slot.
-          </p>
-        </div>
-      )}
-    </Modal>
   );
 }

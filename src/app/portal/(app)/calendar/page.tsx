@@ -12,7 +12,7 @@ import { BookingFlow } from "@/components/portal/booking-flow";
 import { BookingRow } from "@/components/portal/booking-row";
 import { GoogleCalendarConnect } from "@/components/portal/google-calendar-connect";
 import { PageHeader } from "@/components/portal/page-header";
-import { Button } from "@/components/ui/button";
+import { Button, ButtonLink } from "@/components/ui/button";
 import { Alert, EmptyState, Loading } from "@/components/ui/primitives";
 import type { Booking } from "@/lib/types";
 
@@ -100,7 +100,6 @@ function Schedule({ userId, isTutor }: { userId: string; isTutor: boolean }) {
   const bookings = useQuery(() => api.bookings.forUser(userId), [userId]);
   const people = useQuery(() => api.users.directory(), []);
 
-  const pay = useAction((id: string) => api.bookings.pay(id));
   const cancel = useAction((id: string) => api.bookings.cancel(id));
   const complete = useAction((id: string) => api.bookings.complete(id));
 
@@ -165,14 +164,9 @@ function Schedule({ userId, isTutor }: { userId: string; isTutor: boolean }) {
                 actions={
                   <div className="flex flex-wrap items-center justify-end gap-2">
                     {booking.status === "awaiting_payment" && !isTutor ? (
-                      <Button
-                        size="sm"
-                        variant="saffron"
-                        disabled={pay.pending}
-                        onClick={() => void pay.run(booking.id)}
-                      >
+                      <ButtonLink href={`/portal/checkout/${booking.id}`} size="sm" variant="saffron">
                         Pay now
-                      </Button>
+                      </ButtonLink>
                     ) : null}
 
                     {booking.status === "confirmed" && !past && booking.meetingUrl ? (

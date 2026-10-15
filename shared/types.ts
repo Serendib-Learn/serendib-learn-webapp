@@ -120,6 +120,39 @@ export interface Booking {
   meetingUrl?: string;
   /** Id of the Google Calendar event backing this booking, when there is one. */
   googleEventId?: string;
+  /** The card payment, when it went through Payments.lk rather than the demo checkout. */
+  payment?: BookingPayment;
+  /** Why a booking was cancelled, when the system did it (an expired checkout, say). */
+  cancelReason?: string;
+}
+
+/**
+ * A booking's hosted checkout on Payments.lk. Amounts are in LKR cents:
+ * Payments.lk only takes rupees, so the USD price is converted when the
+ * checkout is made, at the rate in the API's USD_TO_LKR setting.
+ */
+export interface BookingPayment {
+  provider: "payments.lk";
+  mode: "test" | "live";
+  checkoutId: string;
+  checkoutUrl: string;
+  expiresAt: string;
+  amountCents: number;
+  currency: "LKR";
+  paymentId?: string;
+  /** e.g. "VISA •••• 4242", once paid. */
+  card?: string;
+  /** The processor's reason, when an attempt was declined. */
+  failureMessage?: string;
+}
+
+/** What the frontend needs to know about taking payments. */
+export interface PaymentsConfig {
+  /** False when no Payments.lk key is set: the demo checkout is used instead. */
+  enabled: boolean;
+  mode: "test" | "live" | null;
+  /** Rupees per US dollar used to price checkouts. */
+  usdToLkr: number;
 }
 
 export type MaterialKind = "pdf" | "audio" | "video" | "link" | "deck";

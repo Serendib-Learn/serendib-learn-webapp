@@ -13,6 +13,7 @@ import type {
   Material,
   Message,
   PostReply,
+  PaymentsConfig,
   PublicProfile,
   PublicTutor,
   Slot,
@@ -198,6 +199,12 @@ export const httpBackend: Backend = {
     },
   },
 
+  payments: {
+    config() {
+      return request<PaymentsConfig>("/payments/config");
+    },
+  },
+
   availability: {
     forTutor(tutorId) {
       return request<AvailabilityRule[]>("/availability", { query: { tutorId } });
@@ -231,6 +238,16 @@ export const httpBackend: Backend = {
 
     pay(id) {
       return request<Booking>(`/bookings/${id}/pay`, { method: "POST" });
+    },
+
+    startCheckout(id) {
+      return request<{ url: string; booking: Booking }>(`/bookings/${id}/checkout`, {
+        method: "POST",
+      });
+    },
+
+    paymentStatus(id) {
+      return request<Booking>(`/bookings/${id}/payment`);
     },
 
     cancel(id) {
