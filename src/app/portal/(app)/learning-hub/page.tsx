@@ -34,24 +34,15 @@ function StudentHub({ student }: { student: User }) {
   return (
     <>
       <PageHeader title="Learning hub">
-        Your course chapter by chapter, everything your tutor has shared, and the write-up
-        from every lesson.
+        Vocabulary, audio and worksheets, organised by folder. Tutors can upload directly here.
       </PageHeader>
 
       <section>
-        <h2 className="text-xl">Your course, chapter by chapter</h2>
-        <p className="mt-1 text-sm text-ink-500">
-          Everything your tutor has shared and the open library, filed by chapter — with the
-          phrases for each one in{" "}
-          {student.languages.map((language) => (language === "sinhala" ? "Sinhala" : "Tamil")).join(" and ")}.
-        </p>
-        <div className="mt-5">
-          <ChapterBrowser
-            chapters={chapters.data ?? []}
-            materials={[...(mine.data ?? []), ...(library.data ?? [])]}
-            languages={student.languages}
-          />
-        </div>
+        <ChapterBrowser
+          chapters={chapters.data ?? []}
+          materials={[...(mine.data ?? []), ...(library.data ?? [])]}
+          languages={student.languages}
+        />
       </section>
 
       {(notes.data ?? []).length > 0 ? (

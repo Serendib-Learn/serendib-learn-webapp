@@ -1,9 +1,9 @@
 "use client";
 
+import { ArrowUpRight, ChevronDown, FileText, FolderOpen, Volume2 } from "lucide-react";
 import Link from "next/link";
 import { getChapter } from "@/data/vocabulary";
 import { MaterialCard } from "./material-card";
-import { Badge } from "@/components/ui/primitives";
 import { cn } from "@/lib/cn";
 import type { CourseChapter, LanguageCode, Material } from "@/lib/types";
 
@@ -18,10 +18,85 @@ export function groupByStage(chapters: CourseChapter[]) {
   return Array.from(stages, ([stage, items]) => ({ stage, chapters: items }));
 }
 
+const STAGE_DESCRIPTIONS: Record<string, string> = {
+  Foundation: "Say Hello, Who's Who, Calling Grandma, and the rest of the Foundation units.",
+  "Survival Sri Lanka": "From the airport gate to your grandmother's front room — every phrase in script and romanised.",
+  "Building & fluency": "Materials for holding a conversation and telling your own story.",
+  "Worksheets & printables": "General printables, homework templates, and offline practice sheets.",
+};
+
+/** One of the original learning hub's folders: a white card that opens. */
+function Folder({
+  icon,
+  title,
+  description,
+  count,
+  defaultOpen = false,
+  children,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  count?: number;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <details open={defaultOpen} className="group overflow-hidden rounded-xl border border-forest/10 bg-white">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 text-left transition-colors hover:bg-mist/40">
+        <div className="flex min-w-0 items-center gap-3">
+          <span className="shrink-0 text-amber-spice">{icon}</span>
+          <div className="min-w-0">
+            <p className="font-display text-[15px] text-forest">{title}</p>
+            <p className="truncate text-xs text-earth/55">{description}</p>
+          </div>
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          {count ? <span className="rounded-full bg-mist px-2 py-0.5 text-[10px] text-fern">{count}</span> : null}
+          <ChevronDown className="h-4 w-4 text-earth/40 transition-transform group-open:rotate-180" />
+        </div>
+      </summary>
+      <div className="space-y-3 px-5 pt-1 pb-5">{children}</div>
+    </details>
+  );
+}
+
+/** The original hub's Alphabet folder, now pointing at the site's own alphabet sheet. */
+function AlphabetFolder() {
+  return (
+    <Folder
+      icon={<Volume2 className="h-4 w-4" strokeWidth={1.75} />}
+      title="Alphabet"
+      description="Sinhala and Tamil scripts, with a sound for every letter."
+      defaultOpen
+    >
+      <div className="grid gap-3 sm:grid-cols-2">
+        {[
+          { href: "/alphabet?script=sinhala", title: "Sinhala alphabet · සිංහල", note: "Every letter, its sound, and an example word" },
+          { href: "/alphabet?script=tamil", title: "Tamil alphabet · தமிழ்", note: "Vowels and consonants, with how to say them" },
+        ].map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            className="flex items-center justify-between gap-2 rounded-lg border border-forest/10 px-4 py-3 transition-colors hover:border-amber-spice/50"
+          >
+            <div>
+              <p className="text-sm font-medium text-forest">{item.title}</p>
+              <p className="text-xs text-earth/55">{item.note}</p>
+            </div>
+            <ArrowUpRight className="h-3.5 w-3.5 shrink-0 text-amber-spice" />
+          </Link>
+        ))}
+      </div>
+    </Folder>
+  );
+}
+
 /**
- * The course, chapter by chapter: each chapter's materials, and — for the
- * Survival Sri Lanka chapters — its phrase list in the learner's language(s),
- * so no chapter is ever empty. The alphabet chapter links the alphabet sheet.
+ * The course, folder by folder as on the original site's learning hub: the
+ * alphabet, then one folder per stage holding its chapters. Each chapter
+ * shows its materials and — for the Survival Sri Lanka chapters — its phrase
+ * list in the learner's language(s), so no chapter is ever empty.
  */
 export function ChapterBrowser({
   chapters,
@@ -39,63 +114,55 @@ export function ChapterBrowser({
   const shown: LanguageCode[] = languages.length > 0 ? languages : ["sinhala", "tamil"];
 
   return (
-    <div className="space-y-10">
-      {groupByStage(chapters).map(({ stage, chapters: items }) => (
-        <section key={stage}>
-          <h3 className="text-xs font-semibold tracking-[0.18em] text-jade-600 uppercase">{stage}</h3>
-          <div className="mt-3 space-y-3">
-            {items.map((chapter, index) => {
+    <div className="space-y-3">
+      <AlphabetFolder />
+
+      {groupByStage(chapters).map(({ stage, chapters: items }) => {
+        const inStage = materials.filter((material) => items.some((chapter) => chapter.id === material.chapterId));
+        return (
+          <Folder
+            key={stage}
+            icon={<FolderOpen className="h-4 w-4" strokeWidth={1.75} />}
+            title={stage}
+            description={STAGE_DESCRIPTIONS[stage] ?? items.map((chapter) => chapter.title).join(", ")}
+            count={inStage.length}
+          >
+            {items.map((chapter) => {
               const filed = materials.filter((material) => material.chapterId === chapter.id);
               const vocab = chapter.vocabChapterId ? getChapter(chapter.vocabChapterId) : undefined;
               const isAlphabet = chapter.id === "ch_alphabet";
               return (
-                <details
-                  key={chapter.id}
-                  className="group rounded-2xl bg-white border border-forest/10 open:shadow-card"
-                >
-                  <summary className="flex cursor-pointer list-none items-center gap-4 px-5 py-4">
-                    <span className="grid size-9 shrink-0 place-items-center rounded-full bg-sand-100 font-display text-sm text-ink-700">
-                      {vocab?.emoji ?? index + 1}
-                    </span>
+                <details key={chapter.id} className="group/chapter rounded-lg border border-forest/10">
+                  <summary className="flex cursor-pointer list-none items-center gap-3 px-4 py-3">
                     <span className="min-w-0 flex-1">
-                      <span className="block font-display text-base text-ink-900">{chapter.title}</span>
-                      {chapter.summary ? (
-                        <span className="block truncate text-xs text-ink-500">{chapter.summary}</span>
-                      ) : null}
+                      <span className="block text-sm font-medium text-forest">
+                        {vocab ? `${vocab.emoji} ` : ""}
+                        {chapter.title}
+                      </span>
+                      {chapter.summary ? <span className="block truncate text-xs text-earth/55">{chapter.summary}</span> : null}
                     </span>
-                    {filed.length > 0 ? <Badge tone="jade">{filed.length}</Badge> : null}
-                    {vocab ? <Badge>{vocab.phrases.length} phrases</Badge> : null}
-                    <svg
-                      viewBox="0 0 20 20"
-                      aria-hidden
-                      className="size-4 shrink-0 text-ink-400 transition group-open:rotate-180"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1.8"
-                    >
-                      <path d="M5 8l5 5 5-5" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
+                    {filed.length > 0 ? (
+                      <span className="rounded-full bg-mist px-2 py-0.5 text-[10px] text-fern">{filed.length}</span>
+                    ) : null}
+                    {vocab ? <span className="text-[10px] text-earth/45">{vocab.phrases.length} phrases</span> : null}
+                    <ChevronDown className="h-3.5 w-3.5 shrink-0 text-earth/40 transition-transform group-open/chapter:rotate-180" />
                   </summary>
 
-                  <div className="space-y-5 border-t border-ink-900/8 px-5 py-5">
+                  <div className="space-y-4 border-t border-forest/8 px-4 py-4">
                     {isAlphabet ? (
-                      <Link
-                        href="/alphabet"
-                        className="flex items-center justify-between rounded-xl bg-jade-50 px-4 py-3 text-sm font-medium text-jade-700 ring-1 ring-jade-200 hover:bg-jade-100"
-                      >
-                        Open the alphabet sheet — every letter, its sound, and an example word
-                        <span aria-hidden>→</span>
+                      <Link href="/alphabet" className="text-sm font-medium text-amber-spice hover:underline">
+                        Open the alphabet sheet →
                       </Link>
                     ) : null}
 
                     {filed.length > 0 ? (
-                      <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="grid gap-3 sm:grid-cols-2">
                         {filed.map((material) => (
                           <MaterialCard key={material.id} material={material} footer={footerFor?.(material)} />
                         ))}
                       </div>
                     ) : !vocab && !isAlphabet ? (
-                      <p className="text-sm text-ink-400">Nothing in this chapter yet.</p>
+                      <p className="text-xs text-earth/50">Nothing in this chapter yet.</p>
                     ) : null}
 
                     {vocab ? <PhraseList chapterId={vocab.id} languages={shown} /> : null}
@@ -103,19 +170,23 @@ export function ChapterBrowser({
                 </details>
               );
             })}
-          </div>
-        </section>
-      ))}
+          </Folder>
+        );
+      })}
 
       {unfiled.length > 0 ? (
-        <section>
-          <h3 className="text-xs font-semibold tracking-[0.18em] text-ink-400 uppercase">Other material</h3>
-          <div className="mt-3 grid gap-4 sm:grid-cols-2">
+        <Folder
+          icon={<FileText className="h-4 w-4" strokeWidth={1.75} />}
+          title="Other material"
+          description="Shared with you, not filed under a chapter yet."
+          count={unfiled.length}
+        >
+          <div className="grid gap-3 sm:grid-cols-2">
             {unfiled.map((material) => (
               <MaterialCard key={material.id} material={material} footer={footerFor?.(material)} />
             ))}
           </div>
-        </section>
+        </Folder>
       ) : null}
     </div>
   );
