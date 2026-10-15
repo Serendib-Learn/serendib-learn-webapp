@@ -12,6 +12,7 @@ import { cn } from "@/lib/cn";
 const navigation = [
   { href: "/how-it-works", label: "How it works" },
   { href: "/tutors", label: "Tutors" },
+  { href: "/alphabet", label: "Alphabet" },
   // GAMES-HIDDEN: games are parked for now — see src/lib/features.ts.
   // { href: "/games", label: "Games" },
   { href: "/portal/community", label: "Community" },
@@ -32,7 +33,7 @@ export function Header() {
   }, [menuOpen]);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-white/10 bg-jade-700">
+    <header className="sticky top-0 z-40 border-b border-white/10 bg-jade-700 print:hidden">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5 sm:px-8">
         <Logo tone="light" />
 

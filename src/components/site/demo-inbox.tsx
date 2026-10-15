@@ -56,7 +56,7 @@ export function DemoInbox() {
         type="button"
         onClick={() => setOpen((value) => !value)}
         className={cn(
-          "fixed right-4 bottom-4 z-50 flex items-center gap-2 rounded-full bg-ink-900 py-2.5 pr-4 pl-3 text-sm font-medium text-sand-50 shadow-lifted transition hover:bg-ink-800",
+          "fixed right-4 bottom-4 z-50 flex items-center gap-2 rounded-full bg-ink-900 print:hidden py-2.5 pr-4 pl-3 text-sm font-medium text-sand-50 shadow-lifted transition hover:bg-ink-800",
           open && "bg-ink-800",
         )}
         aria-expanded={open}

@@ -7,6 +7,7 @@ const columns = [
     links: [
       { href: "/how-it-works", label: "How it works" },
       { href: "/tutors", label: "Meet the tutors" },
+      { href: "/alphabet", label: "Alphabet sheet" },
       { href: "/portal/learning-hub", label: "Learning hub" },
       { href: "/portal/calendar", label: "Book a session" },
       { href: "/portal/signup?role=tutor", label: "Teach with us" },
@@ -49,7 +50,7 @@ export const contactEmail = "serendib.learn@gmail.com";
 
 export function Footer() {
   return (
-    <footer className="mt-auto border-t border-white/10 bg-jade-700 text-sand-100">
+    <footer className="mt-auto border-t border-white/10 bg-jade-700 text-sand-100 print:hidden">
       <div className="mx-auto max-w-6xl px-5 py-14 sm:px-8">
         <div className="grid gap-12 md:grid-cols-[1.4fr_repeat(3,1fr)]">
           <div>
