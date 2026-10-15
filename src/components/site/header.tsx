@@ -15,6 +15,7 @@ const navigation = [
   // GAMES-HIDDEN: games are parked for now — see src/lib/features.ts.
   // { href: "/games", label: "Games" },
   { href: "/portal/community", label: "Community" },
+  { href: "/portal/signup?role=tutor", label: "Teach with us" },
 ];
 
 export function Header() {

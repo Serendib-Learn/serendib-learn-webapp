@@ -10,6 +10,7 @@ import type {
   GoogleSignInInput,
   HomeworkInput,
   HomeworkItem,
+  InviteInput,
   LanguageCode,
   LessonNote,
   MailMessage,
@@ -19,12 +20,14 @@ import type {
   PostReply,
   PostStatus,
   PublicProfile,
+  PublicTutor,
   Role,
   SignUpInput,
   Slot,
   StudentProgress,
   Thread,
   ThreadSummary,
+  TutorStatus,
   User,
   WaitlistEntry,
 } from "@/lib/types";
@@ -78,7 +81,12 @@ export interface Backend {
     /** Names and roles for every member, for labelling things in the portal. */
     directory(): Promise<PublicProfile[]>;
     get(id: string): Promise<User | null>;
-    tutors(): Promise<User[]>;
+    /** Approved tutors, as the public sees them. */
+    tutors(): Promise<PublicTutor[]>;
+    /** Administrators: create an account for someone and email them a set-password link. */
+    invite(input: InviteInput): Promise<User>;
+    /** Administrators: approve or turn down a tutor's application. */
+    setTutorStatus(id: string, status: TutorStatus, note?: string): Promise<User>;
     update(id: string, patch: Partial<User>): Promise<User>;
     setRole(id: string, role: Role): Promise<User>;
     setMembership(id: string, membership: User["membership"]): Promise<User>;

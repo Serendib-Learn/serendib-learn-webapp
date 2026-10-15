@@ -9,6 +9,13 @@ export type LanguageCode = "sinhala" | "tamil";
 
 export type MembershipStatus = "none" | "active";
 
+/**
+ * Where a tutor's application stands. Only `approved` tutors can be found and
+ * booked; a tutor record with no status at all predates approvals and counts
+ * as approved.
+ */
+export type TutorStatus = "pending" | "approved" | "rejected";
+
 export interface User {
   id: string;
   name: string;
@@ -24,6 +31,15 @@ export interface User {
   hourlyRateUsd?: number;
   yearsTeaching?: number;
   homeTown?: string;
+  /** Tutors: short tags for what they are best at, shown on their public profile. */
+  specialties?: string[];
+  /** Tutors only — see `TutorStatus`. */
+  tutorStatus?: TutorStatus;
+  /**
+   * The site owners' own account. A super admin cannot be demoted or deleted
+   * from the admin area, so one admin cannot lock the owners out.
+   */
+  superAdmin?: boolean;
   /** Google's stable subject id, set once an account has been linked. */
   googleId?: string;
   /** Profile picture from Google, when there is one. */
@@ -41,6 +57,27 @@ export interface PublicProfile {
   role: Role;
   headline?: string;
 }
+
+/**
+ * A tutor as the public sees them — on the tutors page and in the booking
+ * flow. No email address, Google id or account flags.
+ */
+export type PublicTutor = Pick<
+  User,
+  | "id"
+  | "name"
+  | "role"
+  | "timezone"
+  | "languages"
+  | "headline"
+  | "bio"
+  | "hourlyRateUsd"
+  | "yearsTeaching"
+  | "homeTown"
+  | "specialties"
+  | "avatarUrl"
+  | "createdAt"
+>;
 
 export interface AvailabilityRule {
   id: string;
@@ -205,6 +242,14 @@ export interface GameResult {
   completedAt: string;
 }
 
+/** What someone applying to teach tells us up front. All optional at signup. */
+export interface TutorApplication {
+  headline?: string;
+  bio?: string;
+  homeTown?: string;
+  yearsTeaching?: number;
+}
+
 export interface SignUpInput {
   name: string;
   email: string;
@@ -212,8 +257,23 @@ export interface SignUpInput {
   role: Exclude<Role, "admin">;
   languages: LanguageCode[];
   timezone: string;
+  /** Only read when `role` is `tutor`. */
+  application?: TutorApplication;
   /** Cloudflare Turnstile token. Required only when the server has CAPTCHA configured. */
   turnstileToken?: string;
+}
+
+/**
+ * An administrator creating someone's account for them — an existing tutor
+ * being brought onto the site, or another administrator. The person gets an
+ * email with a link to choose their own password.
+ */
+export interface InviteInput {
+  name: string;
+  email: string;
+  role: Role;
+  languages: LanguageCode[];
+  timezone?: string;
 }
 
 export interface GoogleSignInInput {

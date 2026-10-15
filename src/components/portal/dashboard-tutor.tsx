@@ -7,7 +7,7 @@ import { api } from "@/lib/api";
 import { useQuery } from "@/lib/hooks";
 import { formatDate, formatDateTime, isPast, money, relativeTime } from "@/lib/format";
 import { ButtonLink } from "@/components/ui/button";
-import { Avatar, Badge, Card, EmptyState, Loading, Stat } from "@/components/ui/primitives";
+import { Alert, Avatar, Badge, Card, EmptyState, Loading, Stat } from "@/components/ui/primitives";
 import type { User } from "@/lib/types";
 
 export function TutorDashboard({ user }: { user: User }) {
@@ -48,6 +48,20 @@ export function TutorDashboard({ user }: { user: User }) {
           ? `Next up: ${studentsById.get(next.studentId)?.name ?? "a student"} ${relativeTime(next.startsAt)}, ${formatDateTime(next.startsAt)}.`
           : "Nothing on the calendar. Check your availability so students can book you."}
       </PageHeader>
+
+      {user.tutorStatus === "pending" ? (
+        <Alert tone="saffron" className="mb-6">
+          Your application is with our team. We vet every tutor personally, and students can
+          find and book you as soon as you are approved. Meanwhile, fill in your profile below
+          and publish your hours in the calendar so you are ready on day one.
+        </Alert>
+      ) : null}
+      {user.tutorStatus === "rejected" ? (
+        <Alert className="mb-6">
+          Your tutor application was not approved, so students cannot book you. Check your
+          email for a note from the team, or message them if you think this is a mistake.
+        </Alert>
+      ) : null}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Stat label="Tutees" value={(tutees.data ?? []).length} />

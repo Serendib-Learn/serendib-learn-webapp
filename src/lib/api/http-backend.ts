@@ -14,6 +14,7 @@ import type {
   Message,
   PostReply,
   PublicProfile,
+  PublicTutor,
   Slot,
   StudentProgress,
   Thread,
@@ -151,7 +152,18 @@ export const httpBackend: Backend = {
     },
 
     tutors() {
-      return request<User[]>("/users/tutors");
+      return request<PublicTutor[]>("/users/tutors");
+    },
+
+    invite(input) {
+      return request<User>("/users/invite", { method: "POST", body: input });
+    },
+
+    setTutorStatus(id, status, note) {
+      return request<User>(`/users/${id}/tutor-status`, {
+        method: "POST",
+        body: { status, note },
+      });
     },
 
     update(id, patch) {

@@ -9,6 +9,7 @@
     "start": "node --env-file-if-exists=.env src/index.ts",
     "typecheck": "tsc --noEmit",
     "seed": "node --env-file-if-exists=.env src/scripts/reseed.ts",
+    "create-admin": "node --env-file-if-exists=.env src/scripts/create-admin.ts",
     "test": "node --test"
   },
   "engines": {

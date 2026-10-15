@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/field";
 import { Alert, Card } from "@/components/ui/primitives";
 import { ApiError, DEMO_PASSWORD, api, demoAccounts } from "@/lib/api";
-import { useAction, useTimezone } from "@/lib/hooks";
+import { useAction, useQuery, useTimezone } from "@/lib/hooks";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -18,6 +18,9 @@ export default function LoginPage() {
   const { run, pending, error } = useAction(api.auth.signIn);
   const [googleError, setGoogleError] = useState<string | null>(null);
   const timezone = useTimezone();
+  // The seeded accounts only exist in demo mode, so only offer them then.
+  const { data: health } = useQuery(() => api.health(), []);
+  const demoMode = health?.demoMode === true;
 
   const signInWithGoogle = async (credential: string) => {
     setGoogleError(null);
@@ -56,48 +59,63 @@ export default function LoginPage() {
       }
       aside={
         <Card className="p-6">
-          <p className="text-sm font-semibold text-ink-900">Demo accounts</p>
-          <p className="mt-1.5 text-xs leading-relaxed text-ink-500">
-            This prototype ships with seeded accounts so you can see each role. The
-            password for all of them is{" "}
-            <code className="rounded bg-sand-100 px-1.5 py-0.5 font-mono text-[0.7rem]">
-              {DEMO_PASSWORD}
-            </code>
-            .
-          </p>
+          {demoMode ? (
+            <>
+              <p className="text-sm font-semibold text-ink-900">Demo accounts</p>
+              <p className="mt-1.5 text-xs leading-relaxed text-ink-500">
+                This prototype ships with seeded accounts so you can see each role. The
+                password for all of them is{" "}
+                <code className="rounded bg-sand-100 px-1.5 py-0.5 font-mono text-[0.7rem]">
+                  {DEMO_PASSWORD}
+                </code>
+                .
+              </p>
 
-          <ul className="mt-4 space-y-2">
-            {demoAccounts.map((account) => (
-              <li key={account.email}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEmail(account.email);
-                    setPassword(DEMO_PASSWORD);
-                  }}
-                  className="w-full rounded-xl bg-sand-100/70 px-3.5 py-3 text-left ring-1 ring-inset ring-ink-900/6 transition hover:bg-jade-50 hover:ring-jade-200"
-                >
-                  <span className="block text-sm font-medium text-ink-800">{account.role}</span>
-                  <span className="block truncate text-xs text-ink-400">{account.email}</span>
-                  <span className="mt-1 block text-xs leading-snug text-ink-500">
-                    {account.note}
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
+              <ul className="mt-4 space-y-2">
+                {demoAccounts.map((account) => (
+                  <li key={account.email}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEmail(account.email);
+                        setPassword(DEMO_PASSWORD);
+                      }}
+                      className="w-full rounded-xl bg-sand-100/70 px-3.5 py-3 text-left ring-1 ring-inset ring-ink-900/6 transition hover:bg-jade-50 hover:ring-jade-200"
+                    >
+                      <span className="block text-sm font-medium text-ink-800">{account.role}</span>
+                      <span className="block truncate text-xs text-ink-400">{account.email}</span>
+                      <span className="mt-1 block text-xs leading-snug text-ink-500">
+                        {account.note}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : (
+            <p className="text-sm font-semibold text-ink-900">New to Serendib Learn?</p>
+          )}
 
-          <p className="mt-4 text-xs leading-relaxed text-ink-400">
-            The old site used a single shared code. This replaces it with real accounts
-            and roles — see{" "}
-            <Link
-              href="/portal/signup"
-              className="underline decoration-ink-300 underline-offset-2"
-            >
-              sign up
-            </Link>{" "}
-            for the tutor and student split.
-          </p>
+          <div className={`space-y-2 text-xs leading-relaxed text-ink-500 ${demoMode ? "mt-4 border-t border-ink-900/8 pt-4" : "mt-3"}`}>
+            <p>
+              New here to learn?{" "}
+              <Link
+                href="/portal/signup"
+                className="font-medium text-jade-700 underline decoration-jade-200 underline-offset-2"
+              >
+                Create a student account
+              </Link>
+            </p>
+            <p>
+              Want to teach?{" "}
+              <Link
+                href="/portal/signup?role=tutor"
+                className="font-medium text-jade-700 underline decoration-jade-200 underline-offset-2"
+              >
+                Apply as a tutor
+              </Link>
+            </p>
+          </div>
         </Card>
       }
     >

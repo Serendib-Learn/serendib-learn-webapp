@@ -3,6 +3,7 @@ import express from "express";
 import helmet from "helmet";
 import { config } from "./config.ts";
 import { connect } from "./db/database.ts";
+import { ensureSuperAdmin } from "./lib/accounts.ts";
 import { errorHandler, notFound } from "./lib/errors.ts";
 import { apiLimiter, authLimiter } from "./lib/rate-limit.ts";
 import { loadSession, parseCookies } from "./lib/sessions.ts";
@@ -64,6 +65,7 @@ app.use((_request, _response, next) => {
 app.use(errorHandler);
 
 const database = await connect();
+await ensureSuperAdmin();
 const accounts = await database.users.count();
 
 // Exported for the test harness (server/src/test-support/harness.ts), which imports

@@ -73,6 +73,19 @@ export const config = {
   turnstileSecretKey: process.env.TURNSTILE_SECRET_KEY ?? "",
 
   /**
+   * The owners' own administrator account. When an email is set, every boot
+   * makes sure that account exists and is a super admin: it is created if
+   * missing (with SUPER_ADMIN_PASSWORD, or with no password and a
+   * set-your-password email if that is empty) and promoted if it exists as
+   * something else. An existing account's password is never changed here.
+   */
+  superAdmin: {
+    email: (process.env.SUPER_ADMIN_EMAIL ?? "").trim().toLowerCase(),
+    name: (process.env.SUPER_ADMIN_NAME ?? "").trim() || "Serendib Team",
+    password: process.env.SUPER_ADMIN_PASSWORD ?? "",
+  },
+
+  /**
    * The demo inbox and the reset endpoint exist so the flows can be tried
    * without a mail server. Turn this off for anything real.
    */

@@ -14,7 +14,7 @@ import { MongoMemoryServer } from "mongodb-memory-server";
  * `index.ts` has a top-level `await connect()` before it starts listening,
  * so this `import()` doesn't resolve until the app is fully up.
  */
-export async function startTestServer() {
+export async function startTestServer(env: Record<string, string> = {}) {
   const mongod = await MongoMemoryServer.create();
 
   Object.assign(process.env, {
@@ -30,6 +30,10 @@ export async function startTestServer() {
     GOOGLE_CLIENT_ID: "",
     GOOGLE_CLIENT_SECRET: "",
     TURNSTILE_SECRET_KEY: "",
+    SUPER_ADMIN_EMAIL: "",
+    SUPER_ADMIN_PASSWORD: "",
+    // Per-file overrides last, so a test can switch any of the above.
+    ...env,
   });
 
   const { server } = (await import("../index.ts")) as { server: Server };
@@ -67,6 +71,9 @@ export async function startTestServer() {
       get: (path: string) => request(path),
       post: (path: string, body?: unknown) =>
         request(path, { method: "POST", body: body !== undefined ? JSON.stringify(body) : undefined }),
+      patch: (path: string, body: unknown) =>
+        request(path, { method: "PATCH", body: JSON.stringify(body) }),
+      delete: (path: string) => request(path, { method: "DELETE" }),
     };
   }
 

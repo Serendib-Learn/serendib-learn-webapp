@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
+import { signedUpUser as createAccount } from "../test-support/accounts.ts";
 import { startTestServer } from "../test-support/harness.ts";
-import type { MailMessage } from "../../../shared/types.ts";
 
 let harness: Awaited<ReturnType<typeof startTestServer>>;
 
@@ -13,28 +13,8 @@ after(async () => {
   await harness.close();
 });
 
-async function codeSentTo(email: string): Promise<string> {
-  const { body } = await harness.client().get("/mail");
-  const message = (body as MailMessage[])
-    .filter((item) => item.kind === "verification" && item.to === email)
-    .sort((a, b) => b.sentAt.localeCompare(a.sentAt))[0];
-  assert.ok(message?.code, `expected a verification code sent to ${email}`);
-  return message.code;
-}
-
-/** A verified, logged-in account of the given role, with its own cookie jar. */
-async function signedUpUser(role: "student" | "tutor", email: string) {
-  const client = harness.client();
-  await client.post("/auth/signup", {
-    name: role === "tutor" ? "Test Tutor" : "Test Student",
-    email,
-    password: "password123",
-    role,
-    languages: ["sinhala"],
-  });
-  const code = await codeSentTo(email);
-  const verified = await client.post("/auth/verify", { email, code });
-  return { client, user: verified.body.user as { id: string } };
+function signedUpUser(role: "student" | "tutor", email: string) {
+  return createAccount(harness, role, email);
 }
 
 function hoursFromNow(hours: number): string {

@@ -3,6 +3,7 @@ import { notFound } from "./errors.ts";
 import type {
   Booking,
   HomeworkItem,
+  PublicTutor,
   Slot,
   StudentProgress,
   User,
@@ -23,6 +24,30 @@ export function overlaps(aStart: number, aEnd: number, bStart: number, bEnd: num
 /** A booking in either of these states occupies the tutor's slot. */
 export function blocksSlot(booking: Booking): boolean {
   return booking.status === "confirmed" || booking.status === "awaiting_payment";
+}
+
+/** Only approved tutors can be found and booked. No status means a tutor from before approvals. */
+export function isBookableTutor(user: User): boolean {
+  return user.role === "tutor" && (user.tutorStatus ?? "approved") === "approved";
+}
+
+/** Everything about a tutor that is safe to show someone who is not logged in. */
+export function publicTutor(user: User): PublicTutor {
+  return {
+    id: user.id,
+    name: user.name,
+    role: user.role,
+    timezone: user.timezone,
+    languages: user.languages,
+    headline: user.headline,
+    bio: user.bio,
+    hourlyRateUsd: user.hourlyRateUsd,
+    yearsTeaching: user.yearsTeaching,
+    homeTown: user.homeTown,
+    specialties: user.specialties,
+    avatarUrl: user.avatarUrl,
+    createdAt: user.createdAt,
+  };
 }
 
 export function priceFor(tutor: User, durationMins: number): number {

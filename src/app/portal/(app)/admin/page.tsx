@@ -9,8 +9,9 @@ import { cn } from "@/lib/cn";
 import { formatDate, formatDateTime, relativeTime } from "@/lib/format";
 import { GoogleMailConnect } from "@/components/portal/google-mail-connect";
 import { PageHeader } from "@/components/portal/page-header";
+import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
-import { Select, Textarea } from "@/components/ui/field";
+import { Checkbox, Field, Input, Select, Textarea } from "@/components/ui/field";
 import {
   Alert,
   Avatar,
@@ -19,12 +20,13 @@ import {
   EmptyState,
   Loading,
 } from "@/components/ui/primitives";
-import type { CommunityPost, Role, User } from "@/lib/types";
+import type { CommunityPost, LanguageCode, Role, User } from "@/lib/types";
 
-type Tab = "people" | "moderation" | "waitlist" | "mail" | "audit";
+type Tab = "people" | "tutors" | "moderation" | "waitlist" | "mail" | "audit";
 
 const tabs: { id: Tab; label: string }[] = [
   { id: "people", label: "People" },
+  { id: "tutors", label: "Tutor applications" },
   { id: "moderation", label: "Moderation" },
   { id: "waitlist", label: "Waitlist" },
   { id: "mail", label: "Mail" },
@@ -54,6 +56,10 @@ export default function AdminPage() {
   const { user } = useAuth();
   const [tab, setTab] = useState<Tab>("people");
   const pending = useQuery(() => api.community.pending(), []);
+  const accounts = useQuery(() => api.users.list(), []);
+  const applications = (accounts.data ?? []).filter(
+    (person) => person.role === "tutor" && person.tutorStatus === "pending",
+  );
 
   if (!user) return <Loading />;
 
@@ -76,18 +82,23 @@ export default function AdminPage() {
         <GoogleConnectBanner />
       </Suspense>
 
-      <div className="mb-6 flex gap-1 rounded-full bg-white p-1 ring-1 ring-ink-900/8 sm:w-fit">
+      <div className="mb-6 flex gap-1 overflow-x-auto rounded-full bg-white p-1 ring-1 ring-ink-900/8 sm:w-fit">
         {tabs.map((item) => (
           <button
             key={item.id}
             type="button"
             onClick={() => setTab(item.id)}
             className={cn(
-              "flex-1 rounded-full px-5 py-2 text-sm font-medium transition sm:flex-none",
+              "flex-1 shrink-0 rounded-full px-5 py-2 text-sm font-medium whitespace-nowrap transition sm:flex-none",
               tab === item.id ? "bg-ink-900 text-sand-50" : "text-ink-500 hover:text-ink-900",
             )}
           >
             {item.label}
+            {item.id === "tutors" && applications.length > 0 ? (
+              <span className="ml-2 rounded-full bg-saffron-400 px-1.5 text-[0.65rem] font-bold text-ink-900">
+                {applications.length}
+              </span>
+            ) : null}
             {item.id === "moderation" && (pending.data ?? []).length > 0 ? (
               <span className="ml-2 rounded-full bg-saffron-400 px-1.5 text-[0.65rem] font-bold text-ink-900">
                 {(pending.data ?? []).length}
@@ -98,6 +109,7 @@ export default function AdminPage() {
       </div>
 
       {tab === "people" ? <People me={user} /> : null}
+      {tab === "tutors" ? <TutorApplications /> : null}
       {tab === "moderation" ? <Moderation /> : null}
       {tab === "waitlist" ? <Waitlist /> : null}
       {tab === "mail" ? <GoogleMailConnect /> : null}
@@ -114,6 +126,8 @@ function People({ me }: { me: User }) {
   );
   const remove = useAction((id: string) => api.users.remove(id));
 
+  const [inviting, setInviting] = useState(false);
+
   if (users.loading) return <Loading label="Loading accounts" />;
 
   const everyone = (users.data ?? [])
@@ -122,6 +136,21 @@ function People({ me }: { me: User }) {
 
   return (
     <div className="space-y-3">
+      <Card className="flex flex-wrap items-center justify-between gap-4 p-5">
+        <div className="min-w-0">
+          <p className="font-medium text-ink-800">Add someone yourself</p>
+          <p className="text-xs leading-relaxed text-ink-500">
+            Bring an existing tutor onto the site, or add another administrator. They get an
+            email with a link to choose their own password.
+          </p>
+        </div>
+        <Button size="sm" onClick={() => setInviting(true)}>
+          Invite someone
+        </Button>
+      </Card>
+
+      {inviting ? <InviteDialog onClose={() => setInviting(false)} /> : null}
+
       {everyone.map((person) => (
         <Card key={person.id} className="flex flex-wrap items-center gap-4 p-5">
           <Avatar name={person.name} />
@@ -130,6 +159,13 @@ function People({ me }: { me: User }) {
             <div className="flex flex-wrap items-center gap-2">
               <p className="font-medium text-ink-800">{person.name}</p>
               {!person.verified ? <Badge tone="saffron">Unverified</Badge> : null}
+              {person.superAdmin ? <Badge tone="ocean">Super admin</Badge> : null}
+              {person.role === "tutor" && person.tutorStatus === "pending" ? (
+                <Badge tone="saffron">Awaiting approval</Badge>
+              ) : null}
+              {person.role === "tutor" && person.tutorStatus === "rejected" ? (
+                <Badge tone="clay">Not approved</Badge>
+              ) : null}
               {person.membership === "active" ? <Badge tone="jade">Member</Badge> : null}
               {person.id === me.id ? <Badge tone="ocean">You</Badge> : null}
             </div>
@@ -143,7 +179,7 @@ function People({ me }: { me: User }) {
               aria-label={`Role for ${person.name}`}
               className="h-9 w-auto py-0 text-sm"
               value={person.role}
-              disabled={person.id === me.id || setRole.pending}
+              disabled={person.id === me.id || person.superAdmin || setRole.pending}
               onChange={(event) => void setRole.run(person.id, event.target.value as Role)}
             >
               <option value="student">Student</option>
@@ -169,7 +205,7 @@ function People({ me }: { me: User }) {
               variant="ghost"
               size="sm"
               className="text-clay-600 hover:bg-clay-50"
-              disabled={person.id === me.id || remove.pending}
+              disabled={person.id === me.id || person.superAdmin || remove.pending}
               onClick={() => {
                 if (window.confirm(`Delete ${person.name}'s account?`)) {
                   void remove.run(person.id);
@@ -182,6 +218,211 @@ function People({ me }: { me: User }) {
         </Card>
       ))}
     </div>
+  );
+}
+
+function InviteDialog({ onClose }: { onClose: () => void }) {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [role, setRole] = useState<Role>("tutor");
+  const [languages, setLanguages] = useState<LanguageCode[]>(["sinhala"]);
+  const [sent, setSent] = useState<User | null>(null);
+  const invite = useAction(() => api.users.invite({ name, email, role, languages }));
+
+  return (
+    <Modal
+      open
+      onClose={onClose}
+      title={sent ? "Invitation sent" : "Invite someone"}
+      description={
+        sent
+          ? undefined
+          : "Creates the account now. The email they get has a link to set a password, valid for seven days."
+      }
+    >
+      {sent ? (
+        <div className="space-y-5">
+          <Alert tone="jade">
+            {sent.name}&rsquo;s account is ready and the email is on its way to {sent.email}.
+            {sent.role === "tutor"
+              ? " They are approved already — ask them to fill in their profile and hours."
+              : ""}
+          </Alert>
+          <Button className="w-full" onClick={onClose}>
+            Done
+          </Button>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <Field label="Name" htmlFor="invite-name">
+            <Input id="invite-name" value={name} onChange={(event) => setName(event.target.value)} />
+          </Field>
+          <Field label="Email" htmlFor="invite-email">
+            <Input
+              id="invite-email"
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+            />
+          </Field>
+          <Field label="Role" htmlFor="invite-role">
+            <Select
+              id="invite-role"
+              value={role}
+              onChange={(event) => setRole(event.target.value as Role)}
+            >
+              <option value="tutor">Tutor</option>
+              <option value="student">Student</option>
+              <option value="admin">Administrator</option>
+            </Select>
+          </Field>
+          <div className="grid gap-2 sm:grid-cols-2">
+            {(["sinhala", "tamil"] as LanguageCode[]).map((language) => (
+              <Checkbox
+                key={language}
+                label={language === "sinhala" ? "Sinhala" : "Tamil"}
+                checked={languages.includes(language)}
+                onChange={() =>
+                  setLanguages((current) =>
+                    current.includes(language)
+                      ? current.filter((value) => value !== language)
+                      : [...current, language],
+                  )
+                }
+              />
+            ))}
+          </div>
+
+          {invite.error ? <Alert>{invite.error}</Alert> : null}
+
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="ghost" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button
+              disabled={invite.pending || !name.trim() || !email.trim() || languages.length === 0}
+              onClick={async () => {
+                const result = await invite.run();
+                if (result) setSent(result);
+              }}
+            >
+              {invite.pending ? "Sending…" : "Create and send invite"}
+            </Button>
+          </div>
+        </div>
+      )}
+    </Modal>
+  );
+}
+
+function TutorApplications() {
+  const users = useQuery(() => api.users.list(), []);
+
+  if (users.loading) return <Loading label="Loading applications" />;
+
+  const tutors = (users.data ?? []).filter((person) => person.role === "tutor");
+  const pending = tutors.filter((person) => person.tutorStatus === "pending");
+  const rejected = tutors.filter((person) => person.tutorStatus === "rejected");
+
+  return (
+    <>
+      {pending.length === 0 ? (
+        <EmptyState icon="🧑‍🏫" title="No applications waiting">
+          Anyone who signs up to teach lands here. Students cannot find or book them until you
+          approve.
+        </EmptyState>
+      ) : (
+        <div className="space-y-4">
+          {pending.map((tutor) => (
+            <TutorApplicationRow key={tutor.id} tutor={tutor} />
+          ))}
+        </div>
+      )}
+
+      {rejected.length > 0 ? (
+        <section className="mt-10">
+          <h2 className="text-xl">Not approved</h2>
+          <div className="mt-4 space-y-4">
+            {rejected.map((tutor) => (
+              <TutorApplicationRow key={tutor.id} tutor={tutor} />
+            ))}
+          </div>
+        </section>
+      ) : null}
+    </>
+  );
+}
+
+function TutorApplicationRow({ tutor }: { tutor: User }) {
+  const [note, setNote] = useState("");
+  const decide = useAction((status: "approved" | "rejected") =>
+    api.users.setTutorStatus(tutor.id, status, note.trim() || undefined),
+  );
+
+  return (
+    <Card className="p-6">
+      <div className="flex flex-wrap items-center gap-3">
+        <Avatar name={tutor.name} />
+        <div className="min-w-0 flex-1">
+          <p className="font-medium text-ink-800">{tutor.name}</p>
+          <p className="truncate text-xs text-ink-400">
+            {tutor.email} · applied {relativeTime(tutor.createdAt)}
+            {tutor.verified ? "" : " · email not confirmed yet"}
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-1.5">
+          {tutor.languages.map((language) => (
+            <Badge key={language} tone={language === "sinhala" ? "jade" : "clay"}>
+              {language === "sinhala" ? "Sinhala" : "Tamil"}
+            </Badge>
+          ))}
+        </div>
+      </div>
+
+      {tutor.headline ? (
+        <p className="mt-4 font-display text-lg leading-snug text-ink-800">
+          &ldquo;{tutor.headline}&rdquo;
+        </p>
+      ) : null}
+      <p className="mt-2 text-xs text-ink-500">
+        {[tutor.homeTown, tutor.yearsTeaching !== undefined ? `${tutor.yearsTeaching} years teaching` : null]
+          .filter(Boolean)
+          .join(" · ") || "No details yet"}
+      </p>
+      {tutor.bio ? (
+        <p className="mt-3 text-sm leading-relaxed whitespace-pre-line text-ink-600">{tutor.bio}</p>
+      ) : null}
+
+      <Textarea
+        className="mt-4 min-h-20"
+        value={note}
+        onChange={(event) => setNote(event.target.value)}
+        placeholder="Optional note, emailed to them if you decline."
+        aria-label={`Note for ${tutor.name}`}
+      />
+
+      {decide.error ? (
+        <div className="mt-3">
+          <Alert>{decide.error}</Alert>
+        </div>
+      ) : null}
+
+      <div className="mt-4 flex flex-wrap gap-2">
+        <Button size="sm" disabled={decide.pending} onClick={() => void decide.run("approved")}>
+          Approve
+        </Button>
+        {tutor.tutorStatus !== "rejected" ? (
+          <Button
+            size="sm"
+            variant="secondary"
+            disabled={decide.pending}
+            onClick={() => void decide.run("rejected")}
+          >
+            Decline
+          </Button>
+        ) : null}
+      </div>
+    </Card>
   );
 }
 
@@ -362,6 +603,8 @@ const actionLabel: Record<string, string> = {
   membership_change: "Changed membership",
   account_deleted: "Deleted account",
   post_moderated: "Moderated post",
+  account_invited: "Invited",
+  tutor_review: "Reviewed tutor",
 };
 
 function AuditLog() {

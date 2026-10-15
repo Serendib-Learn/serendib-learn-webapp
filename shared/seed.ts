@@ -83,6 +83,7 @@ export function createSeedData(): SeedData {
       timezone: "Asia/Colombo",
       languages: ["sinhala", "tamil"],
       headline: "Keeping the lights on",
+      superAdmin: true,
     },
     ...tutorProfiles.map((profile, index) => ({
       id: profile.id,
@@ -99,6 +100,8 @@ export function createSeedData(): SeedData {
       hourlyRateUsd: profile.hourlyRateUsd,
       headline: profile.headline,
       bio: profile.bio,
+      specialties: profile.teaches,
+      tutorStatus: "approved" as const,
     })),
     {
       id: PRIYA,

@@ -9,6 +9,7 @@ const columns = [
       { href: "/tutors", label: "Meet the tutors" },
       { href: "/portal/learning-hub", label: "Learning hub" },
       { href: "/portal/calendar", label: "Book a session" },
+      { href: "/portal/signup?role=tutor", label: "Teach with us" },
     ],
   },
   // GAMES-HIDDEN: games are parked for now — see src/lib/features.ts.

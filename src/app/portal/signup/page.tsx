@@ -5,7 +5,7 @@ import { Suspense, useState } from "react";
 import { AuthCard, AuthFooterLink } from "@/components/portal/auth-card";
 import { GoogleButton } from "@/components/portal/google-button";
 import { Button } from "@/components/ui/button";
-import { Checkbox, Field, Input } from "@/components/ui/field";
+import { Checkbox, Field, Input, Textarea } from "@/components/ui/field";
 import { Alert, Card } from "@/components/ui/primitives";
 import { turnstileAvailable, TurnstileWidget } from "@/components/ui/turnstile-widget";
 import { api } from "@/lib/api";
@@ -22,14 +22,33 @@ const roleOptions = [
   {
     value: "tutor" as const,
     title: "I want to teach",
-    body: "Publish your availability, upload material, and assign it to your tutees.",
+    body: "Apply to teach. Once approved, publish your hours and share material with your students.",
   },
 ];
+
+const nextSteps = {
+  student: [
+    "We email you a six digit code to confirm the address",
+    "You land in your portal, ready to choose a tutor",
+    "Pick a tutor from real availability and book an hour",
+  ],
+  tutor: [
+    "We email you a six digit code to confirm the address",
+    "Our team reviews your application — we vet every tutor personally",
+    "Once approved, students can find you and book your hours",
+  ],
+};
 
 function SignUpForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [role, setRole] = useState<"student" | "tutor">("student");
+  const [role, setRole] = useState<"student" | "tutor">(
+    searchParams.get("role") === "tutor" ? "tutor" : "student",
+  );
+  const [headline, setHeadline] = useState("");
+  const [homeTown, setHomeTown] = useState("");
+  const [yearsTeaching, setYearsTeaching] = useState("");
+  const [bio, setBio] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -71,18 +90,18 @@ function SignUpForm() {
 
   return (
     <AuthCard
-      title="Create your account"
-      intro="Two minutes, no card. You choose a tutor afterwards."
+      title={role === "tutor" ? "Apply to teach" : "Create your account"}
+      intro={
+        role === "tutor"
+          ? "Tell us a little about yourself. Every tutor is personally vetted before students can book them."
+          : "Two minutes, no card. You choose a tutor afterwards."
+      }
       footer={<AuthFooterLink label="Already have an account?" href="/portal/login" cta="Log in" />}
       aside={
         <Card className="p-6">
           <p className="text-sm font-semibold text-ink-900">What happens next</p>
           <ol className="mt-4 space-y-3.5">
-            {[
-              "We email you a six digit code to confirm the address",
-              "You land in your portal, empty and waiting",
-              "Pick a tutor from real availability and book an hour",
-            ].map((line, index) => (
+            {nextSteps[role].map((line, index) => (
               <li key={line} className="flex gap-3 text-sm leading-snug text-ink-600">
                 <span className="grid size-5 shrink-0 place-items-center rounded-full bg-jade-100 text-[0.7rem] font-bold text-jade-700">
                   {index + 1}
@@ -92,8 +111,9 @@ function SignUpForm() {
             ))}
           </ol>
           <p className="mt-5 border-t border-ink-900/8 pt-4 text-xs leading-relaxed text-ink-400">
-            Tutor accounts are reviewed by an administrator before students can book
-            them.
+            {role === "tutor"
+              ? "Already teaching with us? Ask the team to add you instead — you will get an email to set your password."
+              : "Looking to teach instead? Choose “I want to teach” above."}
           </p>
         </Card>
       }
@@ -116,6 +136,15 @@ function SignUpForm() {
             role,
             languages,
             timezone: timezone || "UTC",
+            application:
+              role === "tutor"
+                ? {
+                    headline: headline.trim() || undefined,
+                    homeTown: homeTown.trim() || undefined,
+                    bio: bio.trim() || undefined,
+                    yearsTeaching: yearsTeaching ? Number(yearsTeaching) : undefined,
+                  }
+                : undefined,
             turnstileToken: turnstileToken ?? undefined,
           });
           if (result) {
@@ -207,9 +236,58 @@ function SignUpForm() {
             ))}
           </div>
           <p className="mt-2 text-xs text-ink-400">
-            Pick both if you want both — Dilani teaches Sinhala and Tamil together.
+            {role === "tutor"
+              ? "Pick both if you teach both."
+              : "Pick both if you want both — some of our tutors teach Sinhala and Tamil together."}
           </p>
         </fieldset>
+
+        {role === "tutor" ? (
+          <fieldset className="space-y-4 rounded-2xl bg-sand-100/70 p-4 ring-1 ring-ink-900/6">
+            <legend className="px-1 text-sm font-medium text-ink-700">
+              Your application <span className="font-normal text-ink-400">(you can finish it later)</span>
+            </legend>
+            <Field label="One line on how you teach" htmlFor="su-headline">
+              <Input
+                id="su-headline"
+                maxLength={140}
+                value={headline}
+                onChange={(event) => setHeadline(event.target.value)}
+                placeholder="Spoken Sinhala first, the way families actually talk"
+              />
+            </Field>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Where you grew up" htmlFor="su-hometown">
+                <Input
+                  id="su-hometown"
+                  value={homeTown}
+                  onChange={(event) => setHomeTown(event.target.value)}
+                  placeholder="Galle"
+                />
+              </Field>
+              <Field label="Years teaching" htmlFor="su-years">
+                <Input
+                  id="su-years"
+                  type="number"
+                  min={0}
+                  max={70}
+                  value={yearsTeaching}
+                  onChange={(event) => setYearsTeaching(event.target.value)}
+                  placeholder="5"
+                />
+              </Field>
+            </div>
+            <Field label="Introduce yourself" htmlFor="su-bio" hint="This becomes your public profile once you are approved.">
+              <Textarea
+                id="su-bio"
+                maxLength={2000}
+                value={bio}
+                onChange={(event) => setBio(event.target.value)}
+                placeholder="Where you are from, who you have taught, and what a first lesson with you looks like."
+              />
+            </Field>
+          </fieldset>
+        ) : null}
 
         {timezone ? (
           <p className="text-xs text-ink-400">
@@ -231,7 +309,11 @@ function SignUpForm() {
           className="w-full"
           disabled={pending || languages.length === 0 || (turnstileAvailable && !turnstileToken)}
         >
-          {pending ? "Creating your account…" : "Create account"}
+          {pending
+            ? "Creating your account…"
+            : role === "tutor"
+              ? "Send my application"
+              : "Create account"}
         </Button>
       </form>
 

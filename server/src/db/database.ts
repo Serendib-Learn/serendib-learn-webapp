@@ -46,6 +46,11 @@ export interface ResetToken extends Doc {
   id: string;
   email: string;
   createdAt: string;
+  /**
+   * When the link stops working. Tokens written before this field existed
+   * fall back to a day after `createdAt` (see lib/accounts.ts).
+   */
+  expiresAt?: string;
 }
 
 /** A Google account linked for Calendar + Meet. Separate from sign-in. */
@@ -177,10 +182,18 @@ export async function connect(): Promise<Database> {
   database = build(store);
 
   if (await store.isEmpty()) {
-    await store.replaceAll(await seedContents());
-    console.log(
-      `Seeded a fresh database (${usingMongo ? `MongoDB: ${config.mongodbDbName}` : config.dataFile})`,
-    );
+    // The seed's accounts all share a published password, including an
+    // administrator — fine for a demo, a backdoor anywhere else. A real
+    // deployment starts empty and gets its first account from
+    // SUPER_ADMIN_EMAIL instead (lib/accounts.ts's ensureSuperAdmin).
+    if (config.demoMode) {
+      await store.replaceAll(await seedContents());
+      console.log(
+        `Seeded a fresh database (${usingMongo ? `MongoDB: ${config.mongodbDbName}` : config.dataFile})`,
+      );
+    } else {
+      console.log("Fresh database and DEMO_MODE=false: not seeding demo accounts.");
+    }
   }
 
   return database;

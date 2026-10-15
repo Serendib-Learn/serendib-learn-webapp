@@ -2,7 +2,7 @@ import { Router } from "express";
 import { db } from "../db/database.ts";
 import { ApiError, forbidden, notFound, wrap } from "../lib/errors.ts";
 import { pathParam } from "../lib/http.ts";
-import { blocksSlot, overlaps, priceFor, requireUserRecord } from "../lib/domain.ts";
+import { blocksSlot, isBookableTutor, overlaps, priceFor, requireUserRecord } from "../lib/domain.ts";
 import { createGoogleMeeting, deleteGoogleMeeting } from "../lib/google.ts";
 import { newId, nowIso } from "../lib/ids.ts";
 import { deliver } from "../lib/mail.ts";
@@ -116,6 +116,9 @@ bookingsRouter.post(
 
     const tutor = await requireUserRecord(tutorId);
     if (tutor.role !== "tutor") throw new ApiError("That account does not teach.");
+    if (!isBookableTutor(tutor)) {
+      throw new ApiError("That tutor is not taking bookings yet.");
+    }
 
     const endMs = startMs + durationMins * 60 * 1000;
     const existing = await db().bookings.find({ tutorId });

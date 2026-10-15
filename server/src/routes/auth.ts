@@ -1,11 +1,12 @@
 import { Router } from "express";
 import { z } from "zod";
 import { db } from "../db/database.ts";
+import { notifyAdmins, passwordLink, RESET_LINK_MS, tokenExpired } from "../lib/accounts.ts";
 import { ApiError, unauthorized, wrap } from "../lib/errors.ts";
 import { verifyGoogleCredential } from "../lib/google.ts";
 import { newId, nowIso } from "../lib/ids.ts";
 import { deliver } from "../lib/mail.ts";
-import { hashPassword, randomToken, sixDigitCode, verifyPassword } from "../lib/passwords.ts";
+import { hashPassword, sixDigitCode, verifyPassword } from "../lib/passwords.ts";
 import { endSession, startSession } from "../lib/sessions.ts";
 import { requireTurnstile } from "../lib/turnstile.ts";
 import { parseBody } from "../lib/validate.ts";
@@ -34,6 +35,16 @@ const languagesSchema = z
   .array(z.enum(["sinhala", "tamil"]))
   .min(1, "Pick at least one language.");
 
+/** Optional at signup — a tutor can fill the rest of their profile in later. */
+const applicationSchema = z
+  .object({
+    headline: z.string().trim().max(140, "Keep the headline under 140 characters.").optional(),
+    bio: z.string().trim().max(2000, "Keep the introduction under 2000 characters.").optional(),
+    homeTown: z.string().trim().max(80).optional(),
+    yearsTeaching: z.coerce.number().int().min(0).max(70).optional(),
+  })
+  .optional();
+
 const signUpSchema = z.object({
   name: z
     .string({ error: "We need a name to put on your account." })
@@ -44,6 +55,7 @@ const signUpSchema = z.object({
   role: z.enum(["student", "tutor"]).default("student"),
   languages: languagesSchema,
   timezone: z.string().trim().min(1).default("UTC"),
+  application: applicationSchema,
   turnstileToken: z.string().optional(),
 });
 
@@ -80,6 +92,17 @@ const resetPasswordSchema = z.object({
   token: z.string({ error: RESET_LINK_INVALID }).min(1, RESET_LINK_INVALID),
   password: z.string({ error: PASSWORD_TOO_SHORT }).min(MIN_PASSWORD, PASSWORD_TOO_SHORT),
 });
+
+/** Tells the admins a tutor is waiting for a decision. */
+async function announceTutorApplication(tutor: User): Promise<void> {
+  await notifyAdmins(
+    `New tutor application: ${tutor.name}`,
+    `${tutor.name} (${tutor.email}) has applied to teach ${tutor.languages.join(" and ")}.\n\n${tutor.headline ? `"${tutor.headline}"\n\n` : ""}Review it in the portal: Administration → Tutor applications. Students cannot book them until you approve.`,
+  );
+}
+
+const pendingTutorWelcome =
+  "Thanks for applying to teach with Serendib Learn. Your application is with our team now — we personally vet every tutor, and we will be in touch to talk it through. In the meantime, fill in your profile and set your hours in the portal calendar; students can book you as soon as you are approved.";
 
 async function sendVerification(email: string): Promise<void> {
   const code = sixDigitCode();
@@ -122,6 +145,16 @@ authRouter.post(
       languages: input.languages,
     };
 
+    if (input.role === "tutor") {
+      // Nobody can book a tutor until an administrator has approved them.
+      user.tutorStatus = "pending";
+      const application = input.application ?? {};
+      if (application.headline) user.headline = application.headline;
+      if (application.bio) user.bio = application.bio;
+      if (application.homeTown) user.homeTown = application.homeTown;
+      if (application.yearsTeaching !== undefined) user.yearsTeaching = application.yearsTeaching;
+    }
+
     await db().users.insertOne(user);
     await db().credentials.insertOne({
       id: user.id,
@@ -155,13 +188,20 @@ authRouter.post(
 
     await deliver({
       to: user.email,
-      subject: "You're in — welcome to Serendib Learn",
+      subject:
+        user.tutorStatus === "pending"
+          ? "We've got your application — welcome to Serendib Learn"
+          : "You're in — welcome to Serendib Learn",
       body:
-        user.role === "tutor"
-          ? "Your tutor account is live. Set your availability in the portal calendar so students can book you, then upload your first material to the learning hub."
-          : "Your account is live. Find a tutor in the portal calendar, and say hello in the community while you wait for your first lesson.",
+        user.tutorStatus === "pending"
+          ? pendingTutorWelcome
+          : user.role === "tutor"
+            ? "Your tutor account is live. Set your availability in the portal calendar so students can book you, then upload your first material to the learning hub."
+            : "Your account is live. Find a tutor in the portal calendar, and say hello in the community while you wait for your first lesson.",
       kind: "welcome",
     });
+
+    if (user.tutorStatus === "pending") await announceTutorApplication(verified ?? user);
 
     response.json({ user: verified });
   }),
@@ -286,6 +326,7 @@ authRouter.post(
       languages,
       googleId: identity.googleId,
       avatarUrl: identity.avatarUrl,
+      ...(role === "tutor" ? { tutorStatus: "pending" as const } : {}),
     };
 
     // No credential row: this account has no password until someone sets one
@@ -295,13 +336,18 @@ authRouter.post(
 
     await deliver({
       to: created.email,
-      subject: "You're in — welcome to Serendib Learn",
+      subject:
+        created.tutorStatus === "pending"
+          ? "We've got your application — welcome to Serendib Learn"
+          : "You're in — welcome to Serendib Learn",
       body:
-        created.role === "tutor"
-          ? "Your tutor account is live, signed in with Google. Set your availability in the portal calendar so students can book you."
+        created.tutorStatus === "pending"
+          ? pendingTutorWelcome
           : "Your account is live, signed in with Google. Find a tutor in the portal calendar, and say hello in the community while you wait for your first lesson.",
       kind: "welcome",
     });
+
+    if (created.tutorStatus === "pending") await announceTutorApplication(created);
 
     response.status(201).json({ user: created, created: true });
   }),
@@ -323,15 +369,14 @@ authRouter.post(
 
     // Deliberately silent when there is no match.
     if (user) {
-      const token = randomToken(24);
-      await db().resetTokens.insertOne({ id: token, email, createdAt: nowIso() });
+      const link = await passwordLink(email, RESET_LINK_MS);
 
       await deliver({
         to: email,
         subject: "Reset your Serendib Learn password",
-        body: `Someone asked to reset the password for this account. Use the link below to choose a new one. It works once.\n\n/portal/reset-password?token=${token}`,
+        body: `Someone asked to reset the password for this account. Use the link below to choose a new one. It works once, for the next 24 hours.\n\n${link.url}`,
         kind: "password_reset",
-        token,
+        token: link.token,
       });
     }
 
@@ -347,6 +392,10 @@ authRouter.post(
     const record = await db().resetTokens.findById(token);
     if (!record) {
       throw new ApiError("That reset link has already been used, or never existed.");
+    }
+    if (tokenExpired(record)) {
+      await db().resetTokens.deleteOne({ id: token });
+      throw new ApiError("That link has expired. Ask for a new one from the login screen.");
     }
 
     const user = await db().users.findOne({ email: record.email });

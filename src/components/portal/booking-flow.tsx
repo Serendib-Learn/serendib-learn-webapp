@@ -16,7 +16,7 @@ import {
   EmptyState,
   Loading,
 } from "@/components/ui/primitives";
-import type { Booking, LanguageCode, Slot, User } from "@/lib/types";
+import type { Booking, LanguageCode, PublicTutor, Slot, User } from "@/lib/types";
 
 const focusIdeas = [
   "Survival phrases for a Colombo trip",
@@ -170,7 +170,7 @@ function BookingDetails({
   onDone,
 }: {
   student: User;
-  tutor: User;
+  tutor: PublicTutor;
   slot: Slot;
   onDone: () => void;
 }) {
@@ -282,7 +282,7 @@ function Checkout({
   onClose,
 }: {
   booking: Booking;
-  tutor: User;
+  tutor: PublicTutor;
   onClose: () => void;
 }) {
   const [paid, setPaid] = useState(false);

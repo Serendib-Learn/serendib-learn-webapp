@@ -81,7 +81,7 @@ export default function TutorsPage() {
             speaking. Create a tutor account, set your availability, and we will be in
             touch to talk it through before any student can book you.
           </SectionHeading>
-          <ButtonLink href="/portal/signup" className="mt-8">
+          <ButtonLink href="/portal/signup?role=tutor" className="mt-8">
             Apply as a tutor
           </ButtonLink>
         </div>

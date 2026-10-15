@@ -1,15 +1,21 @@
 import { Router } from "express";
+import { z } from "zod";
 import { db } from "../db/database.ts";
+import { sendInvite } from "../lib/accounts.ts";
 import { logAudit } from "../lib/audit.ts";
 import { ApiError, forbidden, notFound, wrap } from "../lib/errors.ts";
 import { pathParam } from "../lib/http.ts";
-import { tuteeIdsOf } from "../lib/domain.ts";
+import { isBookableTutor, publicTutor, tuteeIdsOf } from "../lib/domain.ts";
+import { newId, nowIso } from "../lib/ids.ts";
+import { deliver } from "../lib/mail.ts";
 import { requireAdmin, requireAuth, requireSelfOrAdmin, requireUser } from "../lib/sessions.ts";
+import { parseBody } from "../lib/validate.ts";
 import type {
   AuditLogEntry,
   MembershipStatus,
   PublicProfile,
   Role,
+  TutorStatus,
   User,
 } from "../../../shared/types.ts";
 
@@ -17,17 +23,42 @@ export const usersRouter = Router();
 
 const byName = (a: User, b: User) => a.name.localeCompare(b.name);
 
-/** Fields a user is allowed to change about themselves. */
-const editable: (keyof User)[] = [
-  "name",
-  "timezone",
-  "languages",
-  "headline",
-  "bio",
-  "hourlyRateUsd",
-  "yearsTeaching",
-  "homeTown",
-];
+/** Fields a user is allowed to change about themselves, and what each must look like. */
+const profilePatchSchema = z
+  .object({
+    name: z.string().trim().min(1, "A name cannot be empty.").max(80),
+    timezone: z.string().trim().min(1).max(64),
+    languages: z.array(z.enum(["sinhala", "tamil"])).min(1, "Pick at least one language."),
+    headline: z.string().trim().max(140, "Keep the headline under 140 characters."),
+    bio: z.string().trim().max(2000, "Keep the bio under 2000 characters."),
+    hourlyRateUsd: z.coerce.number().min(5, "Rates start at $5 an hour.").max(500),
+    yearsTeaching: z.coerce.number().int().min(0).max(70),
+    homeTown: z.string().trim().max(80),
+    specialties: z.array(z.string().trim().min(1).max(40)).max(8, "Up to eight specialties."),
+  })
+  .partial();
+
+const inviteSchema = z.object({
+  name: z
+    .string({ error: "We need a name to put on the account." })
+    .trim()
+    .min(1, "We need a name to put on the account."),
+  email: z
+    .string({ error: "That does not look like an email address." })
+    .trim()
+    .toLowerCase()
+    .pipe(z.email("That does not look like an email address.")),
+  role: z.enum(["student", "tutor", "admin"]),
+  languages: z.array(z.enum(["sinhala", "tamil"])).min(1, "Pick at least one language."),
+  timezone: z.string().trim().min(1).default("Asia/Colombo"),
+});
+
+/** The owners' account is out of reach of the admin area — see `User.superAdmin`. */
+function assertNotSuperAdmin(target: User | null, what: string) {
+  if (target?.superAdmin) {
+    throw forbidden(`A super admin account cannot be ${what} from here.`);
+  }
+}
 
 /** Names only, so the portal can label bookings, posts and replies. */
 usersRouter.get(
@@ -47,10 +78,50 @@ usersRouter.get(
   }),
 );
 
+/** Public: approved tutors only, without contact details. */
 usersRouter.get(
   "/tutors",
   wrap(async (_request, response) => {
-    response.json(await db().users.find({ role: "tutor" }, { sort: byName }));
+    const tutors = await db().users.find({ role: "tutor" }, { sort: byName });
+    response.json(tutors.filter(isBookableTutor).map(publicTutor));
+  }),
+);
+
+/**
+ * An administrator creating an account on someone's behalf — bringing an
+ * existing tutor onto the site, or adding another administrator. The person
+ * is emailed a link to choose their own password.
+ */
+usersRouter.post(
+  "/invite",
+  requireAdmin,
+  wrap(async (request, response) => {
+    const actor = requireUser(request);
+    const input = parseBody(inviteSchema, request.body);
+
+    if (await db().users.findOne({ email: input.email })) {
+      throw new ApiError("An account with that email already exists.");
+    }
+
+    const user: User = {
+      id: newId("u"),
+      name: input.name,
+      email: input.email,
+      role: input.role,
+      verified: true,
+      membership: input.role === "student" ? "none" : "active",
+      createdAt: nowIso(),
+      timezone: input.timezone,
+      languages: input.languages,
+      // An administrator adding a tutor is the approval.
+      ...(input.role === "tutor" ? { tutorStatus: "approved" as const } : {}),
+    };
+
+    const created = await db().users.insertOne(user);
+    await sendInvite(created, actor.name);
+    await logAudit(actor, "account_invited", created.name, `${created.role} · ${created.email}`);
+
+    response.status(201).json(created);
   }),
 );
 
@@ -121,11 +192,7 @@ usersRouter.patch(
   wrap(async (request, response) => {
     requireSelfOrAdmin(request, pathParam(request, "id"));
 
-    const body = (request.body ?? {}) as Partial<User>;
-    const patch: Partial<User> = {};
-    for (const field of editable) {
-      if (body[field] !== undefined) Object.assign(patch, { [field]: body[field] });
-    }
+    const patch: Partial<User> = parseBody(profilePatchSchema, request.body ?? {});
 
     const updated = await db().users.updateOne({ id: pathParam(request, "id") }, patch);
     if (!updated) throw notFound("No such account.");
@@ -148,10 +215,60 @@ usersRouter.post(
     }
 
     const target = await db().users.findById(pathParam(request, "id"));
-    const updated = await db().users.updateOne({ id: pathParam(request, "id") }, { role });
+    assertNotSuperAdmin(target, "demoted");
+
+    // Making someone a tutor from the admin area is itself the approval.
+    const patch: Partial<User> = role === "tutor" ? { role, tutorStatus: "approved" } : { role };
+    const updated = await db().users.updateOne({ id: pathParam(request, "id") }, patch);
     if (!updated) throw notFound("No such account.");
 
     await logAudit(actor, "role_change", target?.name ?? updated.id, `${target?.role} → ${role}`);
+    response.json(updated);
+  }),
+);
+
+/** Approve or turn down a tutor's application. */
+usersRouter.post(
+  "/:id/tutor-status",
+  requireAdmin,
+  wrap(async (request, response) => {
+    const status = String(request.body?.status ?? "") as TutorStatus;
+    if (status !== "approved" && status !== "rejected" && status !== "pending") {
+      throw new ApiError("A tutor is approved, rejected or pending.");
+    }
+    const note = request.body?.note ? String(request.body.note).trim() : "";
+
+    const actor = requireUser(request);
+    const target = await db().users.findById(pathParam(request, "id"));
+    if (!target) throw notFound("No such account.");
+    if (target.role !== "tutor") throw new ApiError("That account is not a tutor.");
+
+    const updated = await db().users.updateOne({ id: target.id }, { tutorStatus: status });
+    if (!updated) throw notFound("No such account.");
+
+    await logAudit(
+      actor,
+      "tutor_review",
+      target.name,
+      `${target.tutorStatus ?? "approved"} → ${status}${note ? `: ${note}` : ""}`,
+    );
+
+    if (status === "approved") {
+      await deliver({
+        to: target.email,
+        subject: "You're approved to teach on Serendib Learn",
+        body: "Good news — your tutor application has been approved and students can now find and book you.\n\nMake sure your profile and hours are up to date in the portal: Overview → Your tutor profile, and Calendar → My hours.",
+        kind: "notification",
+      });
+    } else if (status === "rejected") {
+      await deliver({
+        to: target.email,
+        subject: "About your Serendib Learn tutor application",
+        body: note || "Thank you for applying to teach with Serendib Learn. We are not able to take your application forward at the moment.",
+        kind: "notification",
+      });
+    }
+
     response.json(updated);
   }),
 );
@@ -190,6 +307,7 @@ usersRouter.delete(
     if (actor.id === id) throw forbidden("You cannot delete your own account here.");
 
     const target = await db().users.findById(id);
+    assertNotSuperAdmin(target, "deleted");
     const removed = await db().users.deleteOne({ id });
     if (!removed) throw notFound("No such account.");
 
