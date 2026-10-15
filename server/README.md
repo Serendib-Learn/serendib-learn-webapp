@@ -61,18 +61,104 @@ form, the tutor list and the demo inbox needs a session cookie.
 
 | Area | Routes |
 | --- | --- |
-| Auth | `GET /auth/me`, `POST /auth/signup`, `/auth/verify`, `/auth/resend`, `/auth/login`, `/auth/logout`, `/auth/forgot-password`, `/auth/reset-password` |
-| Users | `GET /users` (admin), `GET /users/directory`, `GET /users/tutors`, `GET /users/audit-log` (admin), `GET /users/:id`, `GET /users/:id/tutees`, `GET /users/:id/tutors`, `PATCH /users/:id`, `POST /users/:id/role` (admin), `POST /users/:id/membership` (admin), `DELETE /users/:id` (admin) |
+| Auth | `GET /auth/me`, `POST /auth/signup` (a `tutor` signup carries an optional `application`), `/auth/verify`, `/auth/resend`, `/auth/login`, `/auth/google`, `/auth/logout`, `/auth/forgot-password`, `/auth/reset-password` |
+| Users | `GET /users` (admin), `GET /users/directory`, `GET /users/tutors` (public: approved tutors, no emails), `POST /users/invite` (admin), `GET /users/audit-log` (admin), `GET /users/:id`, `GET /users/:id/tutees`, `GET /users/:id/tutors`, `PATCH /users/:id` (profile fields only, zod-validated), `POST /users/:id/role` (admin), `POST /users/:id/tutor-status` (admin), `POST /users/:id/membership` (admin), `DELETE /users/:id` (admin) |
 | Availability | `GET /availability?tutorId`, `GET /availability/slots?tutorId&days`, `POST /availability`, `DELETE /availability/:id` |
-| Bookings | `GET /bookings?userId`, `GET /bookings/:id`, `POST /bookings`, `POST /bookings/:id/pay`, `/cancel`, `/complete` |
-| Materials | `GET /materials?studentId\|ownerId`, `GET /materials/library`, `POST /materials`, `POST /materials/:id/assign`, `DELETE /materials/:id` |
+| Bookings | `GET /bookings?userId`, `GET /bookings/:id`, `POST /bookings`, `POST /bookings/:id/checkout`, `GET /bookings/:id/payment`, `POST /bookings/:id/pay` (demo, or admin), `/cancel`, `/complete`, `/meeting-link` |
+| Payments | `GET /payments/config`, `POST /payments/webhook` (Payments.lk, signature-verified) |
+| Feedback | `GET /feedback/pending`, `POST /feedback`, `GET /feedback?tutorId\|studentId` (or all, admin), `POST /feedback/lesson-notes`, `POST /voice-notes`, `GET /voice-notes/:id` |
+| Chapters | `GET /chapters`, `POST /chapters` (admin), `PATCH /chapters/:id` (admin), `DELETE /chapters/:id` (admin) |
+| Materials | `GET /materials?studentId\|ownerId`, `GET /materials/library`, `POST /materials`, `POST /materials/:id/assign`, `POST /materials/:id/chapter`, `DELETE /materials/:id` |
 | Homework | `GET /homework?studentId\|tutorId`, `POST /homework`, `POST /homework/:id/submit`, `/review` |
 | Progress | `GET /lesson-notes?studentId`, `GET /progress?tutorId`, `GET /progress/:studentId` |
-| Community | `GET /posts`, `GET /posts/pending` (admin), `POST /posts`, `POST /posts/:id/like`, `GET\|POST /posts/:id/replies`, `POST /posts/:id/moderate` (admin) |
-| Messages | `GET /threads`, `POST /threads`, `GET\|POST /threads/:id/messages`, `POST /threads/:id/read` |
+| Community | `GET /posts`, `GET /posts/pending` (admin), `POST /posts`, `POST /posts/:id/like`, `GET\|POST /posts/:id/replies`, `POST /posts/:id/moderate` (admin), `GET /community/members?language`, `GET\|POST /community/connections`, `POST /community/connections/:id/accept\|decline`, `DELETE /community/connections/:id` |
+| Messages | `GET /threads`, `POST /threads` (student-to-student needs a friend connection), `GET\|POST /threads/:id/messages`, `POST /threads/:id/read` |
+| Jobs | `POST /jobs/reminders` (header `X-Cron-Secret`; off unless `CRON_SECRET` is set) |
 | Waitlist | `POST /waitlist`, `GET /waitlist` (admin) |
 | Demo | `GET /mail`, `POST /mail/:id/read`, `DELETE /mail`, `POST /demo/reset` |
-| Integrations | `GET /integrations/google/status`, `GET /integrations/google/connect`, `POST /integrations/google/disconnect`, `GET /integrations/google/mail/status` (admin), `GET /integrations/google/mail/connect` (admin), `POST /integrations/google/mail/disconnect` (admin), `GET /integrations/google/callback` |
+| Integrations | `GET /integrations/google/status`, `GET /integrations/google/connect`, `POST /integrations/google/disconnect`, `GET /integrations/google/mail/status\|connect` (admin), `POST /integrations/google/mail/disconnect` (admin), `GET /integrations/google/system-calendar/status\|connect` (admin), `POST /integrations/google/system-calendar/disconnect` (admin), `GET /integrations/google/callback` |
+
+## Accounts: students, tutors and the super admin
+
+- **Students** sign up at `/portal/signup`. Their membership turns active on
+  the first paid booking, which is also what makes them a vetted community
+  member (`lib/community.ts`'s `isVetted`).
+- **Tutors** sign up at `/portal/signup?role=tutor` with an optional short
+  application, and stay `tutorStatus: "pending"` — unlisted and unbookable —
+  until an admin approves them (Administration → Tutor applications). Admins
+  are emailed on every application. A tutor record with no `tutorStatus`
+  predates approvals and counts as approved. An admin can also **invite** a
+  tutor (or anyone): the account is created already verified (and approved)
+  and a seven-day set-your-password link is emailed (`lib/accounts.ts`).
+- **The super admin** is the owners' account: `SUPER_ADMIN_EMAIL` (+
+  `SUPER_ADMIN_NAME`, `SUPER_ADMIN_PASSWORD`) makes sure it exists on every
+  boot, and `npm run create-admin -- --email … --name "…"` does the same from
+  a shell against whatever `.env` points at. A `superAdmin` account cannot be
+  demoted or deleted from the admin area.
+- With `DEMO_MODE=false` the demo accounts (which share a published password,
+  one of them an admin) are never seeded.
+
+## Payments
+
+`lib/payments.ts` and `routes/payments.ts`, on the official
+`@payments-lk/node` SDK. Off (demo checkout) until `PAYMENTS_LK_SECRET_KEY` is
+set; an `sk_test_` key takes sandbox payments on Payable's sandbox, `sk_live_`
+real ones — the key decides, the API address is the same.
+
+1. `POST /bookings/:id/checkout` (the student, or an admin) creates a hosted
+   checkout referenced to the booking — or returns the current one while it is
+   still open — priced in LKR cents from the booking's USD price at
+   `USD_TO_LKR`, and the browser is sent to its `url`.
+2. **The webhook confirms.** `POST /api/payments/webhook` is mounted with a
+   raw body parser *before* `express.json()` (the signature covers the exact
+   bytes), verified against `PAYMENTS_LK_WEBHOOK_SECRET` with a five-minute
+   replay window, de-duplicated by event id (`paymentEvents`), and:
+   `payment.succeeded` confirms the booking if the amount matches what was
+   asked; `payment.failed` records the decline; `checkout.expired` releases
+   the held slot.
+3. `GET /bookings/:id/payment` reads the checkout back and confirms from it —
+   the checkout page polls this after the customer returns, which is also how
+   a payment confirms on localhost, where no webhook can arrive.
+4. Confirmation (`lib/booking-confirmation.ts`, shared with the demo path and
+   admin "mark paid") makes the Meet link, activates membership, and emails a
+   receipt and a tutor notice. It is idempotent.
+
+Once a key is set, `POST /bookings/:id/pay` (the instant demo confirm) is
+refused for students; admins keep it to record a payment taken some other way.
+
+## Lesson feedback, voice notes and reminders
+
+`routes/feedback.ts`, `lib/feedback.ts`, `lib/reminders.ts`. Once a lesson's
+end time passes, `GET /feedback/pending` lists it for each side: the student
+owes a rating (1–5, comment, optional voice note), the tutor a write-up (a
+`LessonNote`, which also marks the booking completed). Reminders go out at
+class end and once more 24 hours later, only for what is still missing, and
+are recorded on the booking (`feedbackReminders`) so nothing sends twice.
+They run on an in-process timer every `REMINDER_INTERVAL_MS` (0 = off) and on
+`POST /jobs/reminders` with `X-Cron-Secret: $CRON_SECRET` — use the latter
+from Cloud Scheduler, since an idle Cloud Run instance gets no CPU.
+
+Voice notes are uploaded as base64 JSON with their own 5 MB body limit
+(index.ts skips the general 256 KB parser for `/api/voice-notes`), capped at
+three minutes, and served only to the two people on the lesson and admins.
+Only the author can attach a note to their own feedback or write-up.
+
+## Course chapters
+
+`routes/chapters.ts`. Every database gets the outline in
+`shared/curriculum.ts` the first time it is empty (demo or not). Materials
+carry an optional `chapterId`; deleting a chapter unfiles its materials
+rather than deleting them.
+
+## Community: practice partners and friends
+
+`routes/connections.ts`, `lib/community.ts`. Vetted students (email
+confirmed + a paid booking) who have not opted out (`openToPractice: false`)
+are listed to other vetted members, without contact details. Friend requests
+can be accepted, declined (quietly), cancelled or removed; asking someone who
+already asked you accepts. Students can message each other only while
+friends; anything involving a tutor or admin is open. Conversations never
+carry the other person's email address.
 
 ## Google: sign-in, Calendar, Meet and Gmail
 
@@ -176,8 +262,11 @@ See `DEPLOYMENT.md` for creating a free MongoDB Atlas cluster.
 
 - **Headers.** `helmet()` on every response (CSP, `X-Frame-Options`,
   `X-Content-Type-Options`, HSTS, etc.).
-- **Rate limiting.** `lib/rate-limit.ts` — 300 req/15min on all of `/api`,
-  20 req/15min on `/api/auth` specifically. `app.set("trust proxy", 1)` makes
+- **Rate limiting.** `lib/rate-limit.ts` — a flood guard of 1500 req/15min
+  on all of `/api` (the portal refetches after every write and polls, and
+  households share an IP), and 20 req/15min on credential attempts under
+  `/api/auth` (`GET /auth/me` and logout do not count — counting them signed
+  busy people out). `RATE_LIMIT_SCALE` multiplies both; only the tests set it. `app.set("trust proxy", 1)` makes
   this key off the real client IP behind Cloud Run's proxy, not the proxy's
   own IP for every request.
 - **Input validation.** `routes/auth.ts` validates with `zod` (real email
@@ -221,14 +310,26 @@ npm test              # everything: unit + integration
   sets test env vars and dynamically imports `index.ts` — dynamic, because a
   static `import` is hoisted above the env vars it depends on, which
   `config.ts` reads once at import time.
-- Covered: the full signup → verify → login flow, duplicate-email and
+- `startTestServer(env)` takes per-file env overrides (applied last), e.g.
+  `lib/accounts.test.ts` boots with `DEMO_MODE=false` and a super admin, and
+  `lib/rate-limit.test.ts` runs at the real limits. `test-support/accounts.ts`
+  has the shared helpers: the seeded admin, signed-up-and-verified users
+  (tutors approved unless asked not to), and the latest mail to an address.
+- Payments run the real SDK against `test-support/fake-payments-lk.ts`, a
+  local stand-in for api.payments.lk that can also "pay" or expire a
+  checkout and sign webhook bodies like the real thing.
+- Covered: the signup → verify → login flow, duplicate-email and
   wrong-password rejections (with the identical error message for both, so
-  the API can't be used to enumerate accounts), password reset, and the
-  booking lifecycle (create → slot-clash detection → pay → complete, with
-  authorization checked at every step).
-- Not covered yet: most other routes (materials, homework, community,
-  messages), the Google integrations (would need mocking `googleapis`), and
-  anything on the frontend.
+  the API can't be used to enumerate accounts), password reset and invite
+  links, tutor approval, the super admin bootstrap and its protections, the
+  booking lifecycle with manual meeting links, Payments.lk checkout/webhook/
+  status polling (pricing, reuse, forged and replayed signatures, wrong
+  amounts, expiry), the feedback loop and its reminders, voice-note privacy,
+  chapters, practice partners and friend-gated messaging, the rate limits,
+  and the Mongo store's handling of `undefined` updates.
+- Not covered yet: materials (beyond chapters), homework, posts, the Google
+  integrations (would need mocking `googleapis`), and anything on the
+  frontend (checked by hand in a browser for every change so far).
 
 If a test hangs instead of failing, it's almost always an unclosed resource
 keeping Node's event loop alive rather than a broken test — `close()` in the

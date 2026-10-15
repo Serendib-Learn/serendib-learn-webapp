@@ -28,6 +28,11 @@ reason to skip it.
 | Docker images, `docker-compose.yml` | Top comment in `docker-compose.yml`, `DEPLOYMENT.md` → "Local Docker Compose" |
 | Brand colors, logo, fonts, voice/tone | `branding/brand-tokens.txt` |
 | What's intentionally fake/demo-only right now (payments, etc.) | `README.md` → "Still demo-shaped" |
+| Student/tutor sign-up, tutor approval, the super admin, invites | `server/README.md` → "Accounts: students, tutors and the super admin" |
+| Payments (Payments.lk checkout, webhook, sandbox keys) | `server/README.md` → "Payments", `DEPLOYMENT.md` → "7. Payments.lk" |
+| Lesson feedback, voice notes, reminders, the cron job | `server/README.md` → "Lesson feedback, voice notes and reminders" |
+| Course chapters, practice partners / friend requests | `server/README.md` → "Course chapters", "Community: practice partners and friends" |
+| The parked games (how to bring them back) | `src/lib/features.ts` (and search `GAMES-HIDDEN`) |
 
 If none of these match, then explore — but check here first. A five-second
 lookup beats re-discovering something already documented.

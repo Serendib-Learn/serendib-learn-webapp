@@ -2,12 +2,19 @@
 
 Live Sinhala and Tamil tutoring, taught by Sri Lankans, for people with a reason to learn — a
 family, a move, a place they want to belong to. This repository holds the whole product: the
-public marketing pages, two free learning games built from the project's vocabulary and heritage
-research, and a member portal covering booking, payment, materials, homework, community and
-moderation.
+public marketing pages and a free alphabet sheet, and a member portal covering sign-up for
+students and tutors (with tutor approval), booking with Google Meet links, card payment through
+Payments.lk, materials organised by chapter, homework, a feedback loop after every lesson, and a
+vetted community with practice partners.
 
-The content — the eight Survival Sri Lanka chapters, the eighteen heritage sites and the tutor
-profiles — comes from the source documents in `docs/`.
+The course content — the eight Survival Sri Lanka chapters — comes from the source documents in
+`docs/`; the original site this replaces (a Lovable prototype) set the learning-hub stages, the
+brand and the social links.
+
+**What is parked, not deleted:** the two learning games (Survival Sri Lanka and Explore
+Heritage) are still in the code but switched off — every `/games` route 404s and every link is
+commented out. `src/lib/features.ts` explains how to bring them back; search for
+`GAMES-HIDDEN`.
 
 **Working on this with Claude, Cursor, or another AI assistant?** Read
 `AGENTS.md` first — it has a table of "where to look before exploring" that
@@ -19,7 +26,7 @@ re-discovering the codebase from scratch each session.
 
 | Path | What it is | Port |
 | --- | --- | --- |
-| `/` | Next.js app: pages, games, portal UI | 3000 |
+| `/` | Next.js app: public pages and portal UI | 3000 |
 | `/server` | Express API: accounts, bookings, everything persisted | 4000 |
 | `/shared` | Domain types and seed data both sides import | — |
 
@@ -63,7 +70,11 @@ seeds itself on first boot, so the portal has lessons, homework and posts to sho
 create anything. `server/README.md` has more on the storage layer.
 
 Passwords are hashed with scrypt from Node's `crypto`, and sessions are opaque tokens in an
-httpOnly cookie. Seeded accounts all share the password `serendib`:
+httpOnly cookie. In demo mode (`DEMO_MODE`, on unless set to `false`) these accounts are seeded,
+all with the password `serendib` — the seeded tutors are placeholders, not real people. With
+`DEMO_MODE=false` nothing is seeded: the first account is the owners' super admin from
+`SUPER_ADMIN_EMAIL` (or `npm --prefix server run create-admin`), and real tutors apply at
+`/portal/signup?role=tutor` or are invited from Administration → People.
 
 | Email | Role |
 | --- | --- |
@@ -72,7 +83,7 @@ httpOnly cookie. Seeded accounts all share the password `serendib`:
 | `nimali@serendiblearn.com` | Tutor, Sinhala |
 | `arjun@serendiblearn.com` | Tutor, Tamil |
 | `dilani@serendiblearn.com` | Tutor, both languages |
-| `admin@serendiblearn.com` | Administrator |
+| `admin@serendiblearn.com` | Super admin |
 
 Because there is no mail provider, a **Demo Inbox** sits in the bottom right corner of every page.
 Verification codes, password reset links and receipts land there, and the same panel resets the
@@ -110,12 +121,24 @@ credentials to switch on — see `server/README.md` for the setup steps:
 
 - Sign-in with Google.
 - A tutor connecting their Google Calendar so confirmed bookings get a real
-  Calendar event with a Google Meet link.
+  Calendar event with a Google Meet link — or an admin connecting the shared
+  Serendib calendar once (Administration → Google), which makes Meet links for
+  every tutor who has not connected their own.
 - An admin connecting one Gmail account so verification codes, receipts and
   welcome messages send for real instead of only appearing in the demo inbox.
 
-Without credentials, sign-in hides its button, bookings fall back to the
-placeholder meeting link, and mail stays demo-inbox-only — same as before.
+Without credentials, sign-in hides its button, a booking has no meeting link
+until the tutor adds one by hand from the calendar, and mail stays
+demo-inbox-only.
+
+## Payments
+
+Bookings are paid on [Payments.lk](https://payments.lk/developers)' hosted
+checkout (card details never touch this app). Set `PAYMENTS_LK_SECRET_KEY`
+(an `sk_test_` key from the sandbox profile) and `PAYMENTS_LK_WEBHOOK_SECRET`
+on the API and it is live; without them the demo checkout confirms bookings
+without charging. Tutors price in USD and checkouts are in LKR at `USD_TO_LKR`.
+Details in `server/README.md` → "Payments", setup in `DEPLOYMENT.md`.
 
 ## Docker and deployment
 
@@ -131,12 +154,17 @@ needs to do it automatically, see **`DEPLOYMENT.md`**.
 Rate limiting, security headers, input validation, an optional CAPTCHA, and
 an admin audit log are all in place — see server/README.md's "Security"
 section for what's covered and how each is configured. Automated tests
-(`npm test` in `server/`) cover the auth flow and the booking lifecycle end
-to end; see server/README.md's "Tests" section for what's not covered yet.
+(`npm test` in `server/`) cover auth, tutor approval and the super admin,
+bookings, payments (against a local stand-in for the Payments.lk API),
+feedback and voice notes, chapters, and the community's friend requests; see
+server/README.md's "Tests" section for what's not covered yet.
 
 ## Still demo-shaped
 
-- Checkout confirms a booking without contacting a payment provider.
+- Until `PAYMENTS_LK_SECRET_KEY` is set, checkout confirms a booking without charging anything.
 - The demo inbox is unauthenticated by design, so anyone who can reach the API can read every
   message. `DEMO_MODE=false` closes it and the reset endpoint.
-- Both games work without an account; scores are only recorded when someone is logged in.
+- The seeded tutors (Nimali, Arjun, Dilani) are placeholders; real tutors come in through the
+  tutor sign-up or an admin invite.
+- The alphabet sheet and the avatar characters were drafted with AI as a first pass and are
+  labelled for tutor review.

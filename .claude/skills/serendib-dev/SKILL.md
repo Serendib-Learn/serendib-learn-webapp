@@ -56,8 +56,8 @@ a manual one are warranted: extend the relevant `routes/*.test.ts` (see
    messages, misc). Use `requireAuth` / `requireAdmin` /
    `requireSelfOrAdmin(request, id)` from `lib/sessions.ts` for authorization
    — don't skip this even for "obviously safe" reads.
-3. Use the `Collection<T>` methods on `db()` (`find`, `findOne`, `insertOne`,
-   `updateOne`, `deleteOne`, `countDocuments`) with Mongo-shaped filters
+3. Use the `Collection<T>` methods on `db()` (`find`, `findOne`, `findById`,
+   `insertOne`, `updateOne`, `deleteOne`, `count`) with Mongo-shaped filters
    (`$in`, `$ne`, `$gt`, `$lt`, `$exists`) — never reach for the JSON file or
    a Mongo client directly. `database.ts` picks the JSON store
    (`db/store.ts`) or the real MongoDB store (`db/mongo-store.ts`) based on
@@ -158,7 +158,12 @@ everything.
   which is a much harder failure to diagnose than a normal test failure. If
   a new test file hangs, check `close()` is actually being awaited in an
   `after()` hook before suspecting the test logic itself.
-- Not covered yet: materials/homework/community/messages routes, the Google
+- `startTestServer(env)` takes env overrides; `test-support/accounts.ts`
+  has the shared user/admin/mail helpers — use them rather than re-writing
+  signup boilerplate. Tutors must be approved before they can be booked
+  (`signedUpUser` does it unless told not to).
+- Setting a field to `undefined` in `updateOne` removes it, in both stores.
+- Not covered yet: materials beyond chapters, homework, posts, the Google
   integrations (would need mocking `googleapis`), and the frontend.
 
 ## Deployment & infra

@@ -363,6 +363,112 @@ above, just a convenience.
 docker compose up --build
 ```
 
+## 7. Payments.lk
+
+*In short: get a sandbox key, put two secrets on the API, register one
+webhook. Until then the site keeps its demo checkout, which charges nothing.*
+
+1. **Create the sandbox profile** at
+   [app.payments.lk/admin/setup](https://app.payments.lk/admin/setup) ("Start
+   application"). Test keys (`sk_test_…`) are issued as soon as setup starts,
+   and sandbox checkouts run on Payable's sandbox. Live keys (`sk_live_…`)
+   appear in the dashboard after approval — swap the secret, nothing else
+   changes (the key decides the mode).
+2. **Register the webhook** in the Payments.lk dashboard:
+   `https://<your API host>/api/payments/webhook`, subscribed to
+   `payment.succeeded`, `payment.failed` and `checkout.expired`. Copy its
+   signing secret (`whsec_…`).
+3. **Store both as secrets** and give both service accounts access, exactly
+   like `MONGODB_URI` in step 2:
+   ```bash
+   echo -n "sk_test_..." | gcloud secrets create PAYMENTS_LK_SECRET_KEY --data-file=-
+   echo -n "whsec_..."   | gcloud secrets create PAYMENTS_LK_WEBHOOK_SECRET --data-file=-
+   ```
+   then add to `deploy-backend.yml`'s `secrets:` block — only once they exist,
+   or the deploy fails:
+   ```
+   PAYMENTS_LK_SECRET_KEY=PAYMENTS_LK_SECRET_KEY:latest
+   PAYMENTS_LK_WEBHOOK_SECRET=PAYMENTS_LK_WEBHOOK_SECRET:latest
+   ```
+   and, if the default 300 rupees per dollar is wrong, `USD_TO_LKR=<rate>` to
+   its `env_vars:` block. Tutors keep pricing in USD; checkouts are in LKR.
+4. **Locally**, put the same two values in `server/.env`. Webhooks cannot
+   reach localhost, so the checkout page confirms a payment by asking the API
+   to read the checkout back when you return from Payments.lk — the flow still
+   works end to end. In sandbox mode the checkout page says so.
+
+## 8. Lesson-feedback reminders (Cloud Scheduler)
+
+The API emails a "how was your lesson?" / "write up your lesson" reminder at
+the end of every class and once more a day later. It checks on a timer, but
+an idle Cloud Run instance gets no CPU, so also call the job from Cloud
+Scheduler:
+
+```bash
+echo -n "$(openssl rand -hex 24)" | gcloud secrets create CRON_SECRET --data-file=-
+# grant both service accounts access (as above), add
+#   CRON_SECRET=CRON_SECRET:latest
+# to deploy-backend.yml's secrets: block, then:
+gcloud scheduler jobs create http serendib-feedback-reminders \
+  --location=$REGION --schedule="*/5 * * * *" \
+  --uri="https://<your API host>/api/jobs/reminders" --http-method=POST \
+  --headers="X-Cron-Secret=$(gcloud secrets versions access latest --secret=CRON_SECRET)"
+```
+
+Without `CRON_SECRET` the endpoint does not exist; the timer alone still
+works whenever the instance is awake.
+
+## 9. The owners' super admin, and cleaning out demo data
+
+A production database (`DEMO_MODE=false`) starts with **no accounts** — the
+demo seed shares one published password, including an admin's, so it is
+never written there. Create the owners' account either way:
+
+- **On deploy:** add `SUPER_ADMIN_EMAIL=you@serendiblearn.com` and
+  `SUPER_ADMIN_NAME=…` to `deploy-backend.yml`'s `env_vars:`, and
+  `SUPER_ADMIN_PASSWORD` as a secret for the very first boot (remove it
+  afterwards — an existing account's password is never touched). Without a
+  password the account is created password-less and a set-your-password email
+  goes out, which only reaches a real inbox once Gmail sending is connected —
+  or sign in with Google on that address, which links it.
+- **From a shell:** with `server/.env` pointing at the production
+  `MONGODB_URI`, `npm --prefix server run create-admin -- --email you@… --name "…"`.
+
+**If your Atlas database was ever started in demo mode**, it still holds the
+demo accounts (`admin@serendiblearn.com`, the three placeholder tutors, the
+students) with the password `serendib`. Delete them from Administration →
+People once your own super admin exists (a super admin cannot be deleted
+there, so delete the demo admin from your own account), or drop the
+database and let the API start it fresh.
+
+Real tutors then either apply at `/portal/signup?role=tutor` (you approve
+them under Administration → Tutor applications) or you add them yourself
+from Administration → People → Invite someone, and fill in their profile with
+"Edit profile".
+
+## 10. Moving serendiblearn.com from the prototype
+
+The live serendiblearn.com is the original Lovable prototype. To serve this
+build there instead, the way the prototype was hosted:
+
+1. Finish steps 1–5 so the Vercel site and the Cloud Run API both work on
+   their default URLs.
+2. In Vercel → **Settings → Domains**, add `serendiblearn.com` and
+   `www.serendiblearn.com` (redirect one to the other). Vercel shows the DNS
+   records to set.
+3. At the domain's registrar (or wherever its DNS lives), replace the records
+   that currently point at the Lovable prototype with Vercel's. The prototype
+   keeps running at its own Lovable URL until you remove it, so there is an
+   easy way back.
+4. Map `api.serendiblearn.com` to the Cloud Run service (step 2) and set the
+   GitHub variables `APP_URL=https://www.serendiblearn.com` and
+   `API_URL=https://api.serendiblearn.com`; update the Google OAuth client's
+   JavaScript origin and redirect URI, and the Payments.lk webhook URL, to
+   match. Set Vercel's `NEXT_PUBLIC_API_URL` to the API domain and redeploy.
+
+The site is installable like the prototype was ("Add to Home Screen" /
+"Install app") — the manifest and the prototype's icons ship with it.
+
 ## Go-live checklist
 
 - [ ] Atlas cluster created, network access allows Cloud Run, connection string saved
@@ -379,4 +485,9 @@ docker compose up --build
 - [ ] `DEMO_MODE=false` in the API's deployed env (already set in `deploy-backend.yml`)
 - [ ] `COOKIE_SAMESITE=none` + `COOKIE_SECURE=true` in the API's deployed env (already set) — required because Vercel and Cloud Run are different domains
 - [ ] (optional) Cloudflare Turnstile site created at [dash.cloudflare.com](https://dash.cloudflare.com/?to=/:account/turnstile) if you want CAPTCHA on signup/waitlist — `TURNSTILE_SECRET_KEY` as a Cloud Run secret, `NEXT_PUBLIC_TURNSTILE_SITE_KEY` as a Vercel env var. Skipping this just means no CAPTCHA, same as local dev today.
+- [ ] Owners' super admin created (`SUPER_ADMIN_EMAIL` or `create-admin`), and any demo accounts left over from a demo-mode start deleted (step 9)
+- [ ] Payments.lk sandbox profile created, `PAYMENTS_LK_SECRET_KEY` + `PAYMENTS_LK_WEBHOOK_SECRET` in Secret Manager and referenced in `deploy-backend.yml`, webhook registered (step 7) — test with a sandbox card before swapping in the live key
+- [ ] (recommended) Serendib Google account connected under Administration → Google, so every booking gets a Meet link
+- [ ] (recommended) `CRON_SECRET` + the Cloud Scheduler job for feedback reminders (step 8)
+- [ ] Real tutors invited or approved, with their profiles filled in
 - [ ] Push to `main` → CI runs → deploy workflow runs → visit your domain
