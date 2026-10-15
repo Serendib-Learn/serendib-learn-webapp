@@ -98,7 +98,7 @@ export default async function TutorsPage() {
                   </div>
 
                   <div className="mt-8 flex flex-wrap gap-3 border-t border-ink-900/8 pt-6">
-                    <ButtonLink href="/portal/calendar" size="sm">
+                    <ButtonLink href={`/portal/calendar?tutor=${tutor.id}`} size="sm">
                       See {tutor.name.split(" ")[0]}&rsquo;s availability
                     </ButtonLink>
                     <ButtonLink href="/portal/signup" variant="secondary" size="sm">
