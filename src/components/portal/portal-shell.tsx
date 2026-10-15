@@ -71,6 +71,13 @@ const navItems: NavItem[] = [
     icon: <Icon path="M9 11a3 3 0 100-6 3 3 0 000 6zm8 0a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM3 20v-1.5C3 16 5.5 14.5 9 14.5s6 1.5 6 4V20M17 14.5c2.5.3 4 1.7 4 4V20" />,
   },
   {
+    href: "/portal/profile",
+    label: "Profile",
+    description: "How others see you",
+    roles: ["student", "tutor", "admin"],
+    icon: <Icon path="M12 12a4 4 0 100-8 4 4 0 000 8zm-7 8c0-3.3 3.1-6 7-6s7 2.7 7 6" />,
+  },
+  {
     href: "/portal/admin",
     label: "Administration",
     description: "Users, moderation, waitlist",

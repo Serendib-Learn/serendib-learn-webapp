@@ -9,6 +9,7 @@ import { cn } from "@/lib/cn";
 import { formatDate, formatDateTime, relativeTime } from "@/lib/format";
 import { GoogleMailConnect } from "@/components/portal/google-mail-connect";
 import { PageHeader } from "@/components/portal/page-header";
+import { ProfileEditor } from "@/components/portal/profile-editor";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { Checkbox, Field, Input, Select, Textarea } from "@/components/ui/field";
@@ -127,6 +128,7 @@ function People({ me }: { me: User }) {
   const remove = useAction((id: string) => api.users.remove(id));
 
   const [inviting, setInviting] = useState(false);
+  const [editing, setEditing] = useState<User | null>(null);
 
   if (users.loading) return <Loading label="Loading accounts" />;
 
@@ -150,6 +152,7 @@ function People({ me }: { me: User }) {
       </Card>
 
       {inviting ? <InviteDialog onClose={() => setInviting(false)} /> : null}
+      {editing ? <EditProfileDialog user={editing} onClose={() => setEditing(null)} /> : null}
 
       {everyone.map((person) => (
         <Card key={person.id} className="flex flex-wrap items-center gap-4 p-5">
@@ -187,6 +190,12 @@ function People({ me }: { me: User }) {
               <option value="admin">Admin</option>
             </Select>
 
+            {person.role === "tutor" ? (
+              <Button variant="secondary" size="sm" onClick={() => setEditing(person)}>
+                Edit profile
+              </Button>
+            ) : null}
+
             <Button
               variant="secondary"
               size="sm"
@@ -218,6 +227,20 @@ function People({ me }: { me: User }) {
         </Card>
       ))}
     </div>
+  );
+}
+
+function EditProfileDialog({ user, onClose }: { user: User; onClose: () => void }) {
+  return (
+    <Modal
+      open
+      onClose={onClose}
+      title={`${user.name}'s profile`}
+      description="What students see on the tutors page. The tutor can edit this themselves too."
+      className="sm:max-w-2xl"
+    >
+      <ProfileEditor user={user} />
+    </Modal>
   );
 }
 

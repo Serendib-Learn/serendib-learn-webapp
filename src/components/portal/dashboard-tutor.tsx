@@ -56,6 +56,20 @@ export function TutorDashboard({ user }: { user: User }) {
           and publish your hours in the calendar so you are ready on day one.
         </Alert>
       ) : null}
+      {!user.bio || !user.headline ? (
+        <Card className="mb-6 flex flex-wrap items-center justify-between gap-4 p-5">
+          <div className="min-w-0">
+            <p className="font-medium text-ink-800">Finish your tutor profile</p>
+            <p className="text-xs leading-relaxed text-ink-500">
+              Students choose a tutor from your headline and introduction — add both so they
+              know who they are booking.
+            </p>
+          </div>
+          <ButtonLink href="/portal/profile" size="sm">
+            Edit profile
+          </ButtonLink>
+        </Card>
+      ) : null}
       {user.tutorStatus === "rejected" ? (
         <Alert className="mb-6">
           Your tutor application was not approved, so students cannot book you. Check your

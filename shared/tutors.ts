@@ -15,8 +15,11 @@ export interface TutorProfile {
 }
 
 /**
- * Shared by the public tutor pages and by the seeded portal accounts, so the
- * marketing site and the portal never drift apart.
+ * DEMO PLACEHOLDERS — these are not real tutors. They only seed the demo
+ * accounts (DEMO_MODE=true). The public tutor pages read approved tutors from
+ * the API instead, so real tutors are added through the portal: they apply
+ * at /portal/signup?role=tutor, or an administrator invites them from
+ * Administration → People, and they fill in their own profile.
  */
 export const tutorProfiles: TutorProfile[] = [
   {

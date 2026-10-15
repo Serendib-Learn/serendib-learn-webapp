@@ -257,7 +257,7 @@ usersRouter.post(
       await deliver({
         to: target.email,
         subject: "You're approved to teach on Serendib Learn",
-        body: "Good news — your tutor application has been approved and students can now find and book you.\n\nMake sure your profile and hours are up to date in the portal: Overview → Your tutor profile, and Calendar → My hours.",
+        body: "Good news — your tutor application has been approved and students can now find and book you.\n\nMake sure your profile and hours are up to date in the portal: Profile, and Calendar → My hours.",
         kind: "notification",
       });
     } else if (status === "rejected") {

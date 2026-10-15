@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { ButtonLink } from "@/components/ui/button";
 import { Badge, Card, SectionHeading } from "@/components/ui/primitives";
-import { tutorProfiles } from "@/data/tutors";
 // GAMES-HIDDEN: deck counts, only used by the commented-out detail line below.
 // import { allChapters, totalPhraseCount } from "@/data/vocabulary";
 
@@ -70,7 +69,7 @@ const faqs = [
   },
   {
     q: "What does it cost?",
-    a: `Between $${Math.min(...tutorProfiles.map((tutor) => tutor.hourlyRateUsd))} and $${Math.max(...tutorProfiles.map((tutor) => tutor.hourlyRateUsd))} an hour depending on the tutor, paid per session.`,
+    a: "Each tutor sets their own hourly rate, shown on their profile, and you pay per session — there are no bundles and nothing renews. Card payments are taken securely in Sri Lankan rupees at checkout.",
   },
   {
     q: "Can I change tutors?",

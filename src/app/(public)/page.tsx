@@ -4,11 +4,11 @@
 // import { PhraseCardStack } from "@/components/home/phrase-card-stack";
 import { WaitlistForm } from "@/components/home/waitlist-form";
 import { ButtonLink } from "@/components/ui/button";
-import { Badge, Card, SectionHeading } from "@/components/ui/primitives";
+import { Avatar, Badge, Card, SectionHeading } from "@/components/ui/primitives";
 // GAMES-HIDDEN: deck and heritage counts, used only by commented-out sections.
 // import { allChapters, totalPhraseCount } from "@/data/vocabulary";
 // import { heritageSites } from "@/data/heritage";
-import { tutorProfiles } from "@/data/tutors";
+import { fetchPublicTutors } from "@/lib/api/public";
 
 const steps = [
   {
@@ -51,7 +51,12 @@ const reasons = [
   },
 ];
 
-export default function HomePage() {
+// The tutor section reads the live roster; re-read it at most once a minute.
+export const revalidate = 60;
+
+export default async function HomePage() {
+  const tutors = (await fetchPublicTutors()).slice(0, 3);
+
   // GAMES-HIDDEN
   // const colomboSites = heritageSites.filter((site) => site.region === "Colombo");
 
@@ -184,46 +189,59 @@ export default function HomePage() {
           </ButtonLink>
         </div>
 
-        <div className="mt-12 grid gap-6 md:grid-cols-3">
-          {tutorProfiles.map((tutor) => (
-            <Card key={tutor.id} className="flex h-full flex-col p-7">
-              <div className="flex items-center gap-3">
-                <span
-                  aria-hidden
-                  className="grid size-12 place-items-center rounded-full bg-jade-600 font-display text-lg font-semibold text-sand-50"
-                >
-                  {tutor.name
-                    .split(" ")
-                    .map((part) => part[0])
-                    .join("")}
-                </span>
-                <div>
-                  <h3 className="text-lg leading-tight">{tutor.name}</h3>
-                  <p className="text-xs text-ink-400">
-                    {tutor.homeTown} · {tutor.yearsTeaching} years teaching
-                  </p>
+        {tutors.length === 0 ? (
+          <Card className="mt-12 p-8 text-center">
+            <p className="font-display text-xl text-ink-900">Our first tutors are joining now.</p>
+            <p className="mx-auto mt-2 max-w-xl text-sm leading-relaxed text-ink-500">
+              Every one of them is interviewed by us before they appear here. Register your
+              interest below and we will introduce you personally.
+            </p>
+          </Card>
+        ) : (
+          <div className="mt-12 grid gap-6 md:grid-cols-3">
+            {tutors.map((tutor) => (
+              <Card key={tutor.id} className="flex h-full flex-col p-7">
+                <div className="flex items-center gap-3">
+                  <Avatar name={tutor.name} size="lg" />
+                  <div>
+                    <h3 className="text-lg leading-tight">{tutor.name}</h3>
+                    <p className="text-xs text-ink-400">
+                      {[
+                        tutor.homeTown,
+                        tutor.yearsTeaching ? `${tutor.yearsTeaching} years teaching` : null,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </p>
+                  </div>
                 </div>
-              </div>
 
-              <p className="mt-5 font-display text-base leading-snug text-ink-800">
-                &ldquo;{tutor.headline}&rdquo;
-              </p>
-              <p className="mt-3 flex-1 text-sm leading-relaxed text-ink-500">{tutor.bio}</p>
+                {tutor.headline ? (
+                  <p className="mt-5 font-display text-base leading-snug text-ink-800">
+                    &ldquo;{tutor.headline}&rdquo;
+                  </p>
+                ) : null}
+                <p className="mt-3 line-clamp-5 flex-1 text-sm leading-relaxed text-ink-500">
+                  {tutor.bio}
+                </p>
 
-              <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-ink-900/8 pt-5">
-                {tutor.languages.map((language) => (
-                  <Badge key={language} tone={language === "sinhala" ? "jade" : "clay"}>
-                    {language === "sinhala" ? "Sinhala" : "Tamil"}
-                  </Badge>
-                ))}
-                <span className="ml-auto text-sm font-medium text-ink-700">
-                  ${tutor.hourlyRateUsd}
-                  <span className="text-xs font-normal text-ink-400">/hr</span>
-                </span>
-              </div>
-            </Card>
-          ))}
-        </div>
+                <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-ink-900/8 pt-5">
+                  {tutor.languages.map((language) => (
+                    <Badge key={language} tone={language === "sinhala" ? "jade" : "clay"}>
+                      {language === "sinhala" ? "Sinhala" : "Tamil"}
+                    </Badge>
+                  ))}
+                  {tutor.hourlyRateUsd ? (
+                    <span className="ml-auto text-sm font-medium text-ink-700">
+                      ${tutor.hourlyRateUsd}
+                      <span className="text-xs font-normal text-ink-400">/hr</span>
+                    </span>
+                  ) : null}
+                </div>
+              </Card>
+            ))}
+          </div>
+        )}
       </section>
 
       {/* GAMES-HIDDEN: games are parked for now — see src/lib/features.ts.
