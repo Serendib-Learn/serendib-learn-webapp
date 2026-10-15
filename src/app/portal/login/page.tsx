@@ -45,17 +45,19 @@ export default function LoginPage() {
 
   return (
     <AuthCard
-      title="Welcome back"
-      intro="Log in to see your lessons, materials and messages."
+      title="serendib.learn"
+      intro="Portal for students, families and tutors"
       footer={
-        <div className="space-y-2">
+        <>
           <AuthFooterLink label="No account yet?" href="/portal/signup" cta="Create one" />
-          <AuthFooterLink
-            label="Forgotten your password?"
-            href="/portal/forgot-password"
-            cta="Reset it"
-          />
-        </div>
+          <AuthFooterLink label="Forgotten your password?" href="/portal/forgot-password" cta="Reset it" />
+          <p>
+            Questions? Email{" "}
+            <a href="mailto:serendib.learn@gmail.com" className="text-amber-spice underline">
+              serendib.learn@gmail.com
+            </a>
+          </p>
+        </>
       }
       aside={
         <Card className="p-6">
@@ -154,8 +156,8 @@ export default function LoginPage() {
         {error ? <Alert>{error}</Alert> : null}
         {googleError ? <Alert>{googleError}</Alert> : null}
 
-        <Button type="submit" size="lg" className="w-full" disabled={pending}>
-          {pending ? "Logging in…" : "Log in"}
+        <Button type="submit" variant="forest" className="w-full rounded-lg" disabled={pending}>
+          {pending ? "Logging in…" : "Enter portal"}
         </Button>
       </form>
 

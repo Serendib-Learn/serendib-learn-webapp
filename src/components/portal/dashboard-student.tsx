@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { PageHeader } from "./page-header";
+import { GlanceHeader } from "./glance-header";
 import { BookingRow } from "./booking-row";
 import { api } from "@/lib/api";
 import { useQuery } from "@/lib/hooks";
@@ -43,11 +43,11 @@ export function StudentDashboard({ user }: { user: User }) {
 
   return (
     <>
-      <PageHeader title={`Hello, ${firstName}`}>
+      <GlanceHeader title={`Hello, ${firstName}`}>
         {next
           ? `Your next lesson is ${relativeTime(next.startsAt)} — ${formatDateTime(next.startsAt)}.`
           : "You have no lesson booked. The calendar has live availability whenever you are ready."}
-      </PageHeader>
+      </GlanceHeader>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Stat label="Lessons done" value={completed.length} />

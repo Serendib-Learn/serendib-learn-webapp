@@ -65,7 +65,7 @@ function ResetForm() {
           {mismatch ? <Alert tone="saffron">Those two do not match.</Alert> : null}
           {error ? <Alert>{error}</Alert> : null}
 
-          <Button type="submit" size="lg" className="w-full" disabled={pending || mismatch}>
+          <Button type="submit" variant="forest" className="w-full rounded-lg" disabled={pending || mismatch}>
             {pending ? "Saving…" : "Set password and log in"}
           </Button>
         </form>

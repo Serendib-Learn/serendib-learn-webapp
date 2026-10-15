@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { PageHeader } from "./page-header";
+import { GlanceHeader } from "./glance-header";
 import { api } from "@/lib/api";
 import { useQuery } from "@/lib/hooks";
 import { formatDate, money, relativeTime } from "@/lib/format";
@@ -36,7 +36,7 @@ export function AdminDashboard({ user }: { user: User }) {
 
   return (
     <>
-      <PageHeader
+      <GlanceHeader
         title="Site administration"
         action={
           <ButtonLink href="/portal/admin" size="sm">
@@ -44,8 +44,8 @@ export function AdminDashboard({ user }: { user: User }) {
           </ButtonLink>
         }
       >
-        Logged in as {user.name}. Everything below is live against the demo data store.
-      </PageHeader>
+        Logged in as {user.name}. Everything below is live.
+      </GlanceHeader>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Stat label="Students" value={students.length} />

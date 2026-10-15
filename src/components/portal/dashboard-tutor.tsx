@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { PageHeader } from "./page-header";
+import { GlanceHeader } from "./glance-header";
 import { BookingRow } from "./booking-row";
 import { FeedbackList } from "./feedback-list";
 import { api } from "@/lib/api";
@@ -39,7 +39,7 @@ export function TutorDashboard({ user }: { user: User }) {
 
   return (
     <>
-      <PageHeader
+      <GlanceHeader
         title={`Hello, ${firstName}`}
         action={
           <ButtonLink href="/portal/learning-hub" size="sm">
@@ -50,7 +50,7 @@ export function TutorDashboard({ user }: { user: User }) {
         {next
           ? `Next up: ${studentsById.get(next.studentId)?.name ?? "a student"} ${relativeTime(next.startsAt)}, ${formatDateTime(next.startsAt)}.`
           : "Nothing on the calendar. Check your availability so students can book you."}
-      </PageHeader>
+      </GlanceHeader>
 
       {user.tutorStatus === "pending" ? (
         <Alert tone="saffron" className="mb-6">

@@ -70,7 +70,7 @@ function VerifyForm() {
         {resend.error ? <Alert>{resend.error}</Alert> : null}
         {resent ? <Alert tone="jade">A new code is in the demo inbox.</Alert> : null}
 
-        <Button type="submit" size="lg" className="w-full" disabled={verify.pending}>
+        <Button type="submit" variant="forest" className="w-full rounded-lg" disabled={verify.pending}>
           {verify.pending ? "Checking…" : "Confirm and continue"}
         </Button>
 

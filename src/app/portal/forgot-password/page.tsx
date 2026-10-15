@@ -61,7 +61,7 @@ export default function ForgotPasswordPage() {
 
           {error ? <Alert>{error}</Alert> : null}
 
-          <Button type="submit" size="lg" className="w-full" disabled={pending}>
+          <Button type="submit" variant="forest" className="w-full rounded-lg" disabled={pending}>
             {pending ? "Sending…" : "Send the reset link"}
           </Button>
         </form>

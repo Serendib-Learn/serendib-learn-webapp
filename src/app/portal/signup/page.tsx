@@ -93,6 +93,7 @@ function SignUpForm() {
 
   return (
     <AuthCard
+      wide
       title={role === "tutor" ? "Apply to teach" : "Create your account"}
       intro={
         role === "tutor"
@@ -156,34 +157,26 @@ function SignUpForm() {
           }
         }}
       >
-        <fieldset>
-          <legend className="mb-3 text-sm font-medium text-ink-700">
-            Which are you here for?
-          </legend>
-          <div className="grid gap-3 sm:grid-cols-2">
-            {roleOptions.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => setRole(option.value)}
-                aria-pressed={role === option.value}
-                className={cn(
-                  "rounded-xl p-4 text-left ring-1 ring-inset transition",
-                  role === option.value
-                    ? "bg-jade-50 ring-jade-400"
-                    : "bg-white ring-ink-900/10 hover:bg-sand-100",
-                )}
-              >
-                <span className="block font-display text-base font-semibold text-ink-900">
-                  {option.title}
-                </span>
-                <span className="mt-1 block text-xs leading-relaxed text-ink-500">
-                  {option.body}
-                </span>
-              </button>
-            ))}
-          </div>
-        </fieldset>
+        <div className="flex gap-1 rounded-lg bg-mist p-1" role="radiogroup" aria-label="Which are you here for?">
+          {roleOptions.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              role="radio"
+              aria-checked={role === option.value}
+              onClick={() => setRole(option.value)}
+              className={cn(
+                "flex-1 rounded-md py-1.5 text-center text-xs font-medium transition-colors",
+                role === option.value ? "bg-white text-forest" : "text-earth/50",
+              )}
+            >
+              {option.value === "student" ? "Student / family" : "Tutor"}
+            </button>
+          ))}
+        </div>
+        <p className="-mt-2 text-xs leading-relaxed text-earth/60">
+          {roleOptions.find((option) => option.value === role)?.body}
+        </p>
 
         <Field label="Your name" htmlFor="su-name">
           <Input
@@ -317,8 +310,8 @@ function SignUpForm() {
 
         <Button
           type="submit"
-          size="lg"
-          className="w-full"
+          variant="forest"
+          className="w-full rounded-lg"
           disabled={pending || languages.length === 0 || (turnstileAvailable && !turnstileToken)}
         >
           {pending
