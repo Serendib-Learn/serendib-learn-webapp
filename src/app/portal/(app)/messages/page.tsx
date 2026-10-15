@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { useAction, useQuery } from "@/lib/hooks";
@@ -10,23 +11,38 @@ import { PageHeader } from "@/components/portal/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/field";
 import { Avatar, Card, EmptyState, Loading } from "@/components/ui/primitives";
-import type { User } from "@/lib/types";
+import type { PublicProfile, User } from "@/lib/types";
 
 export default function MessagesPage() {
+  return (
+    <Suspense fallback={<Loading label="Opening your messages" />}>
+      <Messages />
+    </Suspense>
+  );
+}
+
+function Messages() {
   const { user } = useAuth();
   const [threadId, setThreadId] = useState<string | null>(null);
+  /** Set by links like "Message" in the community: open (or start) that conversation. */
+  const withId = useSearchParams().get("with");
 
   const threads = useQuery(
     () => (user ? api.messages.threadsFor(user.id) : Promise.resolve([])),
     [user?.id],
   );
   const contacts = useQuery(
-    () =>
-      !user
-        ? Promise.resolve([])
-        : user.role === "student"
-          ? api.users.tutors()
-          : api.users.tuteesOf(user.id),
+    async (): Promise<{ id: string; name: string }[]> => {
+      if (!user) return [];
+      if (user.role !== "student") return api.users.tuteesOf(user.id);
+      // Students: their tutors, plus practice partners they are friends with.
+      const [tutors, connections] = await Promise.all([
+        api.users.tutors(),
+        api.community.connections().catch(() => []),
+      ]);
+      const friends = connections.filter((item) => item.connection?.status === "accepted");
+      return [...tutors, ...friends];
+    },
     [user?.id, user?.role],
   );
 
@@ -34,10 +50,23 @@ export default function MessagesPage() {
     api.messages.ensureThread(user!.id, otherId),
   );
 
+  const summariesLoaded = !threads.loading;
+  const hasWithThread = (threads.data ?? []).some((summary) => summary.other.id === withId);
+  const startRun = start.run;
+  useEffect(() => {
+    if (!withId || !summariesLoaded || hasWithThread) return;
+    void startRun(withId).then((thread) => {
+      if (thread) setThreadId(thread.id);
+    });
+  }, [withId, summariesLoaded, hasWithThread, startRun]);
+
   if (!user || threads.loading) return <Loading label="Opening your messages" />;
 
   const summaries = threads.data ?? [];
-  const active = summaries.find((summary) => summary.thread.id === threadId) ?? summaries[0];
+  const active =
+    summaries.find((summary) => summary.thread.id === threadId) ??
+    summaries.find((summary) => summary.other.id === withId) ??
+    summaries[0];
   const existingIds = new Set(summaries.map((summary) => summary.other.id));
   const newContacts = (contacts.data ?? []).filter(
     (person) => person.id !== user.id && !existingIds.has(person.id),
@@ -58,6 +87,9 @@ export default function MessagesPage() {
       ) : (
         <div className="grid gap-5 lg:grid-cols-[18rem_1fr]">
           <Card className="overflow-hidden p-0">
+            {start.error ? (
+              <p className="border-b border-ink-900/8 px-4 py-3 text-xs text-clay-600">{start.error}</p>
+            ) : null}
             {summaries.length > 0 ? (
               <ul className="divide-y divide-ink-900/8">
                 {summaries.map((summary) => {
@@ -146,7 +178,7 @@ function Conversation({
 }: {
   threadId: string;
   me: User;
-  other: User;
+  other: PublicProfile;
 }) {
   const messages = useQuery(() => api.messages.forThread(threadId), [threadId]);
   const [draft, setDraft] = useState("");
@@ -170,7 +202,8 @@ function Conversation({
         <div className="min-w-0">
           <p className="truncate font-display text-base text-ink-900">{other.name}</p>
           <p className="text-xs text-ink-400">
-            {other.role === "tutor" ? "Tutor" : "Student"} · {other.timezone}
+            {other.role === "tutor" ? "Tutor" : other.role === "admin" ? "Serendib team" : "Student"}
+            {other.timezone ? ` · ${other.timezone}` : ""}
           </p>
         </div>
       </div>

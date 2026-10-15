@@ -9,6 +9,7 @@ import type {
   AvailabilityRule,
   Booking,
   CommunityPost,
+  Connection,
   CourseChapter,
   GameResult,
   HomeworkItem,
@@ -139,6 +140,7 @@ export interface Database {
   paymentEvents: Collection<PaymentEvent>;
   feedback: Collection<SessionFeedback>;
   chapters: Collection<CourseChapter>;
+  connections: Collection<Connection>;
   voiceNotes: Collection<VoiceNote>;
 }
 
@@ -171,6 +173,7 @@ function build(from: Store): Database {
     paymentEvents: from.collection<PaymentEvent>("paymentEvents"),
     feedback: from.collection<SessionFeedback>("feedback"),
     chapters: from.collection<CourseChapter>("chapters"),
+    connections: from.collection<Connection>("connections"),
     voiceNotes: from.collection<VoiceNote>("voiceNotes"),
   };
 }
@@ -208,6 +211,7 @@ async function seedContents(): Promise<Record<string, Doc[]>> {
     gameResults: seed.gameResults,
     paymentEvents: [],
     feedback: [],
+    connections: [],
     chapters: defaultChapters.map((chapter) => ({ ...chapter, createdAt: new Date().toISOString() })),
     voiceNotes: [],
   };

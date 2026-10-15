@@ -28,6 +28,7 @@ export function ProfileEditor({ user, onSaved }: { user: User; onSaved?: (user: 
   const [rate, setRate] = useState(user.hourlyRateUsd !== undefined ? String(user.hourlyRateUsd) : "");
   const [specialties, setSpecialties] = useState((user.specialties ?? []).join(", "));
   const [avatarId, setAvatarId] = useState<string | undefined>(user.avatarId);
+  const [openToPractice, setOpenToPractice] = useState(user.openToPractice !== false);
   const [saved, setSaved] = useState(false);
 
   const save = useAction(() =>
@@ -39,6 +40,7 @@ export function ProfileEditor({ user, onSaved }: { user: User; onSaved?: (user: 
       bio: bio.trim(),
       homeTown: homeTown.trim(),
       ...(avatarId ? { avatarId } : {}),
+      ...(user.role === "student" ? { openToPractice } : {}),
       ...(isTutor
         ? {
             yearsTeaching: yearsTeaching ? Number(yearsTeaching) : undefined,
@@ -177,6 +179,22 @@ export function ProfileEditor({ user, onSaved }: { user: User; onSaved?: (user: 
             placeholder="Heritage learners, Children, Reading and writing"
           />
         </Field>
+      ) : null}
+
+      {user.role === "student" ? (
+        <Checkbox
+          label={
+            <>
+              <span className="font-medium">Show me in practice partners.</span>{" "}
+              <span className="text-ink-500">
+                Other vetted learners can find you in the community and send you a friend request.
+                Only your name, character, languages, headline and home town are shown.
+              </span>
+            </>
+          }
+          checked={openToPractice}
+          onChange={(event) => setOpenToPractice(event.target.checked)}
+        />
       ) : null}
 
       {save.error ? <Alert>{save.error}</Alert> : null}

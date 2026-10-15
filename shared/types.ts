@@ -46,6 +46,11 @@ export interface User {
   avatarUrl?: string;
   /** A character from shared/avatars.ts chosen to represent them. */
   avatarId?: string;
+  /**
+   * Whether they appear in the community's practice partners directory.
+   * Missing means yes — vetted members are listed unless they opt out.
+   */
+  openToPractice?: boolean;
 }
 
 /**
@@ -59,6 +64,8 @@ export interface PublicProfile {
   role: Role;
   headline?: string;
   avatarId?: string;
+  /** Only sent where it helps — in a conversation, to know when to expect a reply. */
+  timezone?: string;
 }
 
 /**
@@ -450,9 +457,40 @@ export interface CommunityPostInput {
 /** A conversation with the other participant and unread count folded in. */
 export interface ThreadSummary {
   thread: Thread;
-  other: User;
+  /** Profile only — the other person's email address stays private. */
+  other: PublicProfile;
   lastMessage?: Message;
   unread: number;
+}
+
+export type ConnectionStatus = "pending" | "accepted" | "declined";
+
+/** A friend request between two community members, and what became of it. */
+export interface Connection {
+  id: string;
+  requesterId: string;
+  addresseeId: string;
+  status: ConnectionStatus;
+  createdAt: string;
+  respondedAt?: string;
+}
+
+/** Someone in the practice partners directory, as another member sees them. */
+export interface CommunityMember {
+  id: string;
+  name: string;
+  role: Role;
+  avatarId?: string;
+  languages: LanguageCode[];
+  headline?: string;
+  homeTown?: string;
+  /** How this member and the viewer are connected, if at all. */
+  connection?: {
+    id: string;
+    status: ConnectionStatus;
+    /** Who asked: the viewer ("outgoing") or this member ("incoming"). */
+    direction: "outgoing" | "incoming";
+  };
 }
 
 /** A record of an administrator doing something to someone else's account or content. */

@@ -60,7 +60,7 @@ const navItems: NavItem[] = [
   {
     href: "/portal/messages",
     label: "Messages",
-    description: "Talk to your tutor",
+    description: "Tutors and practice partners",
     roles: ["student", "tutor", "admin"],
     icon: <Icon path="M4 5h16v11H9l-5 4V5z" />,
   },
@@ -88,7 +88,7 @@ const navItems: NavItem[] = [
 ];
 
 export function PortalShell({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, loading, error } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -102,13 +102,33 @@ export function PortalShell({ children }: { children: React.ReactNode }) {
   );
 
   useEffect(() => {
-    if (!loading && !user) router.replace("/portal/login");
-  }, [loading, user, router]);
+    // A failed session check is not a logout: stay put and say so below.
+    if (!loading && !user && !error) router.replace("/portal/login");
+  }, [loading, user, error, router]);
 
-  if (loading) {
+  // Only before we know who this is. `loading` is also true while the session
+  // is re-checked after every write; blanking the page then would unmount it
+  // and throw away whatever the person was in the middle of.
+  if (loading && !user) {
     return (
       <div className="mx-auto max-w-6xl px-5 sm:px-8">
         <Loading label="Opening your portal" />
+      </div>
+    );
+  }
+
+  if (!user && error) {
+    return (
+      <div className="mx-auto max-w-md px-5 py-24 text-center sm:px-8">
+        <h1 className="text-2xl">We could not reach Serendib just now</h1>
+        <p className="mt-3 text-sm leading-relaxed text-ink-500">{error}</p>
+        <button
+          type="button"
+          onClick={() => window.location.reload()}
+          className="mt-6 inline-flex h-11 items-center rounded-full bg-saffron-500 px-6 font-medium text-white hover:bg-saffron-600"
+        >
+          Try again
+        </button>
       </div>
     );
   }

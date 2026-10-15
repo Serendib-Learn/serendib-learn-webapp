@@ -3,8 +3,10 @@ import type {
   AvailabilityRule,
   Booking,
   BookingInput,
+  CommunityMember,
   CommunityPost,
   CommunityPostInput,
+  Connection,
   CourseChapter,
   GameResult,
   GoogleCalendarStatus,
@@ -190,6 +192,16 @@ export interface Backend {
     reply(postId: string, authorId: string, body: string): Promise<PostReply>;
     repliesFor(postId: string): Promise<PostReply[]>;
     moderate(postId: string, status: PostStatus, note?: string): Promise<CommunityPost>;
+    /** Vetted fellow learners, optionally only those learning `language`. */
+    members(language?: LanguageCode): Promise<CommunityMember[]>;
+    /** Friends and open requests, in either direction. */
+    connections(): Promise<CommunityMember[]>;
+    /** Sends a friend request, or accepts theirs if they already asked. */
+    connect(userId: string): Promise<Connection>;
+    accept(connectionId: string): Promise<Connection>;
+    decline(connectionId: string): Promise<Connection>;
+    /** Cancels a request you sent, or removes a friend. */
+    disconnect(connectionId: string): Promise<void>;
   };
 
   messages: {

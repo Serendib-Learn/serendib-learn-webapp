@@ -37,6 +37,7 @@ const profilePatchSchema = z
     homeTown: z.string().trim().max(80),
     specialties: z.array(z.string().trim().min(1).max(40)).max(8, "Up to eight specialties."),
     avatarId: z.enum(characterIds as [string, ...string[]], { error: "That is not one of the characters." }),
+    openToPractice: z.boolean(),
   })
   .partial();
 

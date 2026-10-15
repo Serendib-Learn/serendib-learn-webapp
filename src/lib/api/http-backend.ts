@@ -4,7 +4,9 @@ import type {
   AuditLogEntry,
   AvailabilityRule,
   Booking,
+  CommunityMember,
   CommunityPost,
+  Connection,
   CourseChapter,
   GameResult,
   GoogleCalendarStatus,
@@ -455,6 +457,30 @@ export const httpBackend: Backend = {
         method: "POST",
         body: { status, note },
       });
+    },
+
+    members(language) {
+      return request<CommunityMember[]>("/community/members", { query: { language } });
+    },
+
+    connections() {
+      return request<CommunityMember[]>("/community/connections");
+    },
+
+    connect(userId) {
+      return request<Connection>("/community/connections", { method: "POST", body: { userId } });
+    },
+
+    accept(connectionId) {
+      return request<Connection>(`/community/connections/${connectionId}/accept`, { method: "POST" });
+    },
+
+    decline(connectionId) {
+      return request<Connection>(`/community/connections/${connectionId}/decline`, { method: "POST" });
+    },
+
+    disconnect(connectionId) {
+      return request<void>(`/community/connections/${connectionId}`, { method: "DELETE" });
     },
   },
 

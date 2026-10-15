@@ -2,10 +2,25 @@ import { Router } from "express";
 import { db } from "../db/database.ts";
 import { ApiError, forbidden, notFound, wrap } from "../lib/errors.ts";
 import { pathParam } from "../lib/http.ts";
+import { mayMessage } from "../lib/community.ts";
 import { requireUserRecord } from "../lib/domain.ts";
 import { newId, nowIso } from "../lib/ids.ts";
 import { requireAuth, requireUser } from "../lib/sessions.ts";
-import type { Message, Thread, ThreadSummary, User } from "../../../shared/types.ts";
+import type { Message, PublicProfile, Thread, ThreadSummary, User } from "../../../shared/types.ts";
+
+/** What a conversation shows about the other person: no email address. */
+function profileOf(user: User): PublicProfile {
+  return {
+    id: user.id,
+    name: user.name,
+    role: user.role,
+    headline: user.headline,
+    avatarId: user.avatarId,
+    timezone: user.timezone,
+  };
+}
+
+const FRIENDS_FIRST = "Students can message each other once they are practice partners. Send a request from the community first.";
 
 export const messagesRouter = Router();
 
@@ -37,7 +52,7 @@ messagesRouter.get(
 
       summaries.push({
         thread,
-        other,
+        other: profileOf(other),
         lastMessage: messages[messages.length - 1],
         unread: messages.filter(
           (message) => message.senderId !== actor.id && !message.readBy.includes(actor.id),
@@ -62,7 +77,8 @@ messagesRouter.post(
     const otherId = String(request.body?.userId ?? "");
 
     if (!otherId || otherId === actor.id) throw new ApiError("Who do you want to talk to?");
-    await requireUserRecord(otherId);
+    const other = await requireUserRecord(otherId);
+    if (!(await mayMessage(actor, other))) throw forbidden(FRIENDS_FIRST);
 
     const mine = await db().threads.find({ participantIds: actor.id });
     const existing = mine.find((thread) => thread.participantIds.includes(otherId));
@@ -99,6 +115,11 @@ messagesRouter.post(
 
     const body = String(request.body?.body ?? "").trim();
     if (!body) throw new ApiError("Nothing to send.");
+
+    // An unfriended student keeps the history but cannot keep writing.
+    const otherId = thread.participantIds.find((id) => id !== actor.id);
+    const other = otherId ? await db().users.findById(otherId) : null;
+    if (other && !(await mayMessage(actor, other))) throw forbidden(FRIENDS_FIRST);
 
     const message: Message = {
       id: newId("ms"),
