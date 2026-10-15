@@ -50,7 +50,7 @@ async function postWebhook(event: unknown, signature?: string) {
     },
     body,
   });
-  return { status: response.status, body: await response.json() };
+  return { status: response.status, body: (await response.json()) as Record<string, unknown> };
 }
 
 test("config: reports test mode and the conversion rate", async () => {
