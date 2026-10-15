@@ -9,6 +9,9 @@ import type {
   GoogleCalendarStatus,
   HomeworkItem,
   LessonNote,
+  PendingFeedback,
+  SessionFeedback,
+  VoiceNoteInfo,
   MailMessage,
   Material,
   Message,
@@ -334,6 +337,62 @@ export const httpBackend: Backend = {
 
     progressOf(studentId) {
       return request<StudentProgress | null>(`/progress/${studentId}`);
+    },
+
+    write(input) {
+      return request<LessonNote>("/feedback/lesson-notes", { method: "POST", body: input });
+    },
+  },
+
+  feedback: {
+    pending() {
+      return request<PendingFeedback[]>("/feedback/pending");
+    },
+
+    give(input) {
+      return request<SessionFeedback>("/feedback", { method: "POST", body: input });
+    },
+
+    forTutor(tutorId) {
+      return request<SessionFeedback[]>("/feedback", { query: { tutorId } });
+    },
+
+    forStudent(studentId) {
+      return request<SessionFeedback[]>("/feedback", { query: { studentId } });
+    },
+
+    all() {
+      return request<SessionFeedback[]>("/feedback");
+    },
+  },
+
+  voiceNotes: {
+    async upload(bookingId, recording, durationSec) {
+      const bytes = new Uint8Array(await recording.arrayBuffer());
+      let binary = "";
+      for (let index = 0; index < bytes.length; index += 0x8000) {
+        binary += String.fromCharCode(...bytes.subarray(index, index + 0x8000));
+      }
+      return request<VoiceNoteInfo>("/voice-notes", {
+        method: "POST",
+        body: {
+          bookingId,
+          mimeType: recording.type || "audio/webm",
+          durationSec,
+          data: btoa(binary),
+        },
+      });
+    },
+
+    async audio(id) {
+      let response: Response;
+      try {
+        response = await fetch(url(`/voice-notes/${id}`), { credentials: "include" });
+      } catch {
+        throw new ApiError("Could not reach the API to fetch that voice note.");
+      }
+      if (!response.ok) throw new ApiError("That voice note could not be played.");
+      return response.blob();
     },
   },
 

@@ -130,6 +130,11 @@ export interface Booking {
   payment?: BookingPayment;
   /** Why a booking was cancelled, when the system did it (an expired checkout, say). */
   cancelReason?: string;
+  /** When each feedback reminder went out, so none is sent twice. */
+  feedbackReminders?: {
+    student?: string[];
+    tutor?: string[];
+  };
 }
 
 /**
@@ -205,6 +210,60 @@ export interface LessonNote {
   wentWell: string;
   workOn: string;
   vocabIntroduced: string[];
+  /** A spoken version of the write-up, when the tutor recorded one. */
+  voiceNoteId?: string;
+  createdAt?: string;
+}
+
+/** A student's verdict on one lesson, given after it ends. */
+export interface SessionFeedback {
+  id: string;
+  bookingId: string;
+  studentId: string;
+  tutorId: string;
+  /** 1 to 5. */
+  rating: number;
+  comment: string;
+  voiceNoteId?: string;
+  createdAt: string;
+}
+
+/** A recorded voice note's details. The audio itself is fetched separately. */
+export interface VoiceNoteInfo {
+  id: string;
+  ownerId: string;
+  bookingId: string;
+  mimeType: string;
+  durationSec: number;
+  createdAt: string;
+}
+
+/**
+ * A finished lesson still waiting on this person's part of the feedback loop:
+ * a rating from the student, a write-up from the tutor.
+ */
+export interface PendingFeedback {
+  booking: Booking;
+  /** The other person on the lesson. */
+  other: PublicProfile;
+  /** What is owed: the student's feedback, or the tutor's write-up. */
+  kind: "feedback" | "write-up";
+}
+
+export interface LessonNoteInput {
+  bookingId: string;
+  summary: string;
+  wentWell: string;
+  workOn: string;
+  vocabIntroduced: string[];
+  voiceNoteId?: string;
+}
+
+export interface SessionFeedbackInput {
+  bookingId: string;
+  rating: number;
+  comment: string;
+  voiceNoteId?: string;
 }
 
 export type PostStatus = "pending" | "approved" | "rejected";

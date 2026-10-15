@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/auth";
 import { useAction, useQuery } from "@/lib/hooks";
 import { cn } from "@/lib/cn";
 import { formatDate, formatDateTime, relativeTime } from "@/lib/format";
+import { FeedbackList } from "@/components/portal/feedback-list";
 import { GoogleMailConnect } from "@/components/portal/google-mail-connect";
 import { GoogleSystemCalendarConnect } from "@/components/portal/google-system-calendar-connect";
 import { PageHeader } from "@/components/portal/page-header";
@@ -24,11 +25,12 @@ import {
 } from "@/components/ui/primitives";
 import type { CommunityPost, LanguageCode, Role, User } from "@/lib/types";
 
-type Tab = "people" | "tutors" | "moderation" | "waitlist" | "mail" | "audit";
+type Tab = "people" | "tutors" | "feedback" | "moderation" | "waitlist" | "mail" | "audit";
 
 const tabs: { id: Tab; label: string }[] = [
   { id: "people", label: "People" },
   { id: "tutors", label: "Tutor applications" },
+  { id: "feedback", label: "Feedback" },
   { id: "moderation", label: "Moderation" },
   { id: "waitlist", label: "Waitlist" },
   { id: "mail", label: "Google" },
@@ -112,6 +114,7 @@ export default function AdminPage() {
 
       {tab === "people" ? <People me={user} /> : null}
       {tab === "tutors" ? <TutorApplications /> : null}
+      {tab === "feedback" ? <AllFeedback /> : null}
       {tab === "moderation" ? <Moderation /> : null}
       {tab === "waitlist" ? <Waitlist /> : null}
       {tab === "mail" ? (
@@ -450,6 +453,38 @@ function TutorApplicationRow({ tutor }: { tutor: User }) {
             Decline
           </Button>
         ) : null}
+      </div>
+    </Card>
+  );
+}
+
+function AllFeedback() {
+  const feedback = useQuery(() => api.feedback.all(), []);
+  const people = useQuery(() => api.users.directory(), []);
+
+  if (feedback.loading) return <Loading label="Loading feedback" />;
+  const items = feedback.data ?? [];
+  if (items.length === 0) {
+    return (
+      <EmptyState icon="⭐" title="No feedback yet">
+        Students are asked for a rating — or a voice note — as soon as each lesson ends.
+      </EmptyState>
+    );
+  }
+
+  const average = items.reduce((sum, item) => sum + item.rating, 0) / items.length;
+  return (
+    <Card className="p-6">
+      <p className="text-sm text-ink-500">
+        Average <span className="font-medium text-ink-800">{average.toFixed(1)} ★</span> across{" "}
+        {items.length} lessons.
+      </p>
+      <div className="mt-4">
+        <FeedbackList
+          items={items}
+          people={new Map((people.data ?? []).map((person) => [person.id, person]))}
+          show="both"
+        />
       </div>
     </Card>
   );

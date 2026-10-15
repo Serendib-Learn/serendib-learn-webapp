@@ -13,16 +13,20 @@ import type {
   InviteInput,
   LanguageCode,
   LessonNote,
+  LessonNoteInput,
   MailMessage,
   Material,
   MaterialInput,
   Message,
   PostReply,
   PaymentsConfig,
+  PendingFeedback,
   PostStatus,
   PublicProfile,
   PublicTutor,
   Role,
+  SessionFeedback,
+  SessionFeedbackInput,
   SignUpInput,
   Slot,
   StudentProgress,
@@ -30,6 +34,7 @@ import type {
   ThreadSummary,
   TutorStatus,
   User,
+  VoiceNoteInfo,
   WaitlistEntry,
 } from "@/lib/types";
 
@@ -146,6 +151,24 @@ export interface Backend {
     forStudent(studentId: string): Promise<LessonNote[]>;
     progressFor(tutorId: string): Promise<StudentProgress[]>;
     progressOf(studentId: string): Promise<StudentProgress | null>;
+    /** The tutor's write-up of a finished lesson. */
+    write(input: LessonNoteInput): Promise<LessonNote>;
+  };
+
+  feedback: {
+    /** Finished lessons still waiting on the signed-in person's part. */
+    pending(): Promise<PendingFeedback[]>;
+    give(input: SessionFeedbackInput): Promise<SessionFeedback>;
+    forTutor(tutorId: string): Promise<SessionFeedback[]>;
+    forStudent(studentId: string): Promise<SessionFeedback[]>;
+    /** Administrators: everything, newest first. */
+    all(): Promise<SessionFeedback[]>;
+  };
+
+  voiceNotes: {
+    upload(bookingId: string, recording: Blob, durationSec: number): Promise<VoiceNoteInfo>;
+    /** The audio, fetched with the session cookie. */
+    audio(id: string): Promise<Blob>;
   };
 
   community: {

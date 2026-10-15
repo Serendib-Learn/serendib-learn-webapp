@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { useAction, useQuery } from "@/lib/hooks";
 import { MaterialCard } from "@/components/portal/material-card";
+import { VoiceNotePlayer } from "@/components/portal/voice-note-player";
 import { PageHeader } from "@/components/portal/page-header";
 import { Button } from "@/components/ui/button";
 import { Checkbox, Field, Input, Select, Textarea } from "@/components/ui/field";
@@ -77,6 +78,12 @@ function StudentHub({ student }: { student: User }) {
                     <p className="mt-1 text-sm leading-relaxed text-ink-600">{note.workOn}</p>
                   </div>
                 </div>
+
+                {note.voiceNoteId ? (
+                  <div className="mt-4">
+                    <VoiceNotePlayer id={note.voiceNoteId} label="From your tutor" />
+                  </div>
+                ) : null}
 
                 {note.vocabIntroduced.length > 0 ? (
                   <div className="mt-4 flex flex-wrap gap-1.5">

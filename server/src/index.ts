@@ -4,6 +4,7 @@ import helmet from "helmet";
 import { config } from "./config.ts";
 import { connect } from "./db/database.ts";
 import { ensureSuperAdmin } from "./lib/accounts.ts";
+import { startReminderTimer } from "./lib/reminders.ts";
 import { errorHandler, notFound } from "./lib/errors.ts";
 import { apiLimiter, authLimiter } from "./lib/rate-limit.ts";
 import { loadSession, parseCookies } from "./lib/sessions.ts";
@@ -16,6 +17,8 @@ import { integrationsRouter } from "./routes/integrations.ts";
 import { materialsRouter } from "./routes/materials.ts";
 import { messagesRouter } from "./routes/messages.ts";
 import { paymentsRouter, paymentsWebhook } from "./routes/payments.ts";
+import { feedbackRouter, voiceNotesRouter } from "./routes/feedback.ts";
+import { jobsRouter } from "./routes/jobs.ts";
 import { demoRouter, gamesRouter, mailRouter, waitlistRouter } from "./routes/misc.ts";
 import { progressRouter } from "./routes/progress.ts";
 import { usersRouter } from "./routes/users.ts";
@@ -44,7 +47,13 @@ app.post(
   express.raw({ type: "application/json", limit: "1mb" }),
   paymentsWebhook,
 );
-app.use(express.json({ limit: "256kb" }));
+// Voice notes are the one upload big enough to need more than the default
+// body limit; the general parser skips them and their router brings its own.
+const jsonBody = express.json({ limit: "256kb" });
+app.use((request, response, next) => {
+  if (request.path.startsWith("/api/voice-notes")) next();
+  else jsonBody(request, response, next);
+});
 app.use(parseCookies);
 app.use(loadSession);
 app.use("/api", apiLimiter);
@@ -58,6 +67,9 @@ app.use("/api/users", usersRouter);
 app.use("/api/availability", availabilityRouter);
 app.use("/api/bookings", bookingsRouter);
 app.use("/api/payments", paymentsRouter);
+app.use("/api/feedback", feedbackRouter);
+app.use("/api/voice-notes", express.json({ limit: "5mb" }), voiceNotesRouter);
+app.use("/api/jobs", jobsRouter);
 app.use("/api/materials", materialsRouter);
 app.use("/api/homework", homeworkRouter);
 app.use("/api/integrations", integrationsRouter);
@@ -76,6 +88,7 @@ app.use(errorHandler);
 
 const database = await connect();
 await ensureSuperAdmin();
+startReminderTimer();
 const accounts = await database.users.count();
 
 // Exported for the test harness (server/src/test-support/harness.ts), which imports

@@ -32,6 +32,9 @@ export async function startTestServer(env: Record<string, string> = {}) {
     TURNSTILE_SECRET_KEY: "",
     // Tests sign up far more accounts per file than the auth limit allows.
     RATE_LIMIT_SCALE: "50",
+    // Reminders are run explicitly by the tests that care, never on a timer.
+    REMINDER_INTERVAL_MS: "0",
+    CRON_SECRET: "test-cron-secret",
     SUPER_ADMIN_EMAIL: "",
     SUPER_ADMIN_PASSWORD: "",
     // Per-file overrides last, so a test can switch any of the above.

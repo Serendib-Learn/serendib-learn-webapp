@@ -9,6 +9,7 @@ import { useQuery } from "@/lib/hooks";
 import { cn } from "@/lib/cn";
 import { Avatar, Badge, Loading } from "@/components/ui/primitives";
 import { ButtonLink } from "@/components/ui/button";
+import { FeedbackPrompt } from "./feedback-prompt";
 import type { Role } from "@/lib/types";
 
 interface NavItem {
@@ -220,7 +221,10 @@ export function PortalShell({ children }: { children: React.ReactNode }) {
         </nav>
       </aside>
 
-      <div className="min-w-0">{children}</div>
+      <div className="min-w-0">
+        <FeedbackPrompt user={user} />
+        {children}
+      </div>
     </div>
   );
 }

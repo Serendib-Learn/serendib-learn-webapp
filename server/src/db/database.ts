@@ -15,6 +15,7 @@ import type {
   Material,
   Message,
   PostReply,
+  SessionFeedback,
   Thread,
   User,
   WaitlistEntry,
@@ -99,6 +100,18 @@ export interface PaymentEvent extends Doc {
   receivedAt: string;
 }
 
+/** A recorded voice note. The audio stays on the server, base64 encoded. */
+export interface VoiceNote extends Doc {
+  id: string;
+  ownerId: string;
+  bookingId: string;
+  mimeType: string;
+  durationSec: number;
+  /** Base64 audio. Capped well under MongoDB's 16 MB document limit by the upload route. */
+  data: string;
+  createdAt: string;
+}
+
 export interface Database {
   users: Collection<User>;
   credentials: Collection<Credential>;
@@ -122,6 +135,8 @@ export interface Database {
   mail: Collection<MailMessage>;
   gameResults: Collection<GameResult>;
   paymentEvents: Collection<PaymentEvent>;
+  feedback: Collection<SessionFeedback>;
+  voiceNotes: Collection<VoiceNote>;
 }
 
 let store: Store | null = null;
@@ -151,6 +166,8 @@ function build(from: Store): Database {
     mail: from.collection<MailMessage>("mail"),
     gameResults: from.collection<GameResult>("gameResults"),
     paymentEvents: from.collection<PaymentEvent>("paymentEvents"),
+    feedback: from.collection<SessionFeedback>("feedback"),
+    voiceNotes: from.collection<VoiceNote>("voiceNotes"),
   };
 }
 
@@ -186,6 +203,8 @@ async function seedContents(): Promise<Record<string, Doc[]>> {
     mail: seed.mail,
     gameResults: seed.gameResults,
     paymentEvents: [],
+    feedback: [],
+    voiceNotes: [],
   };
 }
 

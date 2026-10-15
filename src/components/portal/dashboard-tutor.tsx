@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { PageHeader } from "./page-header";
 import { BookingRow } from "./booking-row";
+import { FeedbackList } from "./feedback-list";
 import { api } from "@/lib/api";
 import { useQuery } from "@/lib/hooks";
 import { formatDate, formatDateTime, isPast, money, relativeTime } from "@/lib/format";
@@ -17,6 +18,8 @@ export function TutorDashboard({ user }: { user: User }) {
   const materials = useQuery(() => api.materials.forOwner(user.id), [user.id]);
   const availability = useQuery(() => api.availability.forTutor(user.id), [user.id]);
   const progress = useQuery(() => api.lessonNotes.progressFor(user.id), [user.id]);
+  const feedback = useQuery(() => api.feedback.forTutor(user.id), [user.id]);
+  const people = useQuery(() => api.users.directory(), []);
 
   if (bookings.loading || tutees.loading) {
     return <Loading label="Gathering your students" />;
@@ -172,6 +175,27 @@ export function TutorDashboard({ user }: { user: User }) {
         </section>
 
         <aside className="space-y-6">
+          {(feedback.data ?? []).length > 0 ? (
+            <Card className="p-6">
+              <h2 className="text-lg">What your students said</h2>
+              <p className="mt-1 text-xs text-ink-400">
+                Average{" "}
+                {(
+                  (feedback.data ?? []).reduce((sum, item) => sum + item.rating, 0) /
+                  (feedback.data ?? []).length
+                ).toFixed(1)}{" "}
+                ★ from {(feedback.data ?? []).length} lesson
+                {(feedback.data ?? []).length === 1 ? "" : "s"}
+              </p>
+              <div className="mt-4">
+                <FeedbackList
+                  items={(feedback.data ?? []).slice(0, 3)}
+                  people={new Map((people.data ?? []).map((person) => [person.id, person]))}
+                />
+              </div>
+            </Card>
+          ) : null}
+
           <Card className="p-6">
             <div className="flex items-center justify-between">
               <h2 className="text-lg">Your tutees</h2>

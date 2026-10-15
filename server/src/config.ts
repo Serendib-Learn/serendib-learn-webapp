@@ -89,6 +89,17 @@ export const config = {
   },
 
   /**
+   * How often the lesson-feedback reminders run, in milliseconds. 0 turns the
+   * in-process timer off (the tests do). On Cloud Run an idle instance gets no
+   * CPU, so also point Cloud Scheduler at POST /api/jobs/reminders with the
+   * CRON_SECRET below — that runs the same job on demand.
+   */
+  reminderIntervalMs: Number(process.env.REMINDER_INTERVAL_MS ?? 60_000),
+
+  /** Shared secret for POST /api/jobs/reminders. Empty disables the endpoint. */
+  cronSecret: process.env.CRON_SECRET ?? "",
+
+  /**
    * The owners' own administrator account. When an email is set, every boot
    * makes sure that account exists and is a super admin: it is created if
    * missing (with SUPER_ADMIN_PASSWORD, or with no password and a
