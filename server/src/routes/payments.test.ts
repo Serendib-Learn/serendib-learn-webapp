@@ -116,7 +116,6 @@ test("webhook: payment.succeeded confirms the booking once, with a meeting link 
 
   const confirmed = await student.client.get(`/bookings/${booking.id}`);
   assert.equal(confirmed.body.status, "confirmed");
-  assert.ok(confirmed.body.meetingUrl);
   assert.equal(confirmed.body.payment.card, "VISA •••• 4242");
 
   const receipt = await latestMail(harness, "paid-student@example.com", "receipt");

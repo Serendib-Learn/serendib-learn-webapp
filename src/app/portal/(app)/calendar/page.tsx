@@ -13,6 +13,8 @@ import { BookingRow } from "@/components/portal/booking-row";
 import { GoogleCalendarConnect } from "@/components/portal/google-calendar-connect";
 import { PageHeader } from "@/components/portal/page-header";
 import { Button, ButtonLink } from "@/components/ui/button";
+import { Field, Input } from "@/components/ui/field";
+import { Modal } from "@/components/ui/modal";
 import { Alert, EmptyState, Loading } from "@/components/ui/primitives";
 import type { Booking } from "@/lib/types";
 
@@ -101,6 +103,7 @@ function Schedule({ userId, isTutor }: { userId: string; isTutor: boolean }) {
   const people = useQuery(() => api.users.directory(), []);
 
   const cancel = useAction((id: string) => api.bookings.cancel(id));
+  const [linking, setLinking] = useState<Booking | null>(null);
   const complete = useAction((id: string) => api.bookings.complete(id));
 
   if (bookings.loading) return <Loading label="Loading your sessions" />;
@@ -172,10 +175,22 @@ function Schedule({ userId, isTutor }: { userId: string; isTutor: boolean }) {
                     {booking.status === "confirmed" && !past && booking.meetingUrl ? (
                       <a
                         href={booking.meetingUrl}
+                        target="_blank"
+                        rel="noreferrer"
                         className="text-sm font-medium text-jade-700 hover:text-jade-600"
                       >
                         Join link →
                       </a>
+                    ) : null}
+
+                    {booking.status === "confirmed" && !past && !booking.meetingUrl && !isTutor ? (
+                      <span className="text-xs text-ink-400">Meeting link to follow</span>
+                    ) : null}
+
+                    {booking.status === "confirmed" && !past && isTutor ? (
+                      <Button size="sm" variant="secondary" onClick={() => setLinking(booking)}>
+                        {booking.meetingUrl ? "Change link" : "Add meeting link"}
+                      </Button>
                     ) : null}
 
                     {booking.status === "confirmed" && past && isTutor ? (
@@ -209,6 +224,50 @@ function Schedule({ userId, isTutor }: { userId: string; isTutor: boolean }) {
           })}
         </div>
       )}
+
+      {linking ? <MeetingLinkDialog booking={linking} onClose={() => setLinking(null)} /> : null}
     </>
+  );
+}
+
+function MeetingLinkDialog({ booking, onClose }: { booking: Booking; onClose: () => void }) {
+  const [link, setLink] = useState(booking.meetingUrl ?? "");
+  const save = useAction(() => api.bookings.setMeetingLink(booking.id, link));
+
+  return (
+    <Modal
+      open
+      onClose={onClose}
+      title={booking.meetingUrl ? "Change the meeting link" : "Add a meeting link"}
+      description="Paste a Google Meet (or Zoom) link. The student is emailed as soon as you save."
+    >
+      <form
+        className="space-y-4"
+        onSubmit={async (event) => {
+          event.preventDefault();
+          if (await save.run()) onClose();
+        }}
+      >
+        <Field label="Meeting link" htmlFor="meeting-link" hint="Tip: connect Google Calendar under My hours and links are made for you.">
+          <Input
+            id="meeting-link"
+            type="url"
+            required
+            value={link}
+            onChange={(event) => setLink(event.target.value)}
+            placeholder="https://meet.google.com/abc-defg-hij"
+          />
+        </Field>
+        {save.error ? <Alert>{save.error}</Alert> : null}
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="ghost" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button type="submit" disabled={save.pending || !link.trim()}>
+            {save.pending ? "Saving…" : "Save link"}
+          </Button>
+        </div>
+      </form>
+    </Modal>
   );
 }

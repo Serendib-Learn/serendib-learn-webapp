@@ -120,6 +120,12 @@ export interface Booking {
   meetingUrl?: string;
   /** Id of the Google Calendar event backing this booking, when there is one. */
   googleEventId?: string;
+  /**
+   * Whose calendar that event is on: the tutor's own, or the site's shared
+   * Serendib calendar (used when the tutor has not connected one). Missing
+   * means the tutor's, which is all there was before the shared one existed.
+   */
+  googleCalendarOwner?: "tutor" | "system";
   /** The card payment, when it went through Payments.lk rather than the demo checkout. */
   payment?: BookingPayment;
   /** Why a booking was cancelled, when the system did it (an expired checkout, say). */

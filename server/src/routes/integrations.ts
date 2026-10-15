@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { config } from "../config.ts";
-import { db } from "../db/database.ts";
+import { db, SYSTEM_CALENDAR_ID } from "../db/database.ts";
 import { ApiError, wrap } from "../lib/errors.ts";
 import {
   exchangeGoogleAuthCode,
@@ -19,9 +19,10 @@ export const integrationsRouter = Router();
 const STATE_TTL_MS = 10 * 60 * 1000;
 
 /** Where the browser lands back on the portal once a purpose's flow finishes. */
-const RETURN_PATH: Record<"calendar" | "mail", string> = {
+const RETURN_PATH: Record<"calendar" | "mail" | "system-calendar", string> = {
   calendar: "/portal/calendar",
   mail: "/portal/admin",
+  "system-calendar": "/portal/admin",
 };
 
 function requireGoogleConfigured() {
@@ -121,6 +122,51 @@ integrationsRouter.post(
 );
 
 /**
+ * The site's shared Serendib calendar: admin-only, one fixed row. Bookings
+ * with a tutor who has not connected their own calendar get their Meet link
+ * from this one instead.
+ */
+integrationsRouter.get(
+  "/google/system-calendar/status",
+  requireAdmin,
+  wrap(async (_request, response) => {
+    const linked = await db().googleAccounts.findById(SYSTEM_CALENDAR_ID);
+    const status: GoogleCalendarStatus = linked
+      ? { connected: true, email: linked.email }
+      : { connected: false };
+    response.json(status);
+  }),
+);
+
+integrationsRouter.get(
+  "/google/system-calendar/connect",
+  requireAdmin,
+  wrap(async (request, response) => {
+    requireGoogleConfigured();
+
+    const actor = requireUser(request);
+    const state = randomToken(24);
+    await db().oauthStates.insertOne({
+      id: state,
+      userId: actor.id,
+      purpose: "system-calendar",
+      createdAt: nowIso(),
+    });
+
+    response.redirect(googleCalendarAuthUrl(state));
+  }),
+);
+
+integrationsRouter.post(
+  "/google/system-calendar/disconnect",
+  requireAdmin,
+  wrap(async (_request, response) => {
+    await db().googleAccounts.deleteOne({ id: SYSTEM_CALENDAR_ID });
+    response.status(204).end();
+  }),
+);
+
+/**
  * Google lands the browser here after the consent screen, for either
  * purpose. There is no session requirement — `state` is what proves which of
  * our users started this, and what it was for, since Google's redirect does
@@ -151,10 +197,11 @@ integrationsRouter.get(
     try {
       const link = await exchangeGoogleAuthCode(code);
 
-      if (pending.purpose === "calendar") {
-        await db().googleAccounts.deleteOne({ id: pending.userId });
+      if (pending.purpose === "calendar" || pending.purpose === "system-calendar") {
+        const id = pending.purpose === "calendar" ? pending.userId : SYSTEM_CALENDAR_ID;
+        await db().googleAccounts.deleteOne({ id });
         await db().googleAccounts.insertOne({
-          id: pending.userId,
+          id,
           refreshToken: link.refreshToken,
           email: link.email,
           connectedAt: nowIso(),

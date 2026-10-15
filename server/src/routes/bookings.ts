@@ -1,11 +1,12 @@
 import { Router } from "express";
-import { db } from "../db/database.ts";
+import { db, SYSTEM_CALENDAR_ID } from "../db/database.ts";
 import { ApiError, forbidden, notFound, wrap } from "../lib/errors.ts";
 import { pathParam } from "../lib/http.ts";
 import { blocksSlot, isBookableTutor, overlaps, priceFor, requireUserRecord } from "../lib/domain.ts";
 import { confirmBooking } from "../lib/booking-confirmation.ts";
 import { deleteGoogleMeeting } from "../lib/google.ts";
 import { newId, nowIso } from "../lib/ids.ts";
+import { deliver } from "../lib/mail.ts";
 import { checkoutFor, paymentsEnabled } from "../lib/payments.ts";
 import { requireAuth, requireSelfOrAdmin, requireUser } from "../lib/sessions.ts";
 import { syncBookingPayment } from "./payments.ts";
@@ -202,11 +203,54 @@ bookingsRouter.post(
     }
 
     if (booking.googleEventId) {
-      const linked = await db().googleAccounts.findById(booking.tutorId);
+      const calendar =
+        booking.googleCalendarOwner === "system" ? SYSTEM_CALENDAR_ID : booking.tutorId;
+      const linked = await db().googleAccounts.findById(calendar);
       if (linked) await deleteGoogleMeeting(linked.refreshToken, booking.googleEventId);
     }
 
     response.json(await db().bookings.updateOne({ id: booking.id }, { status: "cancelled" }));
+  }),
+);
+
+/**
+ * Puts a meeting link on a booking by hand — when no Google calendar made one,
+ * or the tutor prefers their own room. Only the booking's tutor, or an admin.
+ */
+bookingsRouter.post(
+  "/:id/meeting-link",
+  requireAuth,
+  wrap(async (request, response) => {
+    const actor = requireUser(request);
+    const booking = await load(pathParam(request, "id"));
+    if (booking.tutorId !== actor.id && actor.role !== "admin") {
+      throw forbidden("Only the tutor sets the meeting link.");
+    }
+    if (booking.status !== "confirmed") {
+      throw new ApiError("Only a confirmed session takes a meeting link.");
+    }
+
+    let url: URL;
+    try {
+      url = new URL(String(request.body?.url ?? "").trim());
+    } catch {
+      throw new ApiError("That does not look like a link. Paste the whole https:// address.");
+    }
+    if (url.protocol !== "https:") throw new ApiError("Meeting links must start with https://.");
+
+    const updated = await db().bookings.updateOne({ id: booking.id }, { meetingUrl: url.toString() });
+
+    const student = await db().users.findById(booking.studentId);
+    if (student) {
+      await deliver({
+        to: student.email,
+        subject: "Your meeting link is ready",
+        body: `The link for your lesson on ${new Date(booking.startsAt).toLocaleString()}:\n\n${url.toString()}\n\nIt is also on the booking in your portal.`,
+        kind: "notification",
+      });
+    }
+
+    response.json(updated);
   }),
 );
 

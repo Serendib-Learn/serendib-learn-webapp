@@ -58,7 +58,28 @@ test("booking lifecycle: create -> slot clash -> pay -> complete, with authoriza
   const paid = await student.client.post(`/bookings/${bookingId}/pay`);
   assert.equal(paid.status, 200);
   assert.equal(paid.body.status, "confirmed");
-  assert.ok(paid.body.meetingUrl, "gets a meeting link even with no Google Calendar connected");
+  assert.equal(
+    paid.body.meetingUrl,
+    undefined,
+    "no Google calendar connected means no link yet — never a made-up one",
+  );
+
+  // With no link made for them, the tutor adds one — and only the tutor.
+  const studentSetsLink = await student.client.post(`/bookings/${bookingId}/meeting-link`, {
+    url: "https://meet.google.com/abc-defg-hij",
+  });
+  assert.equal(studentSetsLink.status, 403);
+
+  const notALink = await tutor.client.post(`/bookings/${bookingId}/meeting-link`, {
+    url: "javascript:alert(1)",
+  });
+  assert.equal(notALink.status, 400);
+
+  const linked = await tutor.client.post(`/bookings/${bookingId}/meeting-link`, {
+    url: "https://meet.google.com/abc-defg-hij",
+  });
+  assert.equal(linked.status, 200);
+  assert.equal(linked.body.meetingUrl, "https://meet.google.com/abc-defg-hij");
 
   // The student's membership flips to active on their first paid booking.
   const meAfterPay = await student.client.get("/auth/me");

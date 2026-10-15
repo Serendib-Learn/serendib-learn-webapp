@@ -119,6 +119,8 @@ export interface Backend {
     startCheckout(id: string): Promise<{ url: string; booking: Booking }>;
     /** The booking after the API has checked its payment with Payments.lk. */
     paymentStatus(id: string): Promise<Booking>;
+    /** The booking's tutor (or an admin) puts a meeting link on it by hand. */
+    setMeetingLink(id: string, url: string): Promise<Booking>;
     cancel(id: string): Promise<Booking>;
     complete(id: string): Promise<Booking>;
   };
@@ -196,6 +198,14 @@ export interface Backend {
       mailStatus(): Promise<GoogleCalendarStatus>;
       mailConnectUrl(): string;
       mailDisconnect(): Promise<void>;
+
+      /**
+       * The site's shared Serendib calendar — admin-only. Makes the Meet link
+       * for any booking whose tutor has not connected their own calendar.
+       */
+      systemCalendarStatus(): Promise<GoogleCalendarStatus>;
+      systemCalendarConnectUrl(): string;
+      systemCalendarDisconnect(): Promise<void>;
     };
   };
 

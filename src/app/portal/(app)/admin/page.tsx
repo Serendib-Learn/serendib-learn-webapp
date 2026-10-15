@@ -8,6 +8,7 @@ import { useAction, useQuery } from "@/lib/hooks";
 import { cn } from "@/lib/cn";
 import { formatDate, formatDateTime, relativeTime } from "@/lib/format";
 import { GoogleMailConnect } from "@/components/portal/google-mail-connect";
+import { GoogleSystemCalendarConnect } from "@/components/portal/google-system-calendar-connect";
 import { PageHeader } from "@/components/portal/page-header";
 import { ProfileEditor } from "@/components/portal/profile-editor";
 import { Modal } from "@/components/ui/modal";
@@ -30,7 +31,7 @@ const tabs: { id: Tab; label: string }[] = [
   { id: "tutors", label: "Tutor applications" },
   { id: "moderation", label: "Moderation" },
   { id: "waitlist", label: "Waitlist" },
-  { id: "mail", label: "Mail" },
+  { id: "mail", label: "Google" },
   { id: "audit", label: "Audit log" },
 ];
 
@@ -113,7 +114,12 @@ export default function AdminPage() {
       {tab === "tutors" ? <TutorApplications /> : null}
       {tab === "moderation" ? <Moderation /> : null}
       {tab === "waitlist" ? <Waitlist /> : null}
-      {tab === "mail" ? <GoogleMailConnect /> : null}
+      {tab === "mail" ? (
+        <div className="space-y-6">
+          <GoogleSystemCalendarConnect />
+          <GoogleMailConnect />
+        </div>
+      ) : null}
       {tab === "audit" ? <AuditLog /> : null}
     </>
   );

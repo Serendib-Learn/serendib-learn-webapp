@@ -250,6 +250,13 @@ export const httpBackend: Backend = {
       return request<Booking>(`/bookings/${id}/payment`);
     },
 
+    setMeetingLink(id, meetingUrl) {
+      return request<Booking>(`/bookings/${id}/meeting-link`, {
+        method: "POST",
+        body: { url: meetingUrl },
+      });
+    },
+
     cancel(id) {
       return request<Booking>(`/bookings/${id}/cancel`, { method: "POST" });
     },
@@ -458,6 +465,20 @@ export const httpBackend: Backend = {
 
       mailDisconnect() {
         return request<void>("/integrations/google/mail/disconnect", { method: "POST" });
+      },
+
+      systemCalendarStatus() {
+        return request<GoogleCalendarStatus>("/integrations/google/system-calendar/status");
+      },
+
+      systemCalendarConnectUrl() {
+        return url("/integrations/google/system-calendar/connect");
+      },
+
+      systemCalendarDisconnect() {
+        return request<void>("/integrations/google/system-calendar/disconnect", {
+          method: "POST",
+        });
       },
     },
   },

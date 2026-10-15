@@ -278,6 +278,12 @@ function Confirmed({ booking }: { booking: Booking }) {
           Back to the calendar
         </ButtonLink>
       </div>
+      {!booking.meetingUrl ? (
+        <p className="mt-4 text-sm text-ink-500">
+          Your tutor will add the meeting link to this booking before the lesson — you will get
+          an email when it is there.
+        </p>
+      ) : null}
     </Card>
   );
 }

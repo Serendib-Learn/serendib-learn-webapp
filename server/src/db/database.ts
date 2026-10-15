@@ -53,9 +53,16 @@ export interface ResetToken extends Doc {
   expiresAt?: string;
 }
 
+/** The `googleAccounts` row for the site's shared Serendib calendar. */
+export const SYSTEM_CALENDAR_ID = "system";
+
 /** A Google account linked for Calendar + Meet. Separate from sign-in. */
 export interface GoogleAccount extends Doc {
-  /** Same value as the user id. */
+  /**
+   * Same value as the user id — or `SYSTEM_CALENDAR_ID` for the site's own
+   * calendar, which an admin connects once and which makes Meet links for
+   * every tutor who has not connected their own.
+   */
   id: string;
   refreshToken: string;
   email: string;
@@ -81,7 +88,7 @@ export interface OAuthState extends Doc {
   id: string;
   userId: string;
   /** Which connection this state is for — the callback trusts this, not the URL it hit. */
-  purpose: "calendar" | "mail";
+  purpose: "calendar" | "mail" | "system-calendar";
   createdAt: string;
 }
 
