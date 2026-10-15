@@ -11,6 +11,12 @@ The course content — the eight Survival Sri Lanka chapters — comes from the 
 `docs/`; the original site this replaces (a Lovable prototype) set the learning-hub stages, the
 brand and the social links.
 
+**The look follows the original site.** The public pages, the portal frame, the login card,
+the calendar, the learning hub folders and the community page reproduce the original
+serendib.learn (the Lovable prototype) — its palette, Georgia headings, flower mark and layouts —
+with the newer features styled to match. Colours are named after the brand
+(`forest`, `fern`, `sage`, `amber-spice`, `cream`, `earth`, `mist`) in `src/app/globals.css`.
+
 **What is parked, not deleted:** the two learning games (Survival Sri Lanka and Explore
 Heritage) are still in the code but switched off — every `/games` route 404s and every link is
 commented out. `src/lib/features.ts` explains how to bring them back; search for

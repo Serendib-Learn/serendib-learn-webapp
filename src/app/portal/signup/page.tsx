@@ -117,7 +117,7 @@ function SignUpForm() {
           <p className="mt-5 border-t border-ink-900/8 pt-4 text-xs leading-relaxed text-ink-400">
             {role === "tutor"
               ? "Already teaching with us? Ask the team to add you instead — you will get an email to set your password."
-              : "Looking to teach instead? Choose “I want to teach” above."}
+              : "Looking to teach instead? Choose “Tutor” above."}
           </p>
         </Card>
       }
