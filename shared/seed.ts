@@ -238,6 +238,7 @@ export function createSeedData(): SeedData {
     materials: [
       {
         id: "mat_1",
+        chapterId: "ch_alphabet",
         ownerId: ARJUN,
         title: "Tamil script — the first twelve letters",
         description:
@@ -251,6 +252,7 @@ export function createSeedData(): SeedData {
       },
       {
         id: "mat_2",
+        chapterId: "ch_relatives",
         ownerId: ARJUN,
         title: "Family words, recorded slowly",
         description:
@@ -264,6 +266,7 @@ export function createSeedData(): SeedData {
       },
       {
         id: "mat_3",
+        chapterId: "ch_tuk-tuk",
         ownerId: NIMALI,
         title: "Tuk tuk role play script",
         description:
@@ -277,6 +280,7 @@ export function createSeedData(): SeedData {
       },
       {
         id: "mat_4",
+        chapterId: "ch_at-the-shop",
         ownerId: NIMALI,
         title: "Numbers 1 to 100 in Sinhala",
         description: "Video walkthrough, with the pattern that makes the twenties onward easy.",
@@ -289,6 +293,7 @@ export function createSeedData(): SeedData {
       },
       {
         id: "mat_5",
+        chapterId: "ch_worksheets",
         ownerId: ADMIN,
         title: "Survival Sri Lanka — printable phrase cards",
         description:
@@ -302,6 +307,7 @@ export function createSeedData(): SeedData {
       },
       {
         id: "mat_6",
+        chapterId: "ch_conversation",
         ownerId: ADMIN,
         title: "How Sinhala and Tamil word order works",
         description:

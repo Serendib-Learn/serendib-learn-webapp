@@ -1,5 +1,9 @@
 import { MongoClient } from "mongodb";
-import type { Collection as MongoNativeCollection, Filter as MongoFilter } from "mongodb";
+import type {
+  Collection as MongoNativeCollection,
+  Filter as MongoFilter,
+  UpdateFilter,
+} from "mongodb";
 import type { Collection, Doc, FindOptions, Filter, Store } from "./store.ts";
 
 /**
@@ -20,6 +24,24 @@ import type { Collection, Doc, FindOptions, Filter, Store } from "./store.ts";
 
 function clone<T>(value: T): T {
   return structuredClone(value);
+}
+
+/**
+ * `{ field: undefined }` in a change means "remove the field" — that is what
+ * the JSON store ends up doing — but a plain $set would store null instead.
+ */
+function toUpdate<T>(changes: Partial<T>) {
+  const set: Record<string, unknown> = {};
+  const unset: Record<string, ""> = {};
+  for (const [key, value] of Object.entries(clone(changes) as Record<string, unknown>)) {
+    if (value === undefined) unset[key] = "";
+    else set[key] = value;
+  }
+  // Never an empty document: Mongo would read that as "replace with nothing".
+  return {
+    $set: set,
+    ...(Object.keys(unset).length > 0 ? { $unset: unset } : {}),
+  };
 }
 
 class MongoDocCollection<T extends Doc> implements Collection<T> {
@@ -71,16 +93,17 @@ class MongoDocCollection<T extends Doc> implements Collection<T> {
   async updateOne(filter: Filter<T>, changes: Partial<T>): Promise<T | null> {
     const result = await this.#col.findOneAndUpdate(
       this.#mongoFilter(filter),
-      { $set: clone(changes) },
+      toUpdate(changes) as UpdateFilter<T>,
       { returnDocument: "after", projection: { _id: 0 } },
     );
     return (result as T | null) ?? null;
   }
 
   async updateMany(filter: Filter<T>, changes: Partial<T>): Promise<number> {
-    const result = await this.#col.updateMany(this.#mongoFilter(filter), {
-      $set: clone(changes),
-    });
+    const result = await this.#col.updateMany(
+      this.#mongoFilter(filter),
+      toUpdate(changes) as UpdateFilter<T>,
+    );
     return result.modifiedCount;
   }
 

@@ -4,14 +4,14 @@ import { useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { useAction, useQuery } from "@/lib/hooks";
-import { MaterialCard } from "@/components/portal/material-card";
+import { ChapterBrowser, groupByStage } from "@/components/portal/chapter-browser";
 import { VoiceNotePlayer } from "@/components/portal/voice-note-player";
 import { PageHeader } from "@/components/portal/page-header";
 import { Button } from "@/components/ui/button";
 import { Checkbox, Field, Input, Select, Textarea } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
-import { Alert, Badge, EmptyState, Loading, SectionHeading } from "@/components/ui/primitives";
-import type { LanguageCode, Material, MaterialKind, User } from "@/lib/types";
+import { Alert, Badge, Card, Loading } from "@/components/ui/primitives";
+import type { CourseChapter, LanguageCode, Material, MaterialKind, User } from "@/lib/types";
 
 export default function LearningHubPage() {
   const { user } = useAuth();
@@ -27,31 +27,31 @@ function StudentHub({ student }: { student: User }) {
   const mine = useQuery(() => api.materials.forStudent(student.id), [student.id]);
   const library = useQuery(() => api.materials.library(), []);
   const notes = useQuery(() => api.lessonNotes.forStudent(student.id), [student.id]);
+  const chapters = useQuery(() => api.chapters.list(), []);
 
-  if (mine.loading) return <Loading label="Opening your hub" />;
+  if (mine.loading || chapters.loading) return <Loading label="Opening your hub" />;
 
   return (
     <>
       <PageHeader title="Learning hub">
-        Everything your tutor has shared, plus notes from past lessons and open resources
-        anyone can use.
+        Your course chapter by chapter, everything your tutor has shared, and the write-up
+        from every lesson.
       </PageHeader>
 
       <section>
-        <h2 className="text-xl">Shared with you</h2>
-        {(mine.data ?? []).length === 0 ? (
-          <div className="mt-4">
-            <EmptyState icon="📚" title="Nothing assigned yet">
-              Your tutor will drop worksheets, audio and decks here after your first lesson.
-            </EmptyState>
-          </div>
-        ) : (
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            {(mine.data ?? []).map((material) => (
-              <MaterialCard key={material.id} material={material} />
-            ))}
-          </div>
-        )}
+        <h2 className="text-xl">Your course, chapter by chapter</h2>
+        <p className="mt-1 text-sm text-ink-500">
+          Everything your tutor has shared and the open library, filed by chapter — with the
+          phrases for each one in{" "}
+          {student.languages.map((language) => (language === "sinhala" ? "Sinhala" : "Tamil")).join(" and ")}.
+        </p>
+        <div className="mt-5">
+          <ChapterBrowser
+            chapters={chapters.data ?? []}
+            materials={[...(mine.data ?? []), ...(library.data ?? [])]}
+            languages={student.languages}
+          />
+        </div>
       </section>
 
       {(notes.data ?? []).length > 0 ? (
@@ -98,18 +98,6 @@ function StudentHub({ student }: { student: User }) {
         </section>
       ) : null}
 
-      {(library.data ?? []).length > 0 ? (
-        <section className="mt-12">
-          <SectionHeading title="Open library" className="max-w-xl">
-            Free resources from our tutors. No assignment needed.
-          </SectionHeading>
-          <div className="mt-5 grid gap-4 sm:grid-cols-2">
-            {(library.data ?? []).map((material) => (
-              <MaterialCard key={material.id} material={material} />
-            ))}
-          </div>
-        </section>
-      ) : null}
     </>
   );
 }
@@ -119,10 +107,15 @@ function TeachingHub({ owner }: { owner: User }) {
   const tutees = useQuery(() => api.users.tuteesOf(owner.id), [owner.id]);
   const [composing, setComposing] = useState(false);
   const [assigning, setAssigning] = useState<Material | null>(null);
+  const [managing, setManaging] = useState(false);
+  const chapters = useQuery(() => api.chapters.list(), []);
 
   const remove = useAction((id: string) => api.materials.remove(id));
+  const move = useAction((id: string, chapterId: string) =>
+    api.materials.setChapter(id, chapterId || undefined),
+  );
 
-  if (materials.loading) return <Loading label="Opening your hub" />;
+  if (materials.loading || chapters.loading) return <Loading label="Opening your hub" />;
 
   const students = (tutees.data ?? []).filter((person) => person.role === "student");
 
@@ -130,53 +123,82 @@ function TeachingHub({ owner }: { owner: User }) {
     <>
       <PageHeader
         title="Learning hub"
-        action={<Button size="sm" onClick={() => setComposing(true)}>Add material</Button>}
+        action={
+          <div className="flex flex-wrap gap-2">
+            {owner.role === "admin" ? (
+              <Button size="sm" variant="secondary" onClick={() => setManaging(true)}>
+                Manage chapters
+              </Button>
+            ) : null}
+            <Button size="sm" onClick={() => setComposing(true)}>
+              Add material
+            </Button>
+          </div>
+        }
       >
-        Upload what you use in lessons and assign it to the students who need it.
+        Upload what you use in lessons, file it under its chapter, and assign it to the students
+        who need it.
       </PageHeader>
 
       {(materials.data ?? []).length === 0 ? (
-        <EmptyState
-          icon="📥"
-          title="Your shelf is empty"
-          action={<Button onClick={() => setComposing(true)}>Add your first material</Button>}
-        >
-          Worksheets, audio drills, links to news clips — anything a student can work through
-          between lessons.
-        </EmptyState>
-      ) : (
-        <div className="grid gap-4 sm:grid-cols-2">
-          {(materials.data ?? []).map((material) => (
-            <MaterialCard
-              key={material.id}
-              material={material}
-              footer={
-                <div className="flex items-center gap-1">
-                  <Button variant="ghost" size="sm" onClick={() => setAssigning(material)}>
-                    {material.assignedTo.length === 0
-                      ? "Assign"
-                      : `${material.assignedTo.length} assigned`}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-clay-600 hover:bg-clay-50"
-                    disabled={remove.pending}
-                    onClick={() => void remove.run(material.id)}
-                  >
-                    Delete
-                  </Button>
-                </div>
-              }
-            />
-          ))}
-        </div>
-      )}
+        <Card className="mb-8 flex flex-wrap items-center justify-between gap-4 p-5">
+          <p className="text-sm text-ink-600">
+            Your shelf is empty. Worksheets, audio drills, links — anything a student can work
+            through between lessons, filed by chapter.
+          </p>
+          <Button size="sm" onClick={() => setComposing(true)}>
+            Add your first material
+          </Button>
+        </Card>
+      ) : null}
+
+      <ChapterBrowser
+        chapters={chapters.data ?? []}
+        materials={materials.data ?? []}
+        languages={owner.languages}
+        footerFor={(material) => (
+          <div className="flex flex-wrap items-center gap-1">
+            <Select
+              aria-label={`Chapter for ${material.title}`}
+              className="h-9 w-auto max-w-44 py-0 text-xs"
+              value={material.chapterId ?? ""}
+              disabled={move.pending}
+              onChange={(event) => void move.run(material.id, event.target.value)}
+            >
+              <option value="">No chapter</option>
+              {(chapters.data ?? []).map((chapter) => (
+                <option key={chapter.id} value={chapter.id}>
+                  {chapter.title}
+                </option>
+              ))}
+            </Select>
+            <Button variant="ghost" size="sm" onClick={() => setAssigning(material)}>
+              {material.assignedTo.length === 0
+                ? "Assign"
+                : `${material.assignedTo.length} assigned`}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-clay-600 hover:bg-clay-50"
+              disabled={remove.pending}
+              onClick={() => void remove.run(material.id)}
+            >
+              Delete
+            </Button>
+          </div>
+        )}
+      />
+
+      {managing ? (
+        <ManageChapters chapters={chapters.data ?? []} onClose={() => setManaging(false)} />
+      ) : null}
 
       {composing ? (
         <MaterialComposer
           owner={owner}
           students={students}
+          chapters={chapters.data ?? []}
           onClose={() => setComposing(false)}
         />
       ) : null}
@@ -195,12 +217,15 @@ function TeachingHub({ owner }: { owner: User }) {
 function MaterialComposer({
   owner,
   students,
+  chapters,
   onClose,
 }: {
   owner: User;
   students: User[];
+  chapters: CourseChapter[];
   onClose: () => void;
 }) {
+  const [chapterId, setChapterId] = useState("");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [kind, setKind] = useState<MaterialKind>("pdf");
@@ -223,6 +248,7 @@ function MaterialComposer({
       url: url.trim() || undefined,
       fileLabel: fileLabel.trim() || undefined,
       assignedTo,
+      chapterId: chapterId || undefined,
     }),
   );
 
@@ -250,6 +276,25 @@ function MaterialComposer({
             onChange={(event) => setDescription(event.target.value)}
             placeholder="Two pages of fill-in-the-blank practice on the verbs we covered."
           />
+        </Field>
+
+        <Field label="Chapter" htmlFor="material-chapter" hint="Where students find it in their course.">
+          <Select
+            id="material-chapter"
+            value={chapterId}
+            onChange={(event) => setChapterId(event.target.value)}
+          >
+            <option value="">No chapter</option>
+            {groupByStage(chapters).map(({ stage, chapters: items }) => (
+              <optgroup key={stage} label={stage}>
+                {items.map((chapter) => (
+                  <option key={chapter.id} value={chapter.id}>
+                    {chapter.title}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </Select>
         </Field>
 
         <div className="grid gap-4 sm:grid-cols-3">
@@ -418,5 +463,136 @@ function AssignDialog({
         </Button>
       </div>
     </Modal>
+  );
+}
+
+/** Administrators: rename, reorder, add and remove the course's chapters. */
+function ManageChapters({ chapters, onClose }: { chapters: CourseChapter[]; onClose: () => void }) {
+  const [stage, setStage] = useState("");
+  const [title, setTitle] = useState("");
+  const add = useAction(() =>
+    api.chapters.create({
+      stage: stage.trim(),
+      title: title.trim(),
+      summary: "",
+      order: Math.max(0, ...chapters.map((chapter) => chapter.order)) + 10,
+    }),
+  );
+
+  return (
+    <Modal
+      open
+      onClose={onClose}
+      title="Manage chapters"
+      description="Changes show for every tutor and student straight away. Removing a chapter keeps its materials, unfiled."
+      className="sm:max-w-2xl"
+    >
+      <div className="space-y-6">
+        {groupByStage(chapters).map(({ stage: heading, chapters: items }) => (
+          <div key={heading}>
+            <p className="text-xs font-semibold tracking-[0.16em] text-jade-600 uppercase">{heading}</p>
+            <ul className="mt-2 space-y-2">
+              {items.map((chapter) => (
+                <ChapterRow key={chapter.id} chapter={chapter} />
+              ))}
+            </ul>
+          </div>
+        ))}
+
+        <form
+          className="grid gap-3 rounded-2xl bg-sand-100/70 p-4 sm:grid-cols-[1fr_1fr_auto] sm:items-end"
+          onSubmit={async (event) => {
+            event.preventDefault();
+            if (await add.run()) {
+              setTitle("");
+            }
+          }}
+        >
+          <Field label="Stage" htmlFor="new-chapter-stage">
+            <Input
+              id="new-chapter-stage"
+              list="chapter-stages"
+              value={stage}
+              onChange={(event) => setStage(event.target.value)}
+              placeholder="Foundation"
+            />
+          </Field>
+          <datalist id="chapter-stages">
+            {groupByStage(chapters).map(({ stage: heading }) => (
+              <option key={heading} value={heading} />
+            ))}
+          </datalist>
+          <Field label="New chapter" htmlFor="new-chapter-title">
+            <Input
+              id="new-chapter-title"
+              value={title}
+              onChange={(event) => setTitle(event.target.value)}
+              placeholder="At the temple"
+            />
+          </Field>
+          <Button type="submit" disabled={add.pending || !stage.trim() || !title.trim()}>
+            Add
+          </Button>
+        </form>
+        {add.error ? <Alert>{add.error}</Alert> : null}
+      </div>
+    </Modal>
+  );
+}
+
+function ChapterRow({ chapter }: { chapter: CourseChapter }) {
+  const [title, setTitle] = useState(chapter.title);
+  const [summary, setSummary] = useState(chapter.summary);
+  const [order, setOrder] = useState(String(chapter.order));
+  const save = useAction(() =>
+    api.chapters.update(chapter.id, { title: title.trim(), summary: summary.trim(), order: Number(order) }),
+  );
+  const remove = useAction(() => api.chapters.remove(chapter.id));
+  const dirty =
+    title !== chapter.title || summary !== chapter.summary || order !== String(chapter.order);
+
+  return (
+    <li className="grid gap-2 rounded-xl px-3 py-2.5 ring-1 ring-ink-900/8 sm:grid-cols-[4rem_1fr_1.4fr_auto] sm:items-center">
+      <Input
+        aria-label={`Order of ${chapter.title}`}
+        type="number"
+        className="h-9 py-0 text-sm"
+        value={order}
+        onChange={(event) => setOrder(event.target.value)}
+      />
+      <Input
+        aria-label="Title"
+        className="h-9 py-0 text-sm"
+        value={title}
+        onChange={(event) => setTitle(event.target.value)}
+      />
+      <Input
+        aria-label="Summary"
+        className="h-9 py-0 text-sm"
+        value={summary}
+        onChange={(event) => setSummary(event.target.value)}
+      />
+      <div className="flex gap-1">
+        <Button size="sm" variant="secondary" disabled={!dirty || save.pending} onClick={() => void save.run()}>
+          Save
+        </Button>
+        <Button
+          size="sm"
+          variant="ghost"
+          className="text-clay-600 hover:bg-clay-50"
+          disabled={remove.pending}
+          onClick={() => {
+            if (window.confirm(`Remove "${chapter.title}"? Its materials stay, unfiled.`)) {
+              void remove.run();
+            }
+          }}
+        >
+          Remove
+        </Button>
+      </div>
+      {save.error || remove.error ? (
+        <p className="text-xs text-clay-600 sm:col-span-4">{save.error ?? remove.error}</p>
+      ) : null}
+    </li>
   );
 }

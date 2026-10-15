@@ -5,6 +5,7 @@ import type {
   BookingInput,
   CommunityPost,
   CommunityPostInput,
+  CourseChapter,
   GameResult,
   GoogleCalendarStatus,
   GoogleSignInInput,
@@ -136,6 +137,16 @@ export interface Backend {
     library(): Promise<Material[]>;
     create(input: MaterialInput): Promise<Material>;
     assign(id: string, studentIds: string[]): Promise<Material>;
+    /** Files a material under a chapter; no chapter unfiles it. */
+    setChapter(id: string, chapterId: string | undefined): Promise<Material>;
+    remove(id: string): Promise<void>;
+  };
+
+  chapters: {
+    /** The course outline, in order. */
+    list(): Promise<CourseChapter[]>;
+    create(input: Omit<CourseChapter, "id" | "createdAt">): Promise<CourseChapter>;
+    update(id: string, patch: Partial<Omit<CourseChapter, "id" | "createdAt">>): Promise<CourseChapter>;
     remove(id: string): Promise<void>;
   };
 

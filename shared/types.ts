@@ -180,6 +180,22 @@ export interface Material {
   assignedTo: string[];
   fileLabel?: string;
   url?: string;
+  /** The course chapter it belongs to. Missing means unfiled. */
+  chapterId?: string;
+  createdAt: string;
+}
+
+/** One chapter of the course; materials are filed under these. */
+export interface CourseChapter {
+  id: string;
+  /** The heading chapters are grouped under, e.g. "Foundation". */
+  stage: string;
+  title: string;
+  summary: string;
+  /** Sort key across all chapters; stages appear in the order of their first chapter. */
+  order: number;
+  /** A Survival Sri Lanka phrase list (src/data/vocabulary.ts) to show with it. */
+  vocabChapterId?: string;
   createdAt: string;
 }
 
@@ -413,6 +429,7 @@ export interface MaterialInput {
   fileLabel?: string;
   url?: string;
   assignedTo: string[];
+  chapterId?: string;
 }
 
 export interface HomeworkInput {

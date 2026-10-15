@@ -78,6 +78,11 @@ materialsRouter.post(
         ? (body.language as LanguageCode | "both")
         : "both";
 
+    const chapterId = body.chapterId ? String(body.chapterId) : undefined;
+    if (chapterId && !(await db().chapters.findById(chapterId))) {
+      throw new ApiError("That chapter does not exist.");
+    }
+
     const assignedTo = Array.isArray(body.assignedTo)
       ? Array.from(new Set(body.assignedTo.map(String)))
       : [];
@@ -93,6 +98,7 @@ materialsRouter.post(
       assignedTo,
       fileLabel: body.fileLabel ? String(body.fileLabel) : undefined,
       url: body.url ? String(body.url) : undefined,
+      chapterId,
       createdAt: nowIso(),
     };
 
@@ -134,6 +140,27 @@ materialsRouter.post(
     response.json(
       await db().materials.updateOne({ id: material.id }, { assignedTo: studentIds }),
     );
+  }),
+);
+
+/** Files a material under a chapter, or (with no chapterId) unfiles it. */
+materialsRouter.post(
+  "/:id/chapter",
+  requireAuth,
+  wrap(async (request, response) => {
+    const actor = requireUser(request);
+    const material = await db().materials.findById(pathParam(request, "id"));
+    if (!material) throw notFound("That material has gone.");
+    if (material.ownerId !== actor.id && actor.role !== "admin") {
+      throw forbidden("That material belongs to someone else.");
+    }
+
+    const chapterId = request.body?.chapterId ? String(request.body.chapterId) : undefined;
+    if (chapterId && !(await db().chapters.findById(chapterId))) {
+      throw new ApiError("That chapter does not exist.");
+    }
+
+    response.json(await db().materials.updateOne({ id: material.id }, { chapterId }));
   }),
 );
 

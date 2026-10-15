@@ -2,12 +2,14 @@ import { config } from "../config.ts";
 import { hashPassword } from "../lib/passwords.ts";
 import { openMongoStore } from "./mongo-store.ts";
 import { openStore, type Collection, type Doc, type Store } from "./store.ts";
+import { defaultChapters } from "../../../shared/curriculum.ts";
 import { DEMO_PASSWORD, createSeedData } from "../../../shared/seed.ts";
 import type {
   AuditLogEntry,
   AvailabilityRule,
   Booking,
   CommunityPost,
+  CourseChapter,
   GameResult,
   HomeworkItem,
   LessonNote,
@@ -136,6 +138,7 @@ export interface Database {
   gameResults: Collection<GameResult>;
   paymentEvents: Collection<PaymentEvent>;
   feedback: Collection<SessionFeedback>;
+  chapters: Collection<CourseChapter>;
   voiceNotes: Collection<VoiceNote>;
 }
 
@@ -167,6 +170,7 @@ function build(from: Store): Database {
     gameResults: from.collection<GameResult>("gameResults"),
     paymentEvents: from.collection<PaymentEvent>("paymentEvents"),
     feedback: from.collection<SessionFeedback>("feedback"),
+    chapters: from.collection<CourseChapter>("chapters"),
     voiceNotes: from.collection<VoiceNote>("voiceNotes"),
   };
 }
@@ -204,6 +208,7 @@ async function seedContents(): Promise<Record<string, Doc[]>> {
     gameResults: seed.gameResults,
     paymentEvents: [],
     feedback: [],
+    chapters: defaultChapters.map((chapter) => ({ ...chapter, createdAt: new Date().toISOString() })),
     voiceNotes: [],
   };
 }
@@ -229,6 +234,14 @@ export async function connect(): Promise<Database> {
       );
     } else {
       console.log("Fresh database and DEMO_MODE=false: not seeding demo accounts.");
+    }
+  }
+
+  // Not demo data: every site starts with the course outline, demo or not.
+  if ((await database.chapters.count()) === 0) {
+    const createdAt = new Date().toISOString();
+    for (const chapter of defaultChapters) {
+      await database.chapters.insertOne({ ...chapter, createdAt });
     }
   }
 

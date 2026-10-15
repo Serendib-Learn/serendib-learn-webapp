@@ -5,6 +5,7 @@ import type {
   AvailabilityRule,
   Booking,
   CommunityPost,
+  CourseChapter,
   GameResult,
   GoogleCalendarStatus,
   HomeworkItem,
@@ -295,6 +296,31 @@ export const httpBackend: Backend = {
 
     remove(id) {
       return request<void>(`/materials/${id}`, { method: "DELETE" });
+    },
+
+    setChapter(id, chapterId) {
+      return request<Material>(`/materials/${id}/chapter`, {
+        method: "POST",
+        body: { chapterId },
+      });
+    },
+  },
+
+  chapters: {
+    list() {
+      return request<CourseChapter[]>("/chapters");
+    },
+
+    create(input) {
+      return request<CourseChapter>("/chapters", { method: "POST", body: input });
+    },
+
+    update(id, patch) {
+      return request<CourseChapter>(`/chapters/${id}`, { method: "PATCH", body: patch });
+    },
+
+    remove(id) {
+      return request<void>(`/chapters/${id}`, { method: "DELETE" });
     },
   },
 

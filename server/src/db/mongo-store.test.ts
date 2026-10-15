@@ -109,3 +109,18 @@ test("replaceAll: repopulates named collections and isEmpty tracks the users col
   assert.equal(others.length, 1);
   assert.equal(others[0].id, "x1");
 });
+
+test("updateOne: a field set to undefined is removed, not stored as null", async () => {
+  const mongod = await MongoMemoryServer.create();
+  const store = await openMongoStore(mongod.getUri(), "unset_test");
+  try {
+    const things = store.collection<{ id: string; label?: string; kept: number }>("things");
+    await things.insertOne({ id: "t1", label: "filed", kept: 1 });
+
+    const updated = await things.updateOne({ id: "t1" }, { label: undefined });
+    assert.deepEqual(updated, { id: "t1", kept: 1 });
+  } finally {
+    await store.close?.();
+    await mongod.stop();
+  }
+});
