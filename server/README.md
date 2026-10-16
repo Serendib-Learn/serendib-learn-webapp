@@ -74,6 +74,7 @@ form, the tutor list and the demo inbox needs a session cookie.
 | Community | `GET /posts`, `GET /posts/pending` (admin), `POST /posts`, `POST /posts/:id/like`, `GET\|POST /posts/:id/replies`, `POST /posts/:id/moderate` (admin), `GET /community/members?language`, `GET\|POST /community/connections`, `POST /community/connections/:id/accept\|decline`, `DELETE /community/connections/:id` |
 | Messages | `GET /threads`, `POST /threads` (student-to-student needs a friend connection), `GET\|POST /threads/:id/messages`, `POST /threads/:id/read` |
 | Jobs | `POST /jobs/reminders` (header `X-Cron-Secret`; off unless `CRON_SECRET` is set) |
+| Alphabet audio | `GET /alphabet-audio` (public list), `GET /alphabet-audio/:language/:key` (public audio), `PUT\|DELETE /alphabet-audio/:language/:key` (approved tutors and admins) |
 | Waitlist | `POST /waitlist`, `GET /waitlist` (admin) |
 | Demo | `GET /mail`, `POST /mail/:id/read`, `DELETE /mail`, `POST /demo/reset` |
 | Integrations | `GET /integrations/google/status`, `GET /integrations/google/connect`, `POST /integrations/google/disconnect`, `GET /integrations/google/mail/status\|connect` (admin), `POST /integrations/google/mail/disconnect` (admin), `GET /integrations/google/system-calendar/status\|connect` (admin), `POST /integrations/google/system-calendar/disconnect` (admin), `GET /integrations/google/callback` |

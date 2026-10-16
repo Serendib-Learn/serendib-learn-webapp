@@ -174,3 +174,7 @@ server/README.md's "Tests" section for what's not covered yet.
   tutor sign-up or an admin invite.
 - The alphabet sheet and the avatar characters were drafted with AI as a first pass and are
   labelled for tutor review.
+- Alphabet audio: Tamil plays generated files (Google Text-to-Speech, Indian Tamil voice;
+  `node scripts/generate-alphabet-audio.mjs` makes them). Google has no Sinhala voice, so
+  Sinhala audio comes from tutors recording each letter on `/alphabet` (signed in, "Record
+  pronunciations"); a tutor's recording also replaces the generated Tamil file.

@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { LanguageToggle } from "./language-toggle";
 import { Logo } from "./logo";
 import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/cn";
@@ -53,7 +52,6 @@ export function Header() {
               {link.label}
             </Link>
           ))}
-          <LanguageToggle />
           <Link
             href="/#waitlist"
             className="rounded-md bg-amber-spice px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-amber-light"
@@ -85,7 +83,6 @@ export function Header() {
           <Link href="/portal/signup?role=tutor" onClick={close} className="py-2 text-sage hover:text-cream">
             Teach with us
           </Link>
-          <LanguageToggle variant="full" />
           <Link
             href="/#waitlist"
             onClick={close}

@@ -1,8 +1,13 @@
 "use client";
 
-import { useState, useSyncExternalStore } from "react";
-import { alphabetSheets, type AlphabetSheet, type Letter } from "@/data/alphabet";
+import { Mic, Square, Volume2 } from "lucide-react";
+import { useRef, useState, useSyncExternalStore } from "react";
+import { alphabetSheets, audioKey, type AlphabetSheet, type Letter } from "@/data/alphabet";
 import { Button } from "@/components/ui/button";
+import { api } from "@/lib/api";
+import { useAuth } from "@/lib/auth";
+import { useQuery } from "@/lib/hooks";
+import type { LanguageCode } from "@/lib/types";
 
 import { cn } from "@/lib/cn";
 
@@ -31,6 +36,32 @@ function useVoice(langs: string[]): SpeechSynthesisVoice | null {
   return speechSynthesis.getVoices().find((voice) => voice.name === name) ?? null;
 }
 
+/** Marks with no sound of their own: no audio is generated or recorded for them. */
+const SILENT = new Set(["ஃ", "்", "ං", "්"]);
+
+type Recorded = Map<string, string>;
+
+/**
+ * Where a letter or word can be heard, best first: a tutor's recording, then
+ * (Tamil only) the generated file from scripts/generate-alphabet-audio.mjs.
+ */
+function audioSource(language: LanguageCode, text: string, recorded: Recorded): string | null {
+  const key = audioKey(text);
+  const version = recorded.get(`${language}:${key}`);
+  if (version) return api.alphabetAudio.url(language, key, version);
+  if (language === "tamil" && !SILENT.has(text)) return `/audio/alphabet/tamil/${key}.mp3`;
+  return null;
+}
+
+/** Plays each source in turn (the letter, then its example word). */
+function playInOrder(sources: string[]) {
+  const [first, ...rest] = sources;
+  if (!first) return;
+  const audio = new Audio(first);
+  audio.onended = () => playInOrder(rest);
+  void audio.play().catch(() => undefined);
+}
+
 function speak(text: string, voice: SpeechSynthesisVoice) {
   speechSynthesis.cancel();
   const utterance = new SpeechSynthesisUtterance(text);
@@ -40,10 +71,86 @@ function speak(text: string, voice: SpeechSynthesisVoice) {
   speechSynthesis.speak(utterance);
 }
 
+/**
+ * Records one letter or word (up to 8 seconds) and saves it straight away,
+ * replacing any earlier recording. Tutors and admins only.
+ */
+function RecordChip({
+  language,
+  text,
+  label,
+  done,
+  onSaved,
+}: {
+  language: LanguageCode;
+  text: string;
+  label: string;
+  done: boolean;
+  onSaved: () => void;
+}) {
+  const [state, setState] = useState<"idle" | "recording" | "saving" | "error">("idle");
+  const recorder = useRef<MediaRecorder | null>(null);
+
+  const start = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const media = new MediaRecorder(stream, { audioBitsPerSecond: 48_000 });
+      const chunks: Blob[] = [];
+      media.ondataavailable = (event) => event.data.size > 0 && chunks.push(event.data);
+      media.onstop = async () => {
+        stream.getTracks().forEach((track) => track.stop());
+        setState("saving");
+        try {
+          await api.alphabetAudio.record(language, audioKey(text), new Blob(chunks, { type: media.mimeType }));
+          setState("idle");
+          onSaved();
+        } catch {
+          setState("error");
+        }
+      };
+      recorder.current = media;
+      media.start();
+      setState("recording");
+      setTimeout(() => media.state === "recording" && media.stop(), 8000);
+    } catch {
+      setState("error");
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={() => (state === "recording" ? recorder.current?.stop() : void start())}
+      disabled={state === "saving"}
+      className={cn(
+        "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] transition-colors print:hidden",
+        state === "recording"
+          ? "border-clay-500 bg-clay-500 text-white"
+          : done
+            ? "border-fern/30 bg-mist text-fern"
+            : "border-forest/15 text-earth/60 hover:border-amber-spice/50",
+      )}
+      title={done ? "Recorded — click to record again" : "Record this"}
+    >
+      {state === "recording" ? <Square className="h-2.5 w-2.5" /> : <Mic className="h-2.5 w-2.5" />}
+      {state === "recording" ? "Stop" : state === "saving" ? "Saving…" : state === "error" ? "Try again" : `${done ? "✓ " : ""}${label}`}
+    </button>
+  );
+}
+
 export function AlphabetView({ initial }: { initial: "sinhala" | "tamil" }) {
   const [language, setLanguage] = useState(initial);
   const sheet = alphabetSheets.find((item) => item.language === language)!;
   const voice = useVoice(sheet.voiceLangs);
+  const { user } = useAuth();
+  const canRecord = !!user && (user.role === "admin" || (user.role === "tutor" && (user.tutorStatus ?? "approved") === "approved"));
+  const [recording, setRecording] = useState(false);
+  const [refresh, setRefresh] = useState(0);
+  const recordings = useQuery(() => api.alphabetAudio.list().catch(() => []), [refresh]);
+  const recorded: Recorded = new Map(
+    (recordings.data ?? []).map((item) => [`${item.language}:${item.key}`, item.createdAt]),
+  );
+  const audio = { recorded, voice, recording, onSaved: () => setRefresh((value) => value + 1) };
 
   return (
     <>
@@ -79,10 +186,20 @@ export function AlphabetView({ initial }: { initial: "sinhala" | "tamil" }) {
               Print this sheet
             </Button>
             <span className="text-xs text-ink-400">
-              {voice
+              {language === "tamil"
                 ? "Tap 🔊 on any letter to hear it."
-                : `Your browser has no ${sheet.name} voice, so there is no audio here — your tutor will say them with you.`}
+                : "Tap 🔊 to hear a letter. Sinhala audio is recorded by our tutors, letter by letter — the rest are on their way."}
             </span>
+            {canRecord ? (
+              <Button
+                variant={recording ? "forest" : "secondary"}
+                size="sm"
+                onClick={() => setRecording((value) => !value)}
+              >
+                <Mic className="h-3.5 w-3.5" />
+                {recording ? "Done recording" : "Record pronunciations"}
+              </Button>
+            ) : null}
           </div>
         </div>
       </section>
@@ -97,7 +214,7 @@ export function AlphabetView({ initial }: { initial: "sinhala" | "tamil" }) {
             {group.intro ? <p className="mt-1.5 max-w-3xl text-sm text-ink-500">{group.intro}</p> : null}
             <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 print:mt-2 print:grid-cols-3 print:gap-1.5">
               {group.letters.map((letter) => (
-                <LetterCard key={letter.letter} letter={letter} sheet={sheet} voice={voice} />
+                <LetterCard key={letter.letter} letter={letter} sheet={sheet} {...audio} />
               ))}
             </div>
           </section>
@@ -107,12 +224,37 @@ export function AlphabetView({ initial }: { initial: "sinhala" | "tamil" }) {
           <h2 className="text-2xl print:text-lg">Vowel signs</h2>
           <p className="mt-1.5 max-w-3xl text-sm text-ink-500">{sheet.vowelSigns.intro}</p>
           <div className="mt-5 flex flex-wrap gap-2 print:mt-2">
-            {sheet.vowelSigns.signs.map((sign) => (
-              <div key={sign.form} className="min-w-16 rounded-xl bg-white px-3 py-2 text-center border border-forest/10">
-                <p className={cn("text-2xl text-ink-900", language === "sinhala" ? "text-sinhala" : "text-tamil")}>{sign.form}</p>
-                <p className="text-xs text-ink-500">{sign.roman}</p>
-              </div>
-            ))}
+            {sheet.vowelSigns.signs.map((sign) => {
+              const source = audioSource(language, sign.form, recorded);
+              return (
+                <div key={sign.form} className="min-w-16 rounded-xl border border-forest/10 bg-white px-3 py-2 text-center">
+                  <button
+                    type="button"
+                    disabled={!source}
+                    onClick={() => source && playInOrder([source])}
+                    className="w-full disabled:cursor-default"
+                    aria-label={source ? `Hear ${sign.form}` : sign.form}
+                  >
+                    <p className={cn("text-2xl text-ink-900", language === "sinhala" ? "text-sinhala" : "text-tamil")}>{sign.form}</p>
+                    <p className="text-xs text-ink-500">
+                      {sign.roman}
+                      {source ? <Volume2 className="ml-1 inline h-3 w-3 text-amber-spice print:hidden" /> : null}
+                    </p>
+                  </button>
+                  {recording ? (
+                    <div className="mt-1.5">
+                      <RecordChip
+                        language={language}
+                        text={sign.form}
+                        label="Rec"
+                        done={recorded.has(`${language}:${audioKey(sign.form)}`)}
+                        onSaved={audio.onSaved}
+                      />
+                    </div>
+                  ) : null}
+                </div>
+              );
+            })}
           </div>
         </section>
 
@@ -127,18 +269,31 @@ export function AlphabetView({ initial }: { initial: "sinhala" | "tamil" }) {
   );
 }
 
+interface AudioProps {
+  recorded: Recorded;
+  voice: SpeechSynthesisVoice | null;
+  recording: boolean;
+  onSaved: () => void;
+}
+
 function LetterCard({
   letter,
   sheet,
+  recorded,
   voice,
-}: {
-  letter: Letter;
-  sheet: AlphabetSheet;
-  voice: SpeechSynthesisVoice | null;
-}) {
+  recording,
+  onSaved,
+}: { letter: Letter; sheet: AlphabetSheet } & AudioProps) {
   const scriptClass = sheet.language === "sinhala" ? "text-sinhala" : "text-tamil";
+  const sayable = !SILENT.has(letter.letter);
+  const sources = [
+    sayable ? audioSource(sheet.language, letter.letter, recorded) : null,
+    letter.example ? audioSource(sheet.language, letter.example.word, recorded) : null,
+  ].filter((source): source is string => !!source);
+  const fallback = sources.length === 0 && voice;
+
   return (
-    <div className="flex gap-4 rounded-2xl bg-white p-4 border border-forest/10 print:gap-2 print:rounded-lg print:p-2">
+    <div className="flex gap-4 rounded-2xl border border-forest/10 bg-white p-4 print:gap-2 print:rounded-lg print:p-2">
       <div className="w-16 shrink-0 text-center print:w-10">
         <p className={cn("text-4xl leading-tight text-ink-900 print:text-2xl", scriptClass)}>{letter.letter}</p>
         <p className="font-medium text-jade-700 print:text-xs">{letter.roman}</p>
@@ -154,15 +309,41 @@ function LetterCard({
             </span>
           </p>
         ) : null}
+        {recording ? (
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {sayable ? (
+              <RecordChip
+                language={sheet.language}
+                text={letter.letter}
+                label="Letter"
+                done={recorded.has(`${sheet.language}:${audioKey(letter.letter)}`)}
+                onSaved={onSaved}
+              />
+            ) : null}
+            {letter.example ? (
+              <RecordChip
+                language={sheet.language}
+                text={letter.example.word}
+                label="Word"
+                done={recorded.has(`${sheet.language}:${audioKey(letter.example.word)}`)}
+                onSaved={onSaved}
+              />
+            ) : null}
+          </div>
+        ) : null}
       </div>
-      {voice ? (
+      {sources.length > 0 || fallback ? (
         <button
           type="button"
           aria-label={`Hear ${letter.letter}${letter.example ? ` and ${letter.example.word}` : ""}`}
-          onClick={() => speak(letter.example ? `${letter.letter}. ${letter.example.word}` : letter.letter, voice)}
-          className="self-start rounded-full p-1.5 text-ink-400 transition hover:bg-sand-100 hover:text-ink-800 print:hidden"
+          onClick={() =>
+            sources.length > 0
+              ? playInOrder(sources)
+              : voice && speak(letter.example ? `${letter.letter}. ${letter.example.word}` : letter.letter, voice)
+          }
+          className="self-start rounded-full p-1.5 text-amber-spice transition hover:bg-mist print:hidden"
         >
-          🔊
+          <Volume2 className="h-4 w-4" strokeWidth={1.75} />
         </button>
       ) : null}
     </div>

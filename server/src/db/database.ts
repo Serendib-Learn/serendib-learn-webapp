@@ -124,6 +124,20 @@ export interface PostImage extends Doc {
   createdAt: string;
 }
 
+/**
+ * A tutor's recording of one alphabet letter or example word, played to
+ * everyone on the alphabet sheet. Keyed "<language>:<audioKey>".
+ */
+export interface AlphabetAudio extends Doc {
+  id: string;
+  language: "sinhala" | "tamil";
+  key: string;
+  mimeType: string;
+  data: string;
+  recordedBy: string;
+  createdAt: string;
+}
+
 export interface Database {
   users: Collection<User>;
   credentials: Collection<Credential>;
@@ -151,6 +165,7 @@ export interface Database {
   chapters: Collection<CourseChapter>;
   connections: Collection<Connection>;
   postImages: Collection<PostImage>;
+  alphabetAudio: Collection<AlphabetAudio>;
   voiceNotes: Collection<VoiceNote>;
 }
 
@@ -185,6 +200,7 @@ function build(from: Store): Database {
     chapters: from.collection<CourseChapter>("chapters"),
     connections: from.collection<Connection>("connections"),
     postImages: from.collection<PostImage>("postImages"),
+    alphabetAudio: from.collection<AlphabetAudio>("alphabetAudio"),
     voiceNotes: from.collection<VoiceNote>("voiceNotes"),
   };
 }
@@ -224,6 +240,7 @@ async function seedContents(): Promise<Record<string, Doc[]>> {
     feedback: [],
     connections: [],
     postImages: [],
+    alphabetAudio: [],
     chapters: defaultChapters.map((chapter) => ({ ...chapter, createdAt: new Date().toISOString() })),
     voiceNotes: [],
   };

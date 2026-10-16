@@ -268,3 +268,14 @@ export const tamilAlphabet: AlphabetSheet = {
 };
 
 export const alphabetSheets = [sinhalaAlphabet, tamilAlphabet];
+
+/**
+ * The file name a letter's (or word's) recorded audio is stored under: its
+ * Unicode code points, so it is stable and safe in a URL. Shared by the
+ * audio generator (scripts/generate-alphabet-audio.mjs) and the page.
+ */
+export function audioKey(text: string): string {
+  return Array.from(text)
+    .map((char) => char.codePointAt(0)!.toString(16).toUpperCase().padStart(4, "0"))
+    .join("-");
+}

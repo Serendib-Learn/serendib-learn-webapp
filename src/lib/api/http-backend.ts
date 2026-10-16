@@ -32,7 +32,7 @@ import type {
 
 const BASE = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000").replace(/\/$/, "");
 
-type Method = "GET" | "POST" | "PATCH" | "DELETE";
+type Method = "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
 
 interface RequestOptions {
   method?: Method;
@@ -544,6 +544,32 @@ export const httpBackend: Backend = {
 
     markRead(threadId) {
       return request<void>(`/threads/${threadId}/read`, { method: "POST" });
+    },
+  },
+
+  alphabetAudio: {
+    list() {
+      return request<{ language: "sinhala" | "tamil"; key: string; createdAt: string }[]>("/alphabet-audio");
+    },
+
+    url(language, key, version) {
+      return url(`/alphabet-audio/${language}/${key}`, version ? { v: version } : undefined);
+    },
+
+    async record(language, key, recording) {
+      const bytes = new Uint8Array(await recording.arrayBuffer());
+      let binary = "";
+      for (let index = 0; index < bytes.length; index += 0x8000) {
+        binary += String.fromCharCode(...bytes.subarray(index, index + 0x8000));
+      }
+      await request<void>(`/alphabet-audio/${language}/${key}`, {
+        method: "PUT",
+        body: { mimeType: recording.type || "audio/webm", data: btoa(binary) },
+      });
+    },
+
+    remove(language, key) {
+      return request<void>(`/alphabet-audio/${language}/${key}`, { method: "DELETE" });
     },
   },
 

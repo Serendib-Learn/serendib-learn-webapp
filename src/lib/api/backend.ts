@@ -216,6 +216,16 @@ export interface Backend {
     markRead(threadId: string, userId: string): Promise<void>;
   };
 
+  alphabetAudio: {
+    /** Which letters and words our tutors have recorded. Public. */
+    list(): Promise<{ language: LanguageCode; key: string; createdAt: string }[]>;
+    /** Where a recording plays from — a plain URL, usable by <audio>. */
+    url(language: LanguageCode, key: string, version?: string): string;
+    /** Tutors and admins: record (or replace) one letter or word. */
+    record(language: LanguageCode, key: string, recording: Blob): Promise<void>;
+    remove(language: LanguageCode, key: string): Promise<void>;
+  };
+
   waitlist: {
     join(
       input: Omit<WaitlistEntry, "id" | "createdAt"> & { turnstileToken?: string },

@@ -17,6 +17,7 @@ import { integrationsRouter } from "./routes/integrations.ts";
 import { materialsRouter } from "./routes/materials.ts";
 import { messagesRouter } from "./routes/messages.ts";
 import { paymentsRouter, paymentsWebhook } from "./routes/payments.ts";
+import { alphabetAudioRouter } from "./routes/alphabet-audio.ts";
 import { chaptersRouter } from "./routes/chapters.ts";
 import { connectionsRouter } from "./routes/connections.ts";
 import { feedbackRouter, voiceNotesRouter } from "./routes/feedback.ts";
@@ -53,7 +54,8 @@ app.post(
 // body limit; the general parser skips them and their router brings its own.
 const jsonBody = express.json({ limit: "256kb" });
 app.use((request, response, next) => {
-  if (request.path.startsWith("/api/voice-notes") || request.path.startsWith("/api/post-images")) next();
+  const ownParser = ["/api/voice-notes", "/api/post-images", "/api/alphabet-audio"];
+  if (ownParser.some((prefix) => request.path.startsWith(prefix))) next();
   else jsonBody(request, response, next);
 });
 app.use(parseCookies);
@@ -72,6 +74,7 @@ app.use("/api/payments", paymentsRouter);
 app.use("/api/feedback", feedbackRouter);
 app.use("/api/voice-notes", express.json({ limit: "5mb" }), voiceNotesRouter);
 app.use("/api/post-images", express.json({ limit: "3mb" }), postImagesRouter);
+app.use("/api/alphabet-audio", express.json({ limit: "2mb" }), alphabetAudioRouter);
 app.use("/api/jobs", jobsRouter);
 app.use("/api/materials", materialsRouter);
 app.use("/api/chapters", chaptersRouter);
