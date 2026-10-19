@@ -486,7 +486,7 @@ The site is installable like the prototype was ("Add to Home Screen" /
 - [ ] `COOKIE_SAMESITE=none` + `COOKIE_SECURE=true` in the API's deployed env (already set) — required because Vercel and Cloud Run are different domains
 - [ ] (optional) Cloudflare Turnstile site created at [dash.cloudflare.com](https://dash.cloudflare.com/?to=/:account/turnstile) if you want CAPTCHA on signup/waitlist — `TURNSTILE_SECRET_KEY` as a Cloud Run secret, `NEXT_PUBLIC_TURNSTILE_SITE_KEY` as a Vercel env var. Skipping this just means no CAPTCHA, same as local dev today.
 - [ ] Owners' super admin created (`SUPER_ADMIN_EMAIL` or `create-admin`), and any demo accounts left over from a demo-mode start deleted (step 9)
-- [ ] Payments.lk sandbox profile created, `PAYMENTS_LK_SECRET_KEY` + `PAYMENTS_LK_WEBHOOK_SECRET` in Secret Manager and referenced in `deploy-backend.yml`, webhook registered (step 7) — test with a sandbox card before swapping in the live key
+- [x] Payments.lk sandbox profile created, `PAYMENTS_LK_SECRET_KEY` + `PAYMENTS_LK_WEBHOOK_SECRET` in Secret Manager and referenced in `deploy-backend.yml`, webhook registered (step 7) — sandbox card payment and signed webhook verified. Still to do: swap in the `sk_live_…` key (and the live webhook's secret) once Payments.lk approves the account
 - [ ] (recommended) Serendib Google account connected under Administration → Google, so every booking gets a Meet link
 - [x] `CRON_SECRET` + the Cloud Scheduler job for lesson and feedback reminders (step 8) — set up
 - [ ] Real tutors invited or approved, with their profiles filled in
