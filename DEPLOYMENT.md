@@ -381,17 +381,17 @@ webhook. Until then the site keeps its demo checkout, which charges nothing.*
 3. **Store both as secrets** and give both service accounts access, exactly
    like `MONGODB_URI` in step 2:
    ```bash
-   echo -n "sk_test_..." | gcloud secrets create PAYMENTS_LK_SECRET_KEY --data-file=-
-   echo -n "whsec_..."   | gcloud secrets create PAYMENTS_LK_WEBHOOK_SECRET --data-file=-
+   # copy the key in the dashboard, then (pbpaste keeps it out of shell history):
+   pbpaste | tr -d '[:space:]' | gcloud secrets create PAYMENTS_LK_SECRET_KEY --data-file=-
+   # copy the signing secret, then:
+   pbpaste | tr -d '[:space:]' | gcloud secrets create PAYMENTS_LK_WEBHOOK_SECRET --data-file=-
    ```
-   then add to `deploy-backend.yml`'s `secrets:` block — only once they exist,
-   or the deploy fails:
-   ```
-   PAYMENTS_LK_SECRET_KEY=PAYMENTS_LK_SECRET_KEY:latest
-   PAYMENTS_LK_WEBHOOK_SECRET=PAYMENTS_LK_WEBHOOK_SECRET:latest
-   ```
-   and, if the default 300 rupees per dollar is wrong, `USD_TO_LKR=<rate>` to
-   its `env_vars:` block. Tutors keep pricing in USD; checkouts are in LKR.
+   To replace a value later use `gcloud secrets versions add <NAME> --data-file=-`
+   the same way, and disable the old version. `deploy-backend.yml`'s
+   `secrets:` block already references both (`:latest`), so a deploy fails
+   until they exist. If the default 300 rupees per dollar is wrong, add
+   `USD_TO_LKR=<rate>` to its `env_vars:` block. Tutors keep pricing in USD;
+   checkouts are in LKR.
 4. **Locally**, put the same two values in `server/.env`. Webhooks cannot
    reach localhost, so the checkout page confirms a payment by asking the API
    to read the checkout back when you return from Payments.lk — the flow still
