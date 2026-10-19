@@ -22,6 +22,10 @@ Heritage) are still in the code but switched off — every `/games` route 404s a
 commented out. `src/lib/features.ts` explains how to bring them back; search for
 `GAMES-HIDDEN`.
 
+**New here?** `HANDBOOK.md` is the full picture in one document — design,
+architecture, data model, every feature, infrastructure and the operations
+runbook.
+
 **Working on this with Claude, Cursor, or another AI assistant?** Read
 `AGENTS.md` first — it has a table of "where to look before exploring" that
 points straight at the right doc for most questions (deployment, tests,
