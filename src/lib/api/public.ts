@@ -8,6 +8,11 @@ import type { PublicTutor } from "@/lib/types";
 
 const BASE = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000").replace(/\/$/, "");
 
+/** Where a tutor's photo is served from; `photoId` versions it, so a new upload is never cached stale. */
+export function profilePhotoUrl(userId: string, photoId: string): string {
+  return `${BASE}/api/profile-photos/${userId}?v=${encodeURIComponent(photoId)}`;
+}
+
 /** How often a public page re-reads the tutor roster, in seconds. */
 export const TUTOR_REVALIDATE_SECONDS = 60;
 

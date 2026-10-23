@@ -5,7 +5,7 @@ import { sendInvite } from "../lib/accounts.ts";
 import { logAudit } from "../lib/audit.ts";
 import { ApiError, forbidden, notFound, wrap } from "../lib/errors.ts";
 import { pathParam } from "../lib/http.ts";
-import { isBookableTutor, publicTutor, tuteeIdsOf } from "../lib/domain.ts";
+import { isListedTutor, publicTutor, tuteeIdsOf } from "../lib/domain.ts";
 import { newId, nowIso } from "../lib/ids.ts";
 import { deliver } from "../lib/mail.ts";
 import { requireAdmin, requireAuth, requireSelfOrAdmin, requireUser } from "../lib/sessions.ts";
@@ -41,20 +41,27 @@ const profilePatchSchema = z
   })
   .partial();
 
-const inviteSchema = z.object({
-  name: z
-    .string({ error: "We need a name to put on the account." })
-    .trim()
-    .min(1, "We need a name to put on the account."),
-  email: z
-    .string({ error: "That does not look like an email address." })
-    .trim()
-    .toLowerCase()
-    .pipe(z.email("That does not look like an email address.")),
-  role: z.enum(["student", "tutor", "admin"]),
-  languages: z.array(z.enum(["sinhala", "tamil"])).min(1, "Pick at least one language."),
-  timezone: z.string().trim().min(1).default("Asia/Colombo"),
-});
+const emailSchema = z
+  .string({ error: "That does not look like an email address." })
+  .trim()
+  .toLowerCase()
+  .pipe(z.email("That does not look like an email address."));
+
+const inviteSchema = z
+  .object({
+    name: z
+      .string({ error: "We need a name to put on the account." })
+      .trim()
+      .min(1, "We need a name to put on the account."),
+    // Blank is allowed for a tutor: listed now, invited once we have the address.
+    email: z.preprocess((value) => (value === "" ? undefined : value), emailSchema.optional()),
+    role: z.enum(["student", "tutor", "admin"]),
+    languages: z.array(z.enum(["sinhala", "tamil"])).min(1, "Pick at least one language."),
+    timezone: z.string().trim().min(1).default("Asia/Colombo"),
+  })
+  .refine((input) => input.email || input.role === "tutor", {
+    message: "Students and administrators need an email address to sign in with.",
+  });
 
 /** The owners' account is out of reach of the admin area — see `User.superAdmin`. */
 function assertNotSuperAdmin(target: User | null, what: string) {
@@ -87,14 +94,16 @@ usersRouter.get(
   "/tutors",
   wrap(async (_request, response) => {
     const tutors = await db().users.find({ role: "tutor" }, { sort: byName });
-    response.json(tutors.filter(isBookableTutor).map(publicTutor));
+    response.json(tutors.filter(isListedTutor).map(publicTutor));
   }),
 );
 
 /**
  * An administrator creating an account on someone's behalf — bringing an
  * existing tutor onto the site, or adding another administrator. The person
- * is emailed a link to choose their own password.
+ * is emailed a link to choose their own password. A tutor can be added with
+ * no email address yet: their profile goes on the tutors page straight away,
+ * and `POST /:id/email` sends the invite once the address is known.
  */
 usersRouter.post(
   "/invite",
@@ -103,16 +112,17 @@ usersRouter.post(
     const actor = requireUser(request);
     const input = parseBody(inviteSchema, request.body);
 
-    if (await db().users.findOne({ email: input.email })) {
+    if (input.email && (await db().users.findOne({ email: input.email }))) {
       throw new ApiError("An account with that email already exists.");
     }
 
     const user: User = {
       id: newId("u"),
       name: input.name,
-      email: input.email,
+      email: input.email ?? "",
       role: input.role,
-      verified: true,
+      // Verified once there is an address, which the invite link proves.
+      verified: Boolean(input.email),
       membership: input.role === "student" ? "none" : "active",
       createdAt: nowIso(),
       timezone: input.timezone,
@@ -122,10 +132,42 @@ usersRouter.post(
     };
 
     const created = await db().users.insertOne(user);
-    await sendInvite(created, actor.name);
-    await logAudit(actor, "account_invited", created.name, `${created.role} · ${created.email}`);
+    if (created.email) {
+      await sendInvite(created, actor.name);
+      await logAudit(actor, "account_invited", created.name, `${created.role} · ${created.email}`);
+    } else {
+      await logAudit(actor, "tutor_listed", created.name, "no email yet");
+    }
 
     response.status(201).json(created);
+  }),
+);
+
+/**
+ * Gives an account listed without an email address its address, and sends
+ * the invite to set a password. From then on it is an ordinary account — and,
+ * for a tutor, bookable.
+ */
+usersRouter.post(
+  "/:id/email",
+  requireAdmin,
+  wrap(async (request, response) => {
+    const actor = requireUser(request);
+    const email = parseBody(z.object({ email: emailSchema }), request.body ?? {}).email;
+
+    const target = await db().users.findById(pathParam(request, "id"));
+    if (!target) throw notFound("No such account.");
+    if (target.email) throw new ApiError("That account already has an email address.");
+    if (await db().users.findOne({ email })) {
+      throw new ApiError("An account with that email already exists.");
+    }
+
+    const updated = await db().users.updateOne({ id: target.id }, { email, verified: true });
+    if (!updated) throw notFound("No such account.");
+    await sendInvite(updated, actor.name);
+    await logAudit(actor, "account_invited", updated.name, `${updated.role} · ${email}`);
+
+    response.json(updated);
   }),
 );
 

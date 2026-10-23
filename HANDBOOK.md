@@ -105,7 +105,7 @@ prototype's look on purpose (see [Design](#3-design)).
   the login card, the calendar, the learning-hub folders and the community
   page all reproduce the original serendib.learn. Newer features are styled
   to match. The reference was the prototype's source
-  (`serendib-heritage-academy-main.zip`, kept locally and not committed),
+  (`serendib-heritage-academy-main.zip`, used during the rebuild and since deleted),
   plus the review tracker in `docs/Serendib_Website_Review_Tracker.xlsx`.
 - **A boutique Colombo café, not a tech startup.** The brand brief rules
   out corporate blue, so a lilac mist (`#EEEDFE`) stands in wherever a
@@ -297,7 +297,7 @@ flowchart LR
 | --- | --- |
 | `/` | Home. **Hero:** "Tutors for Sri Lankans wherever they call home". **About us:** the process. **Why families choose Serendib:** the promise. **Register your interest:** the waitlist form. |
 | `/how-it-works` | Four stages: tell us why you're learning → pick a tutor and a time → have the lesson → practise in between |
-| `/tutors` | Approved tutors, fetched server-side with `revalidate = 60` (no emails exposed) |
+| `/tutors` | Approved tutors from `GET /users/tutors`, fetched server-side with `revalidate = 60` (no emails exposed), with their photos. A tutor listed without an email yet shows "Ask for a lesson" instead of availability. |
 | `/alphabet` | The Sinhala and Tamil alphabet sheets with audio; tutors can record letters here |
 | `/privacy` | The original privacy text, plus a "Services we use" section |
 | `/games/**` | **Parked.** Every route 404s while `features.games` is false |
@@ -432,6 +432,7 @@ The full endpoint table is in `server/README.md` → "Endpoints".
 | `/api/community` | `routes/connections.ts` | Practice partners, friend requests |
 | `/api/threads` | `routes/messages.ts` | Conversations and messages |
 | `/api/alphabet-audio` | `routes/alphabet-audio.ts` | Public list and audio; tutors and admins upload or delete |
+| `/api/profile-photos` | `routes/profile-photos.ts` | Tutor photos: public for listed tutors; the tutor or an admin uploads or removes |
 | `/api/integrations` | `routes/integrations.ts` | Google Calendar (per tutor and system), Gmail, OAuth callback, test buttons |
 | `/api/jobs` | `routes/jobs.ts` | `POST /reminders`, guarded by `X-Cron-Secret` |
 | `/api/waitlist`, `/api/mail`, `/api/demo`, `/api/games` | `routes/misc.ts` | Waitlist, demo inbox, demo reset, game results |
@@ -499,6 +500,7 @@ Timestamps are ISO strings.
 | `connections` | Friend requests | pending, accepted or declined |
 | `threads`, `messages` | Conversations | `readBy` per message |
 | `alphabetAudio` | Tutor recordings per language and letter key | |
+| `profilePhotos` | Tutor photos (base64), keyed by user id | `User.photoId` versions the URL |
 | `waitlist` | "Register your interest" entries | |
 | `mail` | Every outgoing message (the demo inbox) | |
 | `auditLog` | Admin actions | |
@@ -550,6 +552,11 @@ Both `awaiting_payment` and `confirmed` hold the tutor's slot.
   Administration → Tutor applications.
 - **Invites.** An admin creates someone's account already verified (and
   approved, for tutors). The person gets an email to set their password.
+- **Tutors listed before they have an email.** An admin can add a tutor
+  with no email address. Their profile and photo appear on the public
+  Tutors page straight away, but they aren't bookable and can't be
+  messaged until an admin uses **Add email & invite** in Administration →
+  People. That sends the invite and makes them bookable.
 - **Super admin.** `SUPER_ADMIN_EMAIL` ensures the owners' account on
   every boot: it is created if missing and promoted if it exists as
   something else. An existing password is never changed. Production keeps

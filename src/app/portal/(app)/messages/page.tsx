@@ -41,7 +41,8 @@ function Messages() {
         api.community.connections().catch(() => []),
       ]);
       const friends = connections.filter((item) => item.connection?.status === "accepted");
-      return [...tutors, ...friends];
+      // A tutor listed without an account yet could not read a message.
+      return [...tutors.filter((tutor) => tutor.bookable), ...friends];
     },
     [user?.id, user?.role],
   );

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { api } from "@/lib/api";
 import { CharacterPicker } from "@/components/portal/character-picker";
+import { PhotoField } from "@/components/portal/photo-field";
 import { useAction } from "@/lib/hooks";
 import { Button } from "@/components/ui/button";
 import { Checkbox, Field, Input, Textarea } from "@/components/ui/field";
@@ -67,6 +68,13 @@ export function ProfileEditor({ user, onSaved }: { user: User; onSaved?: (user: 
         }
       }}
     >
+      {isTutor ? (
+        <fieldset>
+          <legend className="mb-3 text-sm font-medium text-ink-700">Photo</legend>
+          <PhotoField user={user} />
+        </fieldset>
+      ) : null}
+
       <fieldset>
         <legend className="mb-3 text-sm font-medium text-ink-700">Your character</legend>
         <CharacterPicker value={avatarId} onChange={setAvatarId} languages={languages} />

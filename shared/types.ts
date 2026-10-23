@@ -19,6 +19,11 @@ export type TutorStatus = "pending" | "approved" | "rejected";
 export interface User {
   id: string;
   name: string;
+  /**
+   * Empty for a tutor an administrator listed before having their address
+   * (`InviteInput.email` left out). Such an account cannot sign in or be
+   * booked until an administrator adds the address, which sends the invite.
+   */
   email: string;
   role: Role;
   verified: boolean;
@@ -46,6 +51,12 @@ export interface User {
   avatarUrl?: string;
   /** A character from shared/avatars.ts chosen to represent them. */
   avatarId?: string;
+  /**
+   * Set when they have uploaded a photo, served from
+   * /api/profile-photos/:userId. Changes with every upload, so it doubles as
+   * a cache-busting version.
+   */
+  photoId?: string;
   /**
    * Whether they appear in the community's practice partners directory.
    * Missing means yes — vetted members are listed unless they opt out.
@@ -87,8 +98,12 @@ export type PublicTutor = Pick<
   | "specialties"
   | "avatarUrl"
   | "avatarId"
+  | "photoId"
   | "createdAt"
->;
+> & {
+  /** False while the tutor has no email address on file: listed, but not yet bookable. */
+  bookable: boolean;
+};
 
 export interface AvailabilityRule {
   id: string;
@@ -409,7 +424,12 @@ export interface SignUpInput {
  */
 export interface InviteInput {
   name: string;
-  email: string;
+  /**
+   * Required, except for a tutor: leaving it out lists the tutor publicly
+   * with their profile, without an account they can sign in to yet. Adding
+   * the address later (`POST /users/:id/email`) sends the invite.
+   */
+  email?: string;
   role: Role;
   languages: LanguageCode[];
   timezone?: string;

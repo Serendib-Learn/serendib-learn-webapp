@@ -62,7 +62,7 @@ form, the tutor list and the demo inbox needs a session cookie.
 | Area | Routes |
 | --- | --- |
 | Auth | `GET /auth/me`, `POST /auth/signup` (a `tutor` signup carries an optional `application`), `/auth/verify`, `/auth/resend`, `/auth/login`, `/auth/google`, `/auth/logout`, `/auth/forgot-password`, `/auth/reset-password` |
-| Users | `GET /users` (admin), `GET /users/directory`, `GET /users/tutors` (public: approved tutors, no emails), `POST /users/invite` (admin), `GET /users/audit-log` (admin), `GET /users/:id`, `GET /users/:id/tutees`, `GET /users/:id/tutors`, `PATCH /users/:id` (profile fields only, zod-validated), `POST /users/:id/role` (admin), `POST /users/:id/tutor-status` (admin), `POST /users/:id/membership` (admin), `DELETE /users/:id` (admin) |
+| Users | `GET /users` (admin), `GET /users/directory`, `GET /users/tutors` (public: approved tutors, no emails, with `bookable`), `POST /users/invite` (admin; email optional for a tutor), `POST /users/:id/email` (admin: add the address to an account listed without one, and send the invite), `GET /users/audit-log` (admin), `GET /users/:id`, `GET /users/:id/tutees`, `GET /users/:id/tutors`, `PATCH /users/:id` (profile fields only, zod-validated), `POST /users/:id/role` (admin), `POST /users/:id/tutor-status` (admin), `POST /users/:id/membership` (admin), `DELETE /users/:id` (admin) |
 | Availability | `GET /availability?tutorId`, `GET /availability/slots?tutorId&days`, `POST /availability`, `DELETE /availability/:id` |
 | Bookings | `GET /bookings?userId`, `GET /bookings/:id`, `POST /bookings`, `POST /bookings/:id/checkout`, `GET /bookings/:id/payment`, `POST /bookings/:id/pay` (demo, or admin), `/cancel`, `/complete`, `/meeting-link` |
 | Payments | `GET /payments/config`, `POST /payments/webhook` (Payments.lk, signature-verified) |
@@ -74,6 +74,7 @@ form, the tutor list and the demo inbox needs a session cookie.
 | Community | `GET /posts`, `GET /posts/pending` (admin), `POST /posts`, `POST /posts/:id/like`, `GET\|POST /posts/:id/replies`, `POST /posts/:id/moderate` (admin), `GET /community/members?language`, `GET\|POST /community/connections`, `POST /community/connections/:id/accept\|decline`, `DELETE /community/connections/:id` |
 | Messages | `GET /threads`, `POST /threads` (student-to-student needs a friend connection), `GET\|POST /threads/:id/messages`, `POST /threads/:id/read` |
 | Jobs | `POST /jobs/reminders` (header `X-Cron-Secret`; off unless `CRON_SECRET` is set) |
+| Profile photos | `GET /profile-photos/:userId` (public, listed tutors only, `?v=<photoId>`), `PUT\|DELETE /profile-photos/:userId` (the tutor, or an admin) |
 | Alphabet audio | `GET /alphabet-audio` (public list), `GET /alphabet-audio/:language/:key` (public audio), `PUT\|DELETE /alphabet-audio/:language/:key` (approved tutors and admins) |
 | Waitlist | `POST /waitlist`, `GET /waitlist` (admin) |
 | Demo | `GET /mail`, `POST /mail/:id/read`, `DELETE /mail`, `POST /demo/reset` |
@@ -91,6 +92,13 @@ form, the tutor list and the demo inbox needs a session cookie.
   predates approvals and counts as approved. An admin can also **invite** a
   tutor (or anyone): the account is created already verified (and approved)
   and a seven-day set-your-password link is emailed (`lib/accounts.ts`).
+  A tutor can be invited **without an email address**: the account is
+  created with `email: ""`, appears on the public tutors page with its
+  profile and photo, and is `bookable: false` (no booking, no messages, no
+  mail) until an admin adds the address with `POST /users/:id/email`, which
+  sends the invite. Tutor photos live in the `profilePhotos` collection
+  (`routes/profile-photos.ts`), keyed by user id; `User.photoId` versions
+  the image URL.
 - **The super admin** is the owners' account: `SUPER_ADMIN_EMAIL` (+
   `SUPER_ADMIN_NAME`, `SUPER_ADMIN_PASSWORD`) makes sure it exists on every
   boot, and `npm run create-admin -- --email … --name "…"` does the same from

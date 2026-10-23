@@ -124,6 +124,15 @@ export interface PostImage extends Doc {
   createdAt: string;
 }
 
+/** Someone's profile photo, shown on the tutors page. Keyed by their user id. */
+export interface ProfilePhoto extends Doc {
+  /** Same value as the user id. */
+  id: string;
+  mimeType: string;
+  data: string;
+  updatedAt: string;
+}
+
 /**
  * A tutor's recording of one alphabet letter or example word, played to
  * everyone on the alphabet sheet. Keyed "<language>:<audioKey>".
@@ -166,6 +175,7 @@ export interface Database {
   connections: Collection<Connection>;
   postImages: Collection<PostImage>;
   alphabetAudio: Collection<AlphabetAudio>;
+  profilePhotos: Collection<ProfilePhoto>;
   voiceNotes: Collection<VoiceNote>;
 }
 
@@ -201,6 +211,7 @@ function build(from: Store): Database {
     connections: from.collection<Connection>("connections"),
     postImages: from.collection<PostImage>("postImages"),
     alphabetAudio: from.collection<AlphabetAudio>("alphabetAudio"),
+    profilePhotos: from.collection<ProfilePhoto>("profilePhotos"),
     voiceNotes: from.collection<VoiceNote>("voiceNotes"),
   };
 }
@@ -241,6 +252,7 @@ async function seedContents(): Promise<Record<string, Doc[]>> {
     connections: [],
     postImages: [],
     alphabetAudio: [],
+    profilePhotos: [],
     chapters: defaultChapters.map((chapter) => ({ ...chapter, createdAt: new Date().toISOString() })),
     voiceNotes: [],
   };

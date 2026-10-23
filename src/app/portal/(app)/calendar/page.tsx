@@ -109,7 +109,12 @@ function CalendarWorkspace({ user }: { user: User }) {
 
   const bookings = useQuery(() => api.bookings.forUser(user.id), [user.id]);
   const people = useQuery(() => api.users.directory(), []);
-  const tutors = useQuery(() => (isStudent ? api.users.tutors() : Promise.resolve([])), [isStudent]);
+  // Bookable only: a tutor listed before they have an account is on the
+  // tutors page, but has no hours to book yet.
+  const tutors = useQuery(
+    async () => (isStudent ? (await api.users.tutors()).filter((tutor) => tutor.bookable) : []),
+    [isStudent],
+  );
   const tutorIds = (tutors.data ?? []).map((tutor) => tutor.id).join(",");
   const slots = useQuery(async () => {
     if (!isStudent) return [];

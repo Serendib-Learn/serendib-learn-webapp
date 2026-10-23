@@ -23,6 +23,7 @@ import { connectionsRouter } from "./routes/connections.ts";
 import { feedbackRouter, voiceNotesRouter } from "./routes/feedback.ts";
 import { jobsRouter } from "./routes/jobs.ts";
 import { demoRouter, gamesRouter, mailRouter, waitlistRouter } from "./routes/misc.ts";
+import { profilePhotosRouter } from "./routes/profile-photos.ts";
 import { progressRouter } from "./routes/progress.ts";
 import { usersRouter } from "./routes/users.ts";
 
@@ -50,11 +51,16 @@ app.post(
   express.raw({ type: "application/json", limit: "1mb" }),
   paymentsWebhook,
 );
-// Voice notes are the one upload big enough to need more than the default
-// body limit; the general parser skips them and their router brings its own.
+// Uploads (voice notes, photos, recordings) need more than the default body
+// limit; the general parser skips them and each router brings its own.
 const jsonBody = express.json({ limit: "256kb" });
 app.use((request, response, next) => {
-  const ownParser = ["/api/voice-notes", "/api/post-images", "/api/alphabet-audio"];
+  const ownParser = [
+    "/api/voice-notes",
+    "/api/post-images",
+    "/api/alphabet-audio",
+    "/api/profile-photos",
+  ];
   if (ownParser.some((prefix) => request.path.startsWith(prefix))) next();
   else jsonBody(request, response, next);
 });
@@ -75,6 +81,7 @@ app.use("/api/feedback", feedbackRouter);
 app.use("/api/voice-notes", express.json({ limit: "5mb" }), voiceNotesRouter);
 app.use("/api/post-images", express.json({ limit: "3mb" }), postImagesRouter);
 app.use("/api/alphabet-audio", express.json({ limit: "2mb" }), alphabetAudioRouter);
+app.use("/api/profile-photos", express.json({ limit: "3mb" }), profilePhotosRouter);
 app.use("/api/jobs", jobsRouter);
 app.use("/api/materials", materialsRouter);
 app.use("/api/chapters", chaptersRouter);

@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { cn } from "@/lib/cn";
 import { CharacterArt, hasCharacterDrawing } from "./characters";
 
@@ -69,16 +70,21 @@ function paletteFor(name: string): string {
   return avatarPalette[sum % avatarPalette.length];
 }
 
+const avatarPixels = { sm: 32, md: 40, lg: 56, xl: 80, "2xl": 112 } as const;
+
 export function Avatar({
   name,
   avatarId,
+  photoUrl,
   size = "md",
   className,
 }: {
   name: string;
   /** A character from shared/avatars.ts; falls back to initials without one. */
   avatarId?: string;
-  size?: "sm" | "md" | "lg" | "xl";
+  /** A tutor's uploaded photo (see `profilePhotoUrl`). Wins over the character. */
+  photoUrl?: string;
+  size?: keyof typeof avatarPixels;
   className?: string;
 }) {
   const dimensions = {
@@ -86,7 +92,26 @@ export function Avatar({
     md: "size-10 text-sm",
     lg: "size-14 text-base",
     xl: "size-20 text-xl",
+    "2xl": "size-28 text-2xl",
   }[size];
+
+  if (photoUrl) {
+    return (
+      <Image
+        src={photoUrl}
+        alt={`Photo of ${name}`}
+        width={avatarPixels[size]}
+        height={avatarPixels[size]}
+        // Served already sized from the API, which is on another host.
+        unoptimized
+        className={cn(
+          "shrink-0 rounded-full border border-forest/15 object-cover object-top",
+          dimensions,
+          className,
+        )}
+      />
+    );
+  }
 
   if (hasCharacterDrawing(avatarId)) {
     return (

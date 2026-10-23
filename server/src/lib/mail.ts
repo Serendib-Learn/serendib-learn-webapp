@@ -14,6 +14,11 @@ import type { MailMessage } from "../../../shared/types.ts";
 export async function deliver(
   message: Omit<MailMessage, "id" | "sentAt" | "read">,
 ): Promise<MailMessage> {
+  // A tutor listed before we had their address: nothing to send to.
+  if (!message.to) {
+    return { ...message, id: newId("mail"), sentAt: new Date().toISOString(), read: true };
+  }
+
   const record = await db().mail.insertOne({
     ...message,
     id: newId("mail"),

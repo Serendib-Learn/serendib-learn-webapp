@@ -164,3 +164,106 @@ test("avatars: only the shared characters are accepted, at signup and on the pro
   );
   assert.equal(me?.avatarId, "aliya");
 });
+
+test("tutor listed without an email: on the tutors page, not bookable, until the invite goes out", async () => {
+  const admin = await adminClient(harness);
+
+  const studentWithout = await admin.client.post("/users/invite", {
+    name: "No Address",
+    role: "student",
+    languages: ["tamil"],
+  });
+  assert.equal(studentWithout.status, 400);
+
+  const listed = await admin.client.post("/users/invite", {
+    name: "Listed Tutor",
+    email: "",
+    role: "tutor",
+    languages: ["tamil"],
+  });
+  assert.equal(listed.status, 201);
+  const tutor = listed.body as User;
+  assert.equal(tutor.email, "");
+  assert.equal(tutor.verified, false);
+  assert.equal(tutor.tutorStatus, "approved");
+
+  const profile = await admin.client.patch(`/users/${tutor.id}`, { bio: "Teaches Tamil in Jaffna." });
+  assert.equal(profile.status, 200);
+
+  const roster = (await harness.client().get("/users/tutors")).body as PublicTutor[];
+  const card = roster.find((item) => item.id === tutor.id);
+  assert.ok(card);
+  assert.equal(card.bookable, false);
+  assert.equal(card.bio, "Teaches Tamil in Jaffna.");
+
+  const student = await signedUpUser(harness, "student", "eager@example.com");
+  const refused = await student.client.post("/bookings", {
+    tutorId: tutor.id,
+    startsAt: new Date(Date.now() + 48 * 3600_000).toISOString(),
+    durationMins: 60,
+    language: "tamil",
+    focus: "Anything",
+  });
+  assert.equal(refused.status, 400);
+
+  // An empty address never matches anything at the front door.
+  const forgot = await harness.client().post("/auth/forgot-password", { email: "" });
+  assert.equal(forgot.status, 400);
+
+  const bad = await admin.client.post(`/users/${tutor.id}/email`, { email: "not-an-email" });
+  assert.equal(bad.status, 400);
+  const taken = await admin.client.post(`/users/${tutor.id}/email`, { email: "eager@example.com" });
+  assert.equal(taken.status, 400);
+  const notAdmin = await student.client.post(`/users/${tutor.id}/email`, { email: "x@example.com" });
+  assert.equal(notAdmin.status, 403);
+
+  const added = await admin.client.post(`/users/${tutor.id}/email`, { email: "Listed.Tutor@Example.com" });
+  assert.equal(added.status, 200);
+  assert.equal(added.body.email, "listed.tutor@example.com");
+  assert.equal(added.body.verified, true);
+  const invite = await latestMail(harness, "listed.tutor@example.com", "password_reset");
+  assert.ok(invite?.token);
+
+  const again = await admin.client.post(`/users/${tutor.id}/email`, { email: "other@example.com" });
+  assert.equal(again.status, 400);
+
+  const relisted = (await harness.client().get("/users/tutors")).body as PublicTutor[];
+  assert.equal(relisted.find((item) => item.id === tutor.id)?.bookable, true);
+});
+
+test("profile photos: tutors only, public on the tutors page, replaced and removed", async () => {
+  const admin = await adminClient(harness);
+  const tutor = await signedUpUser(harness, "tutor", "photogenic@example.com");
+  const student = await signedUpUser(harness, "student", "camera-shy@example.com");
+  // A 1×1 transparent PNG.
+  const png =
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
+
+  assert.equal((await harness.client().put(`/profile-photos/${tutor.user.id}`, { mimeType: "image/png", data: png })).status, 401);
+  assert.equal((await student.client.put(`/profile-photos/${tutor.user.id}`, { mimeType: "image/png", data: png })).status, 403);
+  assert.equal((await student.client.put(`/profile-photos/${student.user.id}`, { mimeType: "image/png", data: png })).status, 400);
+  assert.equal((await tutor.client.put(`/profile-photos/${tutor.user.id}`, { mimeType: "image/gif", data: png })).status, 400);
+
+  const uploaded = await tutor.client.put(`/profile-photos/${tutor.user.id}`, { mimeType: "image/png", data: png });
+  assert.equal(uploaded.status, 200);
+  const firstVersion = uploaded.body.photoId as string;
+  assert.ok(firstVersion);
+
+  const served = await fetch(`${harness.baseUrl}/profile-photos/${tutor.user.id}`);
+  assert.equal(served.status, 200);
+  assert.equal(served.headers.get("content-type"), "image/png");
+  assert.equal(served.headers.get("cross-origin-resource-policy"), "cross-origin");
+
+  const roster = (await harness.client().get("/users/tutors")).body as PublicTutor[];
+  assert.equal(roster.find((item) => item.id === tutor.user.id)?.photoId, firstVersion);
+
+  // An administrator can replace it; the version changes so caches refetch.
+  const replaced = await admin.client.put(`/profile-photos/${tutor.user.id}`, { mimeType: "image/png", data: png });
+  assert.equal(replaced.status, 200);
+  assert.notEqual(replaced.body.photoId, firstVersion);
+
+  const removed = await tutor.client.delete(`/profile-photos/${tutor.user.id}`);
+  assert.equal(removed.status, 200);
+  assert.equal(removed.body.photoId, undefined);
+  assert.equal((await fetch(`${harness.baseUrl}/profile-photos/${tutor.user.id}`)).status, 404);
+});

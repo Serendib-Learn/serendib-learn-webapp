@@ -92,8 +92,17 @@ export interface Backend {
     get(id: string): Promise<User | null>;
     /** Approved tutors, as the public sees them. */
     tutors(): Promise<PublicTutor[]>;
-    /** Administrators: create an account for someone and email them a set-password link. */
+    /**
+     * Administrators: create an account for someone and email them a
+     * set-password link — or, for a tutor with no email given, list them now
+     * and invite them later with `addEmail`.
+     */
     invite(input: InviteInput): Promise<User>;
+    /** Administrators: give an account listed without an email its address, and send the invite. */
+    addEmail(id: string, email: string): Promise<User>;
+    /** A tutor's photo for the tutors page (the tutor, or an administrator). */
+    uploadPhoto(id: string, photo: { mimeType: string; data: string }): Promise<User>;
+    removePhoto(id: string): Promise<User>;
     /** Administrators: approve or turn down a tutor's application. */
     setTutorStatus(id: string, status: TutorStatus, note?: string): Promise<User>;
     update(id: string, patch: Partial<User>): Promise<User>;

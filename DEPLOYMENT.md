@@ -443,8 +443,10 @@ database and let the API start it fresh.
 
 Real tutors then either apply at `/portal/signup?role=tutor` (you approve
 them under Administration → Tutor applications) or you add them yourself
-from Administration → People → Invite someone, and fill in their profile with
-"Edit profile".
+from Administration → People → Invite someone, and fill in their profile and
+photo with "Edit profile". If you don't have a tutor's email yet, leave it
+blank: they're listed on the tutors page (not bookable), and "Add email &
+invite" sends the invitation later.
 
 ## 10. Moving serendiblearn.com from the prototype
 

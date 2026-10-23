@@ -26,9 +26,18 @@ export function blocksSlot(booking: Booking): boolean {
   return booking.status === "confirmed" || booking.status === "awaiting_payment";
 }
 
-/** Only approved tutors can be found and booked. No status means a tutor from before approvals. */
-export function isBookableTutor(user: User): boolean {
+/** Approved tutors are on the public tutors page. No status means a tutor from before approvals. */
+export function isListedTutor(user: User): boolean {
   return user.role === "tutor" && (user.tutorStatus ?? "approved") === "approved";
+}
+
+/**
+ * Approved tutors with an email address can be booked. One an administrator
+ * listed without an address is shown but not bookable: nobody could reach
+ * them about the lesson, and they cannot sign in to teach it.
+ */
+export function isBookableTutor(user: User): boolean {
+  return isListedTutor(user) && user.email !== "";
 }
 
 /** Everything about a tutor that is safe to show someone who is not logged in. */
@@ -47,7 +56,9 @@ export function publicTutor(user: User): PublicTutor {
     specialties: user.specialties,
     avatarUrl: user.avatarUrl,
     avatarId: user.avatarId,
+    photoId: user.photoId,
     createdAt: user.createdAt,
+    bookable: isBookableTutor(user),
   };
 }
 

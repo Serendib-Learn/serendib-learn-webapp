@@ -180,6 +180,18 @@ export const httpBackend: Backend = {
       return request<User>("/users/invite", { method: "POST", body: input });
     },
 
+    addEmail(id, email) {
+      return request<User>(`/users/${id}/email`, { method: "POST", body: { email } });
+    },
+
+    uploadPhoto(id, photo) {
+      return request<User>(`/profile-photos/${id}`, { method: "PUT", body: photo });
+    },
+
+    removePhoto(id) {
+      return request<User>(`/profile-photos/${id}`, { method: "DELETE" });
+    },
+
     setTutorStatus(id, status, note) {
       return request<User>(`/users/${id}/tutor-status`, {
         method: "POST",

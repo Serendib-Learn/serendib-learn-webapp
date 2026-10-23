@@ -3,6 +3,7 @@
 import { useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { api } from "@/lib/api";
+import { profilePhotoUrl } from "@/lib/api/public";
 import { useAuth } from "@/lib/auth";
 import { useAction, useQuery } from "@/lib/hooks";
 import { cn } from "@/lib/cn";
@@ -151,6 +152,7 @@ function People({ me }: { me: User }) {
 
   const [inviting, setInviting] = useState(false);
   const [editing, setEditing] = useState<User | null>(null);
+  const [addingEmail, setAddingEmail] = useState<User | null>(null);
 
   if (users.loading) return <Loading label="Loading accounts" />;
 
@@ -165,7 +167,8 @@ function People({ me }: { me: User }) {
           <p className="font-medium text-ink-800">Add someone yourself</p>
           <p className="text-xs leading-relaxed text-ink-500">
             Bring an existing tutor onto the site, or add another administrator. They get an
-            email with a link to choose their own password.
+            email with a link to choose their own password. A tutor can be listed on the
+            tutors page before you have their email; invite them once you do.
           </p>
         </div>
         <Button size="sm" onClick={() => setInviting(true)}>
@@ -175,15 +178,26 @@ function People({ me }: { me: User }) {
 
       {inviting ? <InviteDialog onClose={() => setInviting(false)} /> : null}
       {editing ? <EditProfileDialog user={editing} onClose={() => setEditing(null)} /> : null}
+      {addingEmail ? (
+        <AddEmailDialog user={addingEmail} onClose={() => setAddingEmail(null)} />
+      ) : null}
 
       {everyone.map((person) => (
         <Card key={person.id} className="flex flex-wrap items-center gap-4 p-5">
-          <Avatar name={person.name} avatarId={person.avatarId} />
+          <Avatar
+            name={person.name}
+            avatarId={person.avatarId}
+            photoUrl={person.photoId ? profilePhotoUrl(person.id, person.photoId) : undefined}
+          />
 
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <p className="font-medium text-ink-800">{person.name}</p>
-              {!person.verified ? <Badge tone="saffron">Unverified</Badge> : null}
+              {!person.email ? (
+                <Badge tone="saffron">No email yet</Badge>
+              ) : !person.verified ? (
+                <Badge tone="saffron">Unverified</Badge>
+              ) : null}
               {person.superAdmin ? <Badge tone="ocean">Super admin</Badge> : null}
               {person.role === "tutor" && person.tutorStatus === "pending" ? (
                 <Badge tone="saffron">Awaiting approval</Badge>
@@ -195,7 +209,8 @@ function People({ me }: { me: User }) {
               {person.id === me.id ? <Badge tone="ocean">You</Badge> : null}
             </div>
             <p className="truncate text-xs text-ink-400">
-              {person.email} · joined {formatDate(person.createdAt)}
+              {person.email || "Listed on the tutors page, not invited yet"} · added{" "}
+              {formatDate(person.createdAt)}
             </p>
           </div>
 
@@ -211,6 +226,12 @@ function People({ me }: { me: User }) {
               <option value="tutor">Tutor</option>
               <option value="admin">Admin</option>
             </Select>
+
+            {!person.email ? (
+              <Button size="sm" onClick={() => setAddingEmail(person)}>
+                Add email &amp; invite
+              </Button>
+            ) : null}
 
             {person.role === "tutor" ? (
               <Button variant="secondary" size="sm" onClick={() => setEditing(person)}>
@@ -266,19 +287,81 @@ function EditProfileDialog({ user, onClose }: { user: User; onClose: () => void 
   );
 }
 
+function AddEmailDialog({ user, onClose }: { user: User; onClose: () => void }) {
+  const [email, setEmail] = useState("");
+  const [sent, setSent] = useState<User | null>(null);
+  const add = useAction(() => api.users.addEmail(user.id, email.trim()));
+
+  return (
+    <Modal
+      open
+      onClose={onClose}
+      title={sent ? "Invitation sent" : `Invite ${user.name}`}
+      description={
+        sent
+          ? undefined
+          : "Adds their email address and sends a link to set a password, valid for seven days. Once they have an account, students can book them."
+      }
+    >
+      {sent ? (
+        <div className="space-y-5">
+          <Alert tone="jade">
+            {sent.name} can now sign in and be booked. The invitation is on its way to{" "}
+            {sent.email} — ask them to set their hours under Calendar → My hours.
+          </Alert>
+          <Button className="w-full" onClick={onClose}>
+            Done
+          </Button>
+        </div>
+      ) : (
+        <form
+          className="space-y-4"
+          onSubmit={async (event) => {
+            event.preventDefault();
+            const result = await add.run();
+            if (result) setSent(result);
+          }}
+        >
+          <Field label="Email" htmlFor="add-email">
+            <Input
+              id="add-email"
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+            />
+          </Field>
+          {add.error ? <Alert>{add.error}</Alert> : null}
+          <div className="flex justify-end gap-2 pt-2">
+            <Button type="button" variant="ghost" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={add.pending || !email.trim()}>
+              {add.pending ? "Sending…" : "Add and send invite"}
+            </Button>
+          </div>
+        </form>
+      )}
+    </Modal>
+  );
+}
+
 function InviteDialog({ onClose }: { onClose: () => void }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<Role>("tutor");
   const [languages, setLanguages] = useState<LanguageCode[]>(["sinhala"]);
   const [sent, setSent] = useState<User | null>(null);
-  const invite = useAction(() => api.users.invite({ name, email, role, languages }));
+  const invite = useAction(() =>
+    api.users.invite({ name, email: email.trim() || undefined, role, languages }),
+  );
+  // A tutor can be listed now and invited once we have their address.
+  const listOnly = role === "tutor" && !email.trim();
 
   return (
     <Modal
       open
       onClose={onClose}
-      title={sent ? "Invitation sent" : "Invite someone"}
+      title={sent ? (sent.email ? "Invitation sent" : "Tutor listed") : "Invite someone"}
       description={
         sent
           ? undefined
@@ -288,10 +371,20 @@ function InviteDialog({ onClose }: { onClose: () => void }) {
       {sent ? (
         <div className="space-y-5">
           <Alert tone="jade">
-            {sent.name}&rsquo;s account is ready and the email is on its way to {sent.email}.
-            {sent.role === "tutor"
-              ? " They are approved already — ask them to fill in their profile and hours."
-              : ""}
+            {sent.email ? (
+              <>
+                {sent.name}&rsquo;s account is ready and the email is on its way to {sent.email}.
+                {sent.role === "tutor"
+                  ? " They are approved already — ask them to fill in their profile and hours."
+                  : ""}
+              </>
+            ) : (
+              <>
+                {sent.name} is on the tutors page. Fill in their profile and photo with
+                &ldquo;Edit profile&rdquo;, and use &ldquo;Add email &amp; invite&rdquo; once
+                you have their address — students can book them from then on.
+              </>
+            )}
           </Alert>
           <Button className="w-full" onClick={onClose}>
             Done
@@ -302,7 +395,11 @@ function InviteDialog({ onClose }: { onClose: () => void }) {
           <Field label="Name" htmlFor="invite-name">
             <Input id="invite-name" value={name} onChange={(event) => setName(event.target.value)} />
           </Field>
-          <Field label="Email" htmlFor="invite-email">
+          <Field
+            label="Email"
+            htmlFor="invite-email"
+            hint={role === "tutor" ? "Optional for a tutor — leave it blank to list them now and invite them later." : undefined}
+          >
             <Input
               id="invite-email"
               type="email"
@@ -345,13 +442,18 @@ function InviteDialog({ onClose }: { onClose: () => void }) {
               Cancel
             </Button>
             <Button
-              disabled={invite.pending || !name.trim() || !email.trim() || languages.length === 0}
+              disabled={
+                invite.pending ||
+                !name.trim() ||
+                (!email.trim() && role !== "tutor") ||
+                languages.length === 0
+              }
               onClick={async () => {
                 const result = await invite.run();
                 if (result) setSent(result);
               }}
             >
-              {invite.pending ? "Sending…" : "Create and send invite"}
+              {invite.pending ? "Saving…" : listOnly ? "List tutor" : "Create and send invite"}
             </Button>
           </div>
         </div>
@@ -681,6 +783,7 @@ const actionLabel: Record<string, string> = {
   account_deleted: "Deleted account",
   post_moderated: "Moderated post",
   account_invited: "Invited",
+  tutor_listed: "Listed tutor",
   tutor_review: "Reviewed tutor",
 };
 

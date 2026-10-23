@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { ButtonLink } from "@/components/ui/button";
 import { Avatar, Badge, Card, EmptyState, SectionHeading } from "@/components/ui/primitives";
-import { fetchPublicTutors } from "@/lib/api/public";
+import { fetchPublicTutors, profilePhotoUrl } from "@/lib/api/public";
 
 export const metadata: Metadata = {
   title: "Tutors",
@@ -47,7 +47,12 @@ export default async function TutorsPage() {
             {tutors.map((tutor) => (
               <Card key={tutor.id} className="grid gap-8 p-8 md:grid-cols-[auto_1fr] md:p-10">
                 <div className="flex items-start gap-4 md:w-56 md:flex-col">
-                  <Avatar name={tutor.name} avatarId={tutor.avatarId} size="lg" />
+                  <Avatar
+                    name={tutor.name}
+                    avatarId={tutor.avatarId}
+                    photoUrl={tutor.photoId ? profilePhotoUrl(tutor.id, tutor.photoId) : undefined}
+                    size="2xl"
+                  />
                   <div>
                     <h2 className="text-xl leading-tight">{tutor.name}</h2>
                     {tutor.homeTown ? (
@@ -88,14 +93,26 @@ export default async function TutorsPage() {
                     ))}
                   </div>
 
-                  <div className="mt-8 flex flex-wrap gap-3 border-t border-ink-900/8 pt-6">
-                    <ButtonLink href={`/portal/calendar?tutor=${tutor.id}`} size="sm">
-                      See {tutor.name.split(" ")[0]}&rsquo;s availability
-                    </ButtonLink>
-                    <ButtonLink href="/portal/signup" variant="secondary" size="sm">
-                      Create an account first
-                    </ButtonLink>
-                  </div>
+                  {tutor.bookable ? (
+                    <div className="mt-8 flex flex-wrap gap-3 border-t border-ink-900/8 pt-6">
+                      <ButtonLink href={`/portal/calendar?tutor=${tutor.id}`} size="sm">
+                        See {tutor.name.split(" ")[0]}&rsquo;s availability
+                      </ButtonLink>
+                      <ButtonLink href="/portal/signup" variant="secondary" size="sm">
+                        Create an account first
+                      </ButtonLink>
+                    </div>
+                  ) : (
+                    // Listed before their account is set up: no hours to book yet.
+                    <div className="mt-8 flex flex-wrap items-center gap-3 border-t border-ink-900/8 pt-6">
+                      <ButtonLink href="/#waitlist" size="sm">
+                        Ask for a lesson with {tutor.name.split(" ")[0]}
+                      </ButtonLink>
+                      <p className="text-sm text-ink-400">
+                        Online booking with {tutor.name.split(" ")[0]} opens soon.
+                      </p>
+                    </div>
+                  )}
                 </div>
               </Card>
             ))}
