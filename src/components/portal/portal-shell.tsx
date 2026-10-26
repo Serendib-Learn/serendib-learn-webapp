@@ -32,6 +32,13 @@ export function PortalShell({ children }: { children: React.ReactNode }) {
     () => (user?.role === "admin" ? api.community.pending() : Promise.resolve([])),
     [user?.role],
   );
+  const { data: waitingRequests } = useQuery(
+    async () =>
+      user?.role === "admin"
+        ? (await api.requests.list()).filter((item) => item.status === "pending").length
+        : 0,
+    [user?.role],
+  );
 
   useEffect(() => {
     // A failed session check is not a logout: stay put and say so below.
@@ -82,7 +89,8 @@ export function PortalShell({ children }: { children: React.ReactNode }) {
   const visible = portalSections.filter((section) => section.roles.includes(user.role));
   const badgeFor = (href: string) => {
     if (href === "/portal/messages" && unread > 0) return unread;
-    if (href === "/portal/admin" && (pendingPosts?.length ?? 0) > 0) return pendingPosts!.length;
+    const adminWaiting = (pendingPosts?.length ?? 0) + (waitingRequests ?? 0);
+    if (href === "/portal/admin" && adminWaiting > 0) return adminWaiting;
     return null;
   };
   const isActive = (href: string) =>

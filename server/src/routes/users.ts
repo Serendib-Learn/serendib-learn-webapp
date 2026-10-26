@@ -1,11 +1,12 @@
 import { Router } from "express";
 import { z } from "zod";
+import { config } from "../config.ts";
 import { db } from "../db/database.ts";
 import { sendInvite } from "../lib/accounts.ts";
 import { logAudit } from "../lib/audit.ts";
 import { ApiError, forbidden, notFound, wrap } from "../lib/errors.ts";
 import { pathParam } from "../lib/http.ts";
-import { isListedTutor, publicTutor, tuteeIdsOf } from "../lib/domain.ts";
+import { isListedTutor, publicTutor, teaches, tuteeIdsOf } from "../lib/domain.ts";
 import { newId, nowIso } from "../lib/ids.ts";
 import { deliver } from "../lib/mail.ts";
 import { requireAdmin, requireAuth, requireSelfOrAdmin, requireUser } from "../lib/sessions.ts";
@@ -144,6 +145,39 @@ usersRouter.post(
 );
 
 /**
+ * Confirms someone's email address for them — when the code never reached
+ * them (mail not set up yet, or caught by a spam filter) and they have
+ * confirmed who they are some other way.
+ */
+usersRouter.post(
+  "/:id/verify",
+  requireAdmin,
+  wrap(async (request, response) => {
+    const actor = requireUser(request);
+    const target = await db().users.findById(pathParam(request, "id"));
+    if (!target) throw notFound("No such account.");
+    if (!target.email) throw new ApiError("Add an email address to that account first.");
+    if (target.verified) {
+      response.json(target);
+      return;
+    }
+
+    const updated = await db().users.updateOne({ id: target.id }, { verified: true });
+    if (!updated) throw notFound("No such account.");
+    await db().verificationCodes.deleteOne({ id: target.email });
+    await logAudit(actor, "email_verified", updated.name, updated.email);
+    await deliver({
+      to: updated.email,
+      subject: "Your Serendib Learn account is ready",
+      body: `We have confirmed your email address, so you can log in now: ${config.appUrl}/portal/login`,
+      kind: "welcome",
+    });
+
+    response.json(updated);
+  }),
+);
+
+/**
  * Gives an account listed without an email address its address, and sends
  * the invite to set a password. From then on it is an ordinary account — and,
  * for a tutor, bookable.
@@ -192,11 +226,24 @@ usersRouter.get(
   }),
 );
 
+/**
+ * A whole account record, email included: your own, any for an
+ * administrator, or one of a tutor's own students. Everyone else gets names
+ * from /directory and tutors from /tutors.
+ */
 usersRouter.get(
   "/:id",
   requireAuth,
   wrap(async (request, response) => {
-    const user = await db().users.findById(pathParam(request, "id"));
+    const actor = requireUser(request);
+    const id = pathParam(request, "id");
+    const allowed =
+      actor.id === id ||
+      actor.role === "admin" ||
+      (actor.role === "tutor" && (await teaches(actor.id, id)));
+    if (!allowed) throw forbidden("That is somebody else's account.");
+
+    const user = await db().users.findById(id);
     if (!user) throw notFound("No such account.");
     response.json(user);
   }),
@@ -228,7 +275,9 @@ usersRouter.get(
       ),
     );
 
-    response.json(await db().users.find({ id: { $in: ids } }, { sort: byName }));
+    // Their public profiles: a student talks to tutors through the portal.
+    const tutors = await db().users.find({ id: { $in: ids } }, { sort: byName });
+    response.json(tutors.map(publicTutor));
   }),
 );
 
@@ -239,6 +288,17 @@ usersRouter.patch(
     requireSelfOrAdmin(request, pathParam(request, "id"));
 
     const patch: Partial<User> = parseBody(profilePatchSchema, request.body ?? {});
+
+    // Rate, experience and specialties describe a tutor's teaching; on any
+    // other account they would only be misleading.
+    const target = await db().users.findById(pathParam(request, "id"));
+    if (!target) throw notFound("No such account.");
+    const tutorOnly = (["hourlyRateUsd", "yearsTeaching", "specialties"] as const).filter(
+      (field) => patch[field] !== undefined,
+    );
+    if (target.role !== "tutor" && tutorOnly.length > 0) {
+      throw new ApiError("Rates, years teaching and specialties are only for tutor profiles.");
+    }
 
     const updated = await db().users.updateOne({ id: pathParam(request, "id") }, patch);
     if (!updated) throw notFound("No such account.");

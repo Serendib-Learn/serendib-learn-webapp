@@ -1,6 +1,6 @@
 <!-- BEGIN:nextjs-agent-rules -->
 
-# This is NOT the Next.js you know
+## This is NOT the Next.js you know
 
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
 
@@ -31,7 +31,9 @@ reason to skip it.
 | What's intentionally fake/demo-only right now (payments, etc.) | `README.md` → "Still demo-shaped" |
 | Student/tutor sign-up, tutor approval, the super admin, invites | `server/README.md` → "Accounts: students, tutors and the super admin" |
 | Payments (Payments.lk checkout, webhook, sandbox keys) | `server/README.md` → "Payments", `DEPLOYMENT.md` → "7. Payments.lk" |
-| Lesson feedback, voice notes, reminders, the cron job | `server/README.md` → "Lesson feedback, voice notes and reminders" |
+| Lesson feedback, voice notes, reminders, the cron job, material feedback | `server/README.md` → "Lesson feedback, voice notes and reminders" |
+| What a student vs a tutor vs an admin may do | `server/README.md` → "Who can do what" |
+| Rescheduling, free lessons, free-session and missed-lesson requests | `server/README.md` → "Rescheduling, free lessons and help requests" |
 | Course chapters, practice partners / friend requests | `server/README.md` → "Course chapters", "Community: practice partners and friends" |
 | The parked games (how to bring them back) | `src/lib/features.ts` (and search `GAMES-HIDDEN`) |
 

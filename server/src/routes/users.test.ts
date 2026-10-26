@@ -267,3 +267,34 @@ test("profile photos: tutors only, public on the tutors page, replaced and remov
   assert.equal(removed.body.photoId, undefined);
   assert.equal((await fetch(`${harness.baseUrl}/profile-photos/${tutor.user.id}`)).status, 404);
 });
+
+test("any email domain signs up; unverified login says so; an admin can confirm the address", async () => {
+  const client = harness.client();
+  const email = "learner.lk@yahoo.com";
+  const signup = await client.post("/auth/signup", {
+    name: "Yahoo Learner",
+    email,
+    password: "password123",
+    role: "student",
+    languages: ["sinhala"],
+  });
+  assert.equal(signup.status, 201);
+
+  const early = await client.post("/auth/login", { email, password: "password123" });
+  assert.equal(early.status, 403);
+  assert.equal(early.body.code, "not_verified");
+
+  const admin = await adminClient(harness);
+  const user = ((await admin.client.get("/users")).body as User[]).find((item) => item.email === email)!;
+  const student = await signedUpUser(harness, "student", "not-staff@example.com");
+  assert.equal((await student.client.post(`/users/${user.id}/verify`)).status, 403);
+
+  const confirmed = await admin.client.post(`/users/${user.id}/verify`);
+  assert.equal(confirmed.status, 200);
+  assert.equal(confirmed.body.verified, true);
+  const welcome = await latestMail(harness, email, "welcome");
+  assert.match(welcome?.body ?? "", /log in now/);
+
+  const login = await client.post("/auth/login", { email, password: "password123" });
+  assert.equal(login.status, 200);
+});

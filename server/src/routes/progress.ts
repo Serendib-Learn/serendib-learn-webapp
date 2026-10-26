@@ -15,9 +15,13 @@ progressRouter.get(
   requireAuth,
   wrap(async (request, response) => {
     const studentId = String(request.query.studentId ?? "");
-    requireSelfOrAdmin(request, studentId);
+    const actor = requireSelfOrAdmin(request, studentId);
 
-    response.json(await db().lessonNotes.find({ studentId }, { sort: newestFirst }));
+    const notes = await db().lessonNotes.find({ studentId }, { sort: newestFirst });
+    // The tutor's engagement score is for the tutor and the team, not the student.
+    response.json(
+      actor.role === "admin" ? notes : notes.map((note) => ({ ...note, engagement: undefined })),
+    );
   }),
 );
 

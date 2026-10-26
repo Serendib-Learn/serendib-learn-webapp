@@ -13,6 +13,12 @@ import { AvailabilityEditor } from "@/components/portal/availability-editor";
 import { HolidaysPanel } from "@/components/portal/holidays-panel";
 import { HOLIDAY_BY_DATE, MonthCalendar, toISODate, type DayMarks } from "@/components/portal/month-calendar";
 import { BookingRow } from "@/components/portal/booking-row";
+import {
+  FreeLessonsPanel,
+  MissedLessonDialog,
+  RescheduleDialog,
+  canReportMissed,
+} from "@/components/portal/lesson-help";
 import { GoogleCalendarConnect } from "@/components/portal/google-calendar-connect";
 import { PageHeader } from "@/components/portal/page-header";
 import { Button, ButtonLink } from "@/components/ui/button";
@@ -68,9 +74,15 @@ function Calendar() {
 
       <CalendarWorkspace user={user} />
 
+      {user.role === "student" ? (
+        <div className="mt-8">
+          <FreeLessonsPanel />
+        </div>
+      ) : null}
+
       <section className="mt-12">
         <h2 className="mb-4 font-display text-xl text-forest">Your sessions</h2>
-        <Schedule userId={user.id} isTutor={isTutor} />
+        <Schedule viewer={user} />
       </section>
 
       {isTutor ? (
@@ -116,6 +128,10 @@ function CalendarWorkspace({ user }: { user: User }) {
     [isStudent],
   );
   const tutorIds = (tutors.data ?? []).map((tutor) => tutor.id).join(",");
+  const credits = useQuery(
+    async () => (isStudent ? (await api.requests.credits()).available : 0),
+    [isStudent],
+  );
   const slots = useQuery(async () => {
     if (!isStudent) return [];
     const ids = (tutorFilter ? [tutorFilter] : tutorIds.split(",")).filter(Boolean);
@@ -228,6 +244,7 @@ function CalendarWorkspace({ user }: { user: User }) {
                   slot={slot}
                   tutor={tutorsById.get(slot.tutorId)}
                   student={user}
+                  freeLessons={credits.data ?? 0}
                 />
               ))}
             </ul>
@@ -253,7 +270,18 @@ function timeRange(startsAt: string, durationMins: number) {
 }
 
 /** One bookable hour on the chosen day; "Book" opens the details right there. */
-function OpenSlot({ slot, tutor, student }: { slot: Slot; tutor?: PublicTutor; student: User }) {
+function OpenSlot({
+  slot,
+  tutor,
+  student,
+  freeLessons,
+}: {
+  slot: Slot;
+  tutor?: PublicTutor;
+  student: User;
+  /** Free lessons the student can book this hour with instead of paying. */
+  freeLessons: number;
+}) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const languages = tutor?.languages ?? ["sinhala"];
@@ -271,6 +299,18 @@ function OpenSlot({ slot, tutor, student }: { slot: Slot; tutor?: PublicTutor; s
       focus: focus.trim(),
     }),
   );
+  // Book, then confirm straight away with a free lesson — no checkout.
+  const bookFree = useAction(async () => {
+    const booking = await api.bookings.create({
+      tutorId: slot.tutorId,
+      studentId: student.id,
+      startsAt: slot.startsAt,
+      durationMins: slot.durationMins,
+      language,
+      focus: focus.trim(),
+    });
+    return api.bookings.useCredit(booking.id);
+  });
 
   return (
     <li className="rounded-lg border border-forest/10 px-3 py-2.5">
@@ -329,22 +369,45 @@ function OpenSlot({ slot, tutor, student }: { slot: Slot; tutor?: PublicTutor; s
             </datalist>
           </div>
           {create.error ? <p className="text-xs text-clay-600">{create.error}</p> : null}
-          <button
-            type="submit"
-            disabled={create.pending || !focus.trim()}
-            className="flex h-8 items-center gap-1 rounded-md bg-forest px-3 text-xs font-medium text-cream disabled:opacity-60"
-          >
-            {create.pending ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
-            Continue to payment
-          </button>
+          {bookFree.error ? <p className="text-xs text-clay-600">{bookFree.error}</p> : null}
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              type="submit"
+              disabled={create.pending || bookFree.pending || !focus.trim()}
+              className="flex h-8 items-center gap-1 rounded-md bg-forest px-3 text-xs font-medium text-cream disabled:opacity-60"
+            >
+              {create.pending ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
+              Continue to payment
+            </button>
+            {freeLessons > 0 ? (
+              <button
+                type="button"
+                disabled={create.pending || bookFree.pending || !focus.trim()}
+                onClick={async () => {
+                  // The hour leaves the open list once it is taken, so show
+                  // the confirmation where a paid booking ends up too.
+                  const booking = await bookFree.run();
+                  if (booking) router.push(`/portal/checkout/${booking.id}`);
+                }}
+                className="flex h-8 items-center gap-1 rounded-md border border-fern/40 bg-mist px-3 text-xs font-medium text-fern disabled:opacity-60"
+              >
+                {bookFree.pending ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
+                Book with a free lesson ({freeLessons} left)
+              </button>
+            ) : null}
+          </div>
         </form>
       ) : null}
     </li>
   );
 }
 
-function Schedule({ userId, isTutor }: { userId: string; isTutor: boolean }) {
+function Schedule({ viewer }: { viewer: User }) {
+  const userId = viewer.id;
+  const isTutor = viewer.role === "tutor";
   const [filter, setFilter] = useState<Filter>("upcoming");
+  const [moving, setMoving] = useState<Booking | null>(null);
+  const [reporting, setReporting] = useState<Booking | null>(null);
   const bookings = useQuery(() => api.bookings.forUser(userId), [userId]);
   const people = useQuery(() => api.users.directory(), []);
 
@@ -453,12 +516,36 @@ function Schedule({ userId, isTutor }: { userId: string; isTutor: boolean }) {
                     {(booking.status === "confirmed" ||
                       booking.status === "awaiting_payment") &&
                     !past ? (
+                      <Button size="sm" variant="secondary" onClick={() => setMoving(booking)}>
+                        Reschedule
+                      </Button>
+                    ) : null}
+
+                    {!isTutor && canReportMissed(booking) ? (
+                      <Button size="sm" variant="ghost" onClick={() => setReporting(booking)}>
+                        Report missed lesson
+                      </Button>
+                    ) : null}
+
+                    {(booking.status === "confirmed" ||
+                      booking.status === "awaiting_payment") &&
+                    !past ? (
                       <Button
                         size="sm"
                         variant="ghost"
                         className="text-clay-600 hover:bg-clay-50"
                         disabled={cancel.pending}
-                        onClick={() => void cancel.run(booking.id)}
+                        onClick={() => {
+                          const warning =
+                            booking.status !== "confirmed"
+                              ? "Cancel this booking?"
+                              : booking.creditId
+                                ? "Cancel this lesson? Your free lesson comes back to you."
+                                : isTutor
+                                  ? "Cancel this paid lesson? The student gets a free lesson in its place, and is emailed."
+                                  : "Cancel this paid lesson? Cancelling is not refunded — you can move it to another time for free with “Reschedule” instead.";
+                          if (window.confirm(warning)) void cancel.run(booking.id);
+                        }}
                       >
                         Cancel
                       </Button>
@@ -472,6 +559,8 @@ function Schedule({ userId, isTutor }: { userId: string; isTutor: boolean }) {
       )}
 
       {linking ? <MeetingLinkDialog booking={linking} onClose={() => setLinking(null)} /> : null}
+      {moving ? <RescheduleDialog booking={moving} viewer={viewer} onClose={() => setMoving(null)} /> : null}
+      {reporting ? <MissedLessonDialog booking={reporting} onClose={() => setReporting(null)} /> : null}
     </>
   );
 }

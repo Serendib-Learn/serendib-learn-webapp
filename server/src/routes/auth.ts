@@ -251,8 +251,9 @@ authRouter.post(
 
     if (!user.verified) {
       throw new ApiError(
-        "Confirm your email address first — check your inbox for the code.",
+        "Confirm your email address first — check your inbox (and spam folder) for the code.",
         403,
+        "not_verified",
       );
     }
 

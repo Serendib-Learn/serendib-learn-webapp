@@ -174,6 +174,33 @@ export async function createGoogleMeeting(input: CreateMeetingInput): Promise<Cr
   return { eventId: data.id, meetLink };
 }
 
+/**
+ * Moves a booking's event to a new time, keeping its Meet link. Google mails
+ * both attendees the change (`sendUpdates: "all"`). Best-effort, like
+ * deleting: the booking's own new time is what counts.
+ */
+export async function moveGoogleMeeting(
+  refreshToken: string,
+  eventId: string,
+  move: { startIso: string; endIso: string; timezone: string },
+): Promise<boolean> {
+  try {
+    await calendarClient(refreshToken).events.patch({
+      calendarId: "primary",
+      eventId,
+      sendUpdates: "all",
+      requestBody: {
+        start: { dateTime: move.startIso, timeZone: move.timezone },
+        end: { dateTime: move.endIso, timeZone: move.timezone },
+      },
+    });
+    return true;
+  } catch (error) {
+    console.error("Moving the Google Calendar event failed:", error);
+    return false;
+  }
+}
+
 /** Best-effort: a booking should still cancel even if this fails. */
 export async function deleteGoogleMeeting(refreshToken: string, eventId: string): Promise<void> {
   try {

@@ -150,6 +150,10 @@ export interface Booking {
   googleCalendarOwner?: "tutor" | "system";
   /** The card payment, when it went through Payments.lk rather than the demo checkout. */
   payment?: BookingPayment;
+  /** The lesson credit it was booked with, instead of a payment. */
+  creditId?: string;
+  /** Every move to a new time, oldest first. Rescheduling never changes the price. */
+  reschedules?: BookingReschedule[];
   /** Why a booking was cancelled, when the system did it (an expired checkout, say). */
   cancelReason?: string;
   /** When each before-the-lesson reminder went out (a day ahead, an hour ahead). */
@@ -162,6 +166,76 @@ export interface Booking {
     student?: string[];
     tutor?: string[];
   };
+}
+
+/** One move of a booking to a new time. */
+export interface BookingReschedule {
+  from: string;
+  to: string;
+  /** Who moved it: the student, the tutor or an administrator. */
+  byId: string;
+  at: string;
+}
+
+/**
+ * Why a student holds a free lesson: an approved request, or a paid lesson
+ * the tutor (or the team) cancelled.
+ */
+export type CreditReason = "free_session" | "missed_session" | "tutor_cancelled";
+
+/**
+ * One free lesson a student can book instead of paying. Used once; given
+ * back if the lesson booked with it is cancelled.
+ */
+export interface LessonCredit {
+  id: string;
+  studentId: string;
+  reason: CreditReason;
+  /** The longest lesson it covers. */
+  durationMins: number;
+  /** The request it came from, when it came from one. */
+  requestId?: string;
+  /** The cancelled booking it replaces, for a tutor_cancelled credit. */
+  sourceBookingId?: string;
+  grantedById: string;
+  createdAt: string;
+  usedBookingId?: string;
+  usedAt?: string;
+}
+
+export type StudentRequestKind = "free_session" | "missed_session";
+export type StudentRequestStatus = "pending" | "approved" | "declined";
+
+/** What happened to a missed lesson, as the student tells it. */
+export type MissedCause = "tutor_absent" | "technical" | "student_unable" | "other";
+
+/**
+ * A student asking the team for something only an administrator can grant:
+ * a free session, or help with a lesson that was missed. Approving one
+ * grants a `LessonCredit`.
+ */
+export interface StudentRequest {
+  id: string;
+  kind: StudentRequestKind;
+  studentId: string;
+  /** The missed lesson, for a missed_session request. */
+  bookingId?: string;
+  cause?: MissedCause;
+  reason: string;
+  status: StudentRequestStatus;
+  createdAt: string;
+  decidedById?: string;
+  decidedAt?: string;
+  /** The administrator's note to the student, sent with the decision. */
+  decisionNote?: string;
+  creditId?: string;
+}
+
+export interface StudentRequestInput {
+  kind: StudentRequestKind;
+  reason: string;
+  bookingId?: string;
+  cause?: MissedCause;
 }
 
 /**
@@ -255,8 +329,23 @@ export interface LessonNote {
   vocabIntroduced: string[];
   /** A spoken version of the write-up, when the tutor recorded one. */
   voiceNoteId?: string;
+  /** Where the student stands after this lesson. Shown to the student. */
+  progress?: ProgressMark;
+  /**
+   * How engaged and prepared the student was, 1 to 5. For the tutor and the
+   * team only — the API leaves it out of what students are sent.
+   */
+  engagement?: number;
+  /** Materials used or recommended in the lesson; they land in the student's learning hub. */
+  materialIds?: string[];
   createdAt?: string;
 }
+
+/** A tutor's read on a student after a lesson. */
+export type ProgressMark = "needs_support" | "on_track" | "ahead";
+
+/** How a lesson's pace felt to the student. */
+export type LessonPace = "too_slow" | "just_right" | "too_fast";
 
 /** A student's verdict on one lesson, given after it ends. */
 export interface SessionFeedback {
@@ -268,7 +357,50 @@ export interface SessionFeedback {
   rating: number;
   comment: string;
   voiceNoteId?: string;
+  pace?: LessonPace;
+  /** How helpful the lesson's materials were, 1 to 5, when there were any. */
+  materialsRating?: number;
+  /** What the student wants to work on next time. */
+  nextFocus?: string;
   createdAt: string;
+}
+
+/** How a material's level suited a student. */
+export type MaterialLevelFit = "too_easy" | "just_right" | "too_hard";
+
+/**
+ * One person's feedback on a material — different questions for a student
+ * (was it helpful, was the level right) and a tutor (how does it work in a
+ * lesson, what would make it better). One per person per material.
+ */
+export interface MaterialFeedback {
+  id: string;
+  materialId: string;
+  authorId: string;
+  authorRole: "student" | "tutor";
+  /** Students: how helpful it was. Tutors: how well it works in lessons. 1 to 5. */
+  rating: number;
+  /** Students only. */
+  level?: MaterialLevelFit;
+  /** Tutors only: what would make it better. */
+  suggestion?: string;
+  comment: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MaterialFeedbackInput {
+  rating: number;
+  level?: MaterialLevelFit;
+  suggestion?: string;
+  comment?: string;
+}
+
+/** What a material's owner sees at a glance. */
+export interface MaterialFeedbackSummary {
+  materialId: string;
+  count: number;
+  average: number;
 }
 
 /** A recorded voice note's details. The audio itself is fetched separately. */
@@ -300,6 +432,9 @@ export interface LessonNoteInput {
   workOn: string;
   vocabIntroduced: string[];
   voiceNoteId?: string;
+  progress?: ProgressMark;
+  engagement?: number;
+  materialIds?: string[];
 }
 
 export interface SessionFeedbackInput {
@@ -307,6 +442,9 @@ export interface SessionFeedbackInput {
   rating: number;
   comment: string;
   voiceNoteId?: string;
+  pace?: LessonPace;
+  materialsRating?: number;
+  nextFocus?: string;
 }
 
 export type PostStatus = "pending" | "approved" | "rejected";

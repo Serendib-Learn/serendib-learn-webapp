@@ -37,6 +37,7 @@ interface GoogleIdentityApi {
           shape?: "rectangular" | "pill";
           width?: number;
           logo_alignment?: "left" | "center";
+          locale?: string;
         },
       ): void;
     };
@@ -119,6 +120,9 @@ export function GoogleButton({
           text,
           logo_alignment: "center",
           width: 320,
+          // Otherwise Google labels it in the browser's language, which on
+          // many Sri Lankan machines is Sinhala — the rest of the page is English.
+          locale: "en",
         });
       })
       .catch(() => {

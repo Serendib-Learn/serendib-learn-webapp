@@ -1,6 +1,10 @@
 import { ApiError, type Backend, type GoogleSignInResult } from "./backend";
 import { bumpRevision } from "./revision";
 import type {
+  MaterialFeedback,
+  MaterialFeedbackSummary,
+  LessonCredit,
+  StudentRequest,
   AuditLogEntry,
   AvailabilityRule,
   Booking,
@@ -180,6 +184,10 @@ export const httpBackend: Backend = {
       return request<User>("/users/invite", { method: "POST", body: input });
     },
 
+    markVerified(id) {
+      return request<User>(`/users/${id}/verify`, { method: "POST" });
+    },
+
     addEmail(id, email) {
       return request<User>(`/users/${id}/email`, { method: "POST", body: { email } });
     },
@@ -223,7 +231,7 @@ export const httpBackend: Backend = {
     },
 
     tutorsOf(studentId) {
-      return request<User[]>(`/users/${studentId}/tutors`);
+      return request<PublicTutor[]>(`/users/${studentId}/tutors`);
     },
 
     auditLog() {
@@ -296,6 +304,38 @@ export const httpBackend: Backend = {
     complete(id) {
       return request<Booking>(`/bookings/${id}/complete`, { method: "POST" });
     },
+
+    reschedule(id, startsAt) {
+      return request<Booking>(`/bookings/${id}/reschedule`, { method: "POST", body: { startsAt } });
+    },
+
+    useCredit(id) {
+      return request<Booking>(`/bookings/${id}/use-credit`, { method: "POST" });
+    },
+  },
+
+  requests: {
+    list(studentId) {
+      return request<StudentRequest[]>("/requests", { query: { studentId } });
+    },
+
+    create(input) {
+      return request<StudentRequest>("/requests", { method: "POST", body: input });
+    },
+
+    approve(id, note) {
+      return request<StudentRequest>(`/requests/${id}/approve`, { method: "POST", body: { note } });
+    },
+
+    decline(id, note) {
+      return request<StudentRequest>(`/requests/${id}/decline`, { method: "POST", body: { note } });
+    },
+
+    credits(studentId) {
+      return request<{ available: number; credits: LessonCredit[] }>("/requests/credits", {
+        query: { studentId },
+      });
+    },
   },
 
   materials: {
@@ -324,6 +364,22 @@ export const httpBackend: Backend = {
 
     remove(id) {
       return request<void>(`/materials/${id}`, { method: "DELETE" });
+    },
+
+    myFeedback() {
+      return request<MaterialFeedback[]>("/materials/feedback/mine");
+    },
+
+    feedbackSummary() {
+      return request<MaterialFeedbackSummary[]>("/materials/feedback/summary");
+    },
+
+    feedbackFor(id) {
+      return request<MaterialFeedback[]>(`/materials/${id}/feedback`);
+    },
+
+    giveFeedback(id, input) {
+      return request<MaterialFeedback>(`/materials/${id}/feedback`, { method: "PUT", body: input });
     },
 
     setChapter(id, chapterId) {

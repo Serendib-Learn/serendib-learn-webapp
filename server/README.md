@@ -62,13 +62,14 @@ form, the tutor list and the demo inbox needs a session cookie.
 | Area | Routes |
 | --- | --- |
 | Auth | `GET /auth/me`, `POST /auth/signup` (a `tutor` signup carries an optional `application`), `/auth/verify`, `/auth/resend`, `/auth/login`, `/auth/google`, `/auth/logout`, `/auth/forgot-password`, `/auth/reset-password` |
-| Users | `GET /users` (admin), `GET /users/directory`, `GET /users/tutors` (public: approved tutors, no emails, with `bookable`), `POST /users/invite` (admin; email optional for a tutor), `POST /users/:id/email` (admin: add the address to an account listed without one, and send the invite), `GET /users/audit-log` (admin), `GET /users/:id`, `GET /users/:id/tutees`, `GET /users/:id/tutors`, `PATCH /users/:id` (profile fields only, zod-validated), `POST /users/:id/role` (admin), `POST /users/:id/tutor-status` (admin), `POST /users/:id/membership` (admin), `DELETE /users/:id` (admin) |
+| Users | `GET /users` (admin), `GET /users/directory`, `GET /users/tutors` (public: approved tutors, no emails, with `bookable`), `POST /users/invite` (admin; email optional for a tutor), `POST /users/:id/email` (admin: add the address to an account listed without one, and send the invite), `POST /users/:id/verify` (admin: confirm someone's email when the code never arrived), `GET /users/audit-log` (admin), `GET /users/:id` (yourself, your own students for a tutor, anyone for an admin), `GET /users/:id/tutees`, `GET /users/:id/tutors` (public profiles, no emails), `PATCH /users/:id` (profile fields only, zod-validated), `POST /users/:id/role` (admin), `POST /users/:id/tutor-status` (admin), `POST /users/:id/membership` (admin), `DELETE /users/:id` (admin) |
 | Availability | `GET /availability?tutorId`, `GET /availability/slots?tutorId&days`, `POST /availability`, `DELETE /availability/:id` |
-| Bookings | `GET /bookings?userId`, `GET /bookings/:id`, `POST /bookings`, `POST /bookings/:id/checkout`, `GET /bookings/:id/payment`, `POST /bookings/:id/pay` (demo, or admin), `/cancel`, `/complete`, `/meeting-link` |
+| Bookings | `GET /bookings?userId`, `GET /bookings/:id`, `POST /bookings`, `POST /bookings/:id/checkout`, `GET /bookings/:id/payment`, `POST /bookings/:id/pay` (demo, or admin), `/cancel`, `/complete`, `/meeting-link`, `/reschedule` (free), `/use-credit` (book with a free lesson) |
+| Requests | `GET /requests` (yours; all for an admin), `POST /requests` (students: `free_session` or `missed_session`), `POST /requests/:id/approve\|decline` (admin), `GET /requests/credits` (free lessons left) |
 | Payments | `GET /payments/config`, `POST /payments/webhook` (Payments.lk, signature-verified) |
 | Feedback | `GET /feedback/pending`, `POST /feedback`, `GET /feedback?tutorId\|studentId` (or all, admin), `POST /feedback/lesson-notes`, `POST /voice-notes`, `GET /voice-notes/:id` |
 | Chapters | `GET /chapters`, `POST /chapters` (admin), `PATCH /chapters/:id` (admin), `DELETE /chapters/:id` (admin) |
-| Materials | `GET /materials?studentId\|ownerId`, `GET /materials/library`, `POST /materials`, `POST /materials/:id/assign`, `POST /materials/:id/chapter`, `DELETE /materials/:id` |
+| Materials | `GET /materials?studentId\|ownerId`, `GET /materials/library`, `POST /materials`, `POST /materials/:id/assign`, `POST /materials/:id/chapter`, `DELETE /materials/:id`, `GET /materials/feedback/mine`, `GET /materials/feedback/summary` (owner/admin), `GET\|PUT /materials/:id/feedback` |
 | Homework | `GET /homework?studentId\|tutorId`, `POST /homework`, `POST /homework/:id/submit`, `/review` |
 | Progress | `GET /lesson-notes?studentId`, `GET /progress?tutorId`, `GET /progress/:studentId` |
 | Community | `GET /posts`, `GET /posts/pending` (admin), `POST /posts`, `POST /posts/:id/like`, `GET\|POST /posts/:id/replies`, `POST /posts/:id/moderate` (admin), `GET /community/members?language`, `GET\|POST /community/connections`, `POST /community/connections/:id/accept\|decline`, `DELETE /community/connections/:id` |
@@ -135,12 +136,70 @@ real ones — the key decides, the API address is the same.
 Once a key is set, `POST /bookings/:id/pay` (the instant demo confirm) is
 refused for students; admins keep it to record a payment taken some other way.
 
+## Who can do what: students, tutors, admins
+
+The API enforces these itself; the portal only hides what a role cannot use.
+
+| | Student | Tutor | Admin |
+| --- | --- | --- | --- |
+| Be booked into a lesson (as the student) | ✓ | — | — (but can book for a student) |
+| Publish teaching hours | — | ✓ own | ✓ any tutor |
+| Set homework, assign material | — | ✓ own students only | ✓ anyone |
+| Read a full account record (email) | own | own + own students | ✓ |
+| Rate, years teaching, specialties on a profile | — | ✓ | ✓ on tutors |
+| Move a lesson (free) | ✓ ≥24h before, to an open hour | ✓ any time before it starts | ✓ |
+| Ask for a free session / report a missed lesson | ✓ | — | — |
+| Approve or decline those requests | — | — | ✓ (super admin too) |
+| Feedback after a lesson | rating, pace, materials, what next | write-up, progress, engagement, materials used | reads all |
+| Feedback on a material | helpfulness, level | works-in-lessons, suggestion | reads all |
+
+"Own students" are `lib/domain.ts`'s `tuteeIdsOf`: anyone with a booking,
+an assigned material or homework from that tutor.
+
+## Rescheduling, free lessons and help requests
+
+`routes/bookings.ts`, `routes/requests.ts`, `lib/credits.ts`.
+
+- **Rescheduling is free.** `POST /bookings/:id/reschedule` keeps the price,
+  the payment (or free lesson) and the Meet link, moves the Google Calendar
+  event (`lib/google.ts`'s `moveGoogleMeeting`), resets the before-lesson
+  reminders, records the move in `booking.reschedules` and emails both
+  people. Students need `STUDENT_RESCHEDULE_NOTICE_HOURS` (24) notice and one
+  of the tutor's open hours; tutors and admins can move it any time before
+  it starts, to any free time.
+- **Free lessons** (`lessonCredits`) are one-hour lessons a student books
+  instead of paying (`POST /bookings/:id/use-credit`, offered on the
+  calendar and the checkout page). They come from an approved request, or
+  automatically when a tutor or admin cancels a lesson the student paid
+  for. Cancelling a lesson booked with one gives it back. A student
+  cancelling their own paid lesson is not refunded — the portal suggests
+  moving it instead.
+- **Requests** (`studentRequests`) are a student asking for a free session
+  (a reason, one pending at a time) or reporting a missed lesson (which one,
+  what happened, up to 30 days after). Admins are emailed and decide under
+  Administration → Requests: approving grants a free lesson, declining
+  needs a note, and the student is emailed either way.
+
 ## Lesson feedback, voice notes and reminders
 
 `routes/feedback.ts`, `lib/feedback.ts`, `lib/reminders.ts`. Once a lesson's
-end time passes, `GET /feedback/pending` lists it for each side: the student
-owes a rating (1–5, comment, optional voice note), the tutor a write-up (a
-`LessonNote`, which also marks the booking completed). Reminders go out at
+end time passes, `GET /feedback/pending` lists it for each side, and each
+side is asked different things. The student owes a rating (1–5), the pace
+(too slow / about right / too fast), how helpful the materials were, what
+to work on next, a comment and an optional voice note. The tutor owes a
+write-up (a `LessonNote`, which also marks the booking completed): what was
+covered, what went well, what to work on, new words, where the student
+stands (`progress`, shown to them), how engaged they were (`engagement`,
+1–5, hidden from the student) and the materials used — the tutor's own are
+assigned to the student, library ones are already visible.
+
+Materials have their own feedback (`materialFeedback`, one entry per person
+per material, editable): students rate helpfulness and whether the level
+was right; tutors rate how well it works in a lesson and suggest
+improvements. Students rate what they can see; tutors rate the open library
+(the learning hub's "Shared library"); nobody rates their own. The owner and
+admins read it all (`GET /materials/:id/feedback`, ratings summary on each
+card). Reminders go out at
 class end and once more 24 hours later, only for what is still missing, and
 are recorded on the booking (`feedbackReminders`) so nothing sends twice.
 They run on an in-process timer every `REMINDER_INTERVAL_MS` (0 = off) and on
@@ -335,8 +394,12 @@ npm test              # everything: unit + integration
   status polling (pricing, reuse, forged and replayed signatures, wrong
   amounts, expiry), the feedback loop and its reminders, voice-note privacy,
   chapters, practice partners and friend-gated messaging, the rate limits,
-  and the Mongo store's handling of `undefined` updates.
-- Not covered yet: materials (beyond chapters), homework, posts, the Google
+  and the Mongo store's handling of `undefined` updates; who can do what as
+  a student or tutor (`access.test.ts`), free rescheduling, free-session and
+  missed-lesson requests and the free lessons they grant
+  (`lesson-help.test.ts`), and role-specific session and material feedback
+  (`role-feedback.test.ts`).
+- Not covered yet: posts, the Google
   integrations (would need mocking `googleapis`), and anything on the
   frontend (checked by hand in a browser for every change so far).
 

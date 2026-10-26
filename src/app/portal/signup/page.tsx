@@ -189,7 +189,11 @@ function SignUpForm() {
           />
         </Field>
 
-        <Field label="Email" htmlFor="su-email">
+        <Field
+          label="Email"
+          htmlFor="su-email"
+          hint="Any email address works — Gmail, Yahoo, Outlook, iCloud or your own. We send a six digit code to it."
+        >
           <Input
             id="su-email"
             type="email"

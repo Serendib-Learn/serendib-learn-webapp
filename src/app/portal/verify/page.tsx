@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/field";
 import { Alert, Card } from "@/components/ui/primitives";
 import { api } from "@/lib/api";
-import { useAction } from "@/lib/hooks";
+import { useAction, useQuery } from "@/lib/hooks";
 
 function VerifyForm() {
   const router = useRouter();
@@ -18,6 +18,8 @@ function VerifyForm() {
 
   const verify = useAction(api.auth.verifyEmail);
   const resend = useAction(api.auth.resendVerification);
+  const { data: health } = useQuery(() => api.health(), []);
+  const demoMode = health?.demoMode === true;
 
   return (
     <AuthCard
@@ -26,11 +28,29 @@ function VerifyForm() {
       aside={
         <Card className="p-6">
           <p className="text-sm font-semibold text-ink-900">Where is the email?</p>
-          <p className="mt-2 text-sm leading-relaxed text-ink-500">
-            This prototype has no mail server. Open the{" "}
-            <span className="font-medium text-ink-800">Demo inbox</span> in the bottom
-            right corner and you will find the code waiting there.
-          </p>
+          {demoMode ? (
+            <p className="mt-2 text-sm leading-relaxed text-ink-500">
+              This demo has no mail server. Open the{" "}
+              <span className="font-medium text-ink-800">Demo inbox</span> in the bottom
+              right corner and you will find the code waiting there.
+            </p>
+          ) : (
+            <div className="mt-2 space-y-2 text-sm leading-relaxed text-ink-500">
+              <p>
+                It comes from serendib.learn@gmail.com and usually arrives within a minute.
+                Yahoo, Outlook and Hotmail sometimes file it under{" "}
+                <span className="font-medium text-ink-800">Spam</span> or{" "}
+                <span className="font-medium text-ink-800">Junk</span> — please look there too.
+              </p>
+              <p>
+                Still nothing after a few minutes? Email{" "}
+                <a href="mailto:serendib.learn@gmail.com" className="text-amber-spice underline">
+                  serendib.learn@gmail.com
+                </a>{" "}
+                from the address you signed up with and we will confirm it for you.
+              </p>
+            </div>
+          )}
         </Card>
       }
     >
@@ -68,7 +88,11 @@ function VerifyForm() {
 
         {verify.error ? <Alert>{verify.error}</Alert> : null}
         {resend.error ? <Alert>{resend.error}</Alert> : null}
-        {resent ? <Alert tone="jade">A new code is in the demo inbox.</Alert> : null}
+        {resent ? (
+          <Alert tone="jade">
+            {demoMode ? "A new code is in the demo inbox." : "A new code is on its way — check your inbox and spam folder."}
+          </Alert>
+        ) : null}
 
         <Button type="submit" variant="forest" className="w-full rounded-lg" disabled={verify.pending}>
           {verify.pending ? "Checking…" : "Confirm and continue"}

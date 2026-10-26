@@ -25,6 +25,7 @@ import { jobsRouter } from "./routes/jobs.ts";
 import { demoRouter, gamesRouter, mailRouter, waitlistRouter } from "./routes/misc.ts";
 import { profilePhotosRouter } from "./routes/profile-photos.ts";
 import { progressRouter } from "./routes/progress.ts";
+import { requestsRouter } from "./routes/requests.ts";
 import { usersRouter } from "./routes/users.ts";
 
 const app = express();
@@ -85,6 +86,7 @@ app.use("/api/profile-photos", express.json({ limit: "3mb" }), profilePhotosRout
 app.use("/api/jobs", jobsRouter);
 app.use("/api/materials", materialsRouter);
 app.use("/api/chapters", chaptersRouter);
+app.use("/api/requests", requestsRouter);
 app.use("/api/homework", homeworkRouter);
 app.use("/api/integrations", integrationsRouter);
 app.use("/api/threads", messagesRouter);

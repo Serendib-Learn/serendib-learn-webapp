@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/auth";
 import { useAction, useQuery } from "@/lib/hooks";
 import { cn } from "@/lib/cn";
 import { formatDate, formatDateTime, relativeTime } from "@/lib/format";
+import { AdminRequests } from "@/components/portal/admin-requests";
 import { FeedbackList } from "@/components/portal/feedback-list";
 import { GoogleMailConnect } from "@/components/portal/google-mail-connect";
 import { GoogleSystemCalendarConnect } from "@/components/portal/google-system-calendar-connect";
@@ -26,10 +27,11 @@ import {
 } from "@/components/ui/primitives";
 import type { CommunityPost, LanguageCode, Role, User } from "@/lib/types";
 
-type Tab = "people" | "tutors" | "feedback" | "moderation" | "waitlist" | "mail" | "audit";
+type Tab = "people" | "requests" | "tutors" | "feedback" | "moderation" | "waitlist" | "mail" | "audit";
 
 const tabs: { id: Tab; label: string }[] = [
   { id: "people", label: "People" },
+  { id: "requests", label: "Requests" },
   { id: "tutors", label: "Tutor applications" },
   { id: "feedback", label: "Feedback" },
   { id: "moderation", label: "Moderation" },
@@ -71,9 +73,15 @@ function AdminArea() {
   // ?tab=google (from the dashboard's "Finish connecting Google"), and the
   // return from Google's consent screen, both land on the Google tab.
   const [tab, setTab] = useState<Tab>(
-    params.get("tab") === "google" || params.get("google") ? "mail" : "people",
+    params.get("tab") === "google" || params.get("google")
+      ? "mail"
+      : params.get("tab") === "requests"
+        ? "requests"
+        : "people",
   );
   const pending = useQuery(() => api.community.pending(), []);
+  const requests = useQuery(() => api.requests.list(), []);
+  const waitingRequests = (requests.data ?? []).filter((item) => item.status === "pending");
   const accounts = useQuery(() => api.users.list(), []);
   const applications = (accounts.data ?? []).filter(
     (person) => person.role === "tutor" && person.tutorStatus === "pending",
@@ -117,6 +125,11 @@ function AdminArea() {
                 {applications.length}
               </span>
             ) : null}
+            {item.id === "requests" && waitingRequests.length > 0 ? (
+              <span className="ml-2 rounded-full bg-saffron-400 px-1.5 text-[0.65rem] font-bold text-ink-900">
+                {waitingRequests.length}
+              </span>
+            ) : null}
             {item.id === "moderation" && (pending.data ?? []).length > 0 ? (
               <span className="ml-2 rounded-full bg-saffron-400 px-1.5 text-[0.65rem] font-bold text-ink-900">
                 {(pending.data ?? []).length}
@@ -127,6 +140,7 @@ function AdminArea() {
       </div>
 
       {tab === "people" ? <People me={user} /> : null}
+      {tab === "requests" ? <AdminRequests /> : null}
       {tab === "tutors" ? <TutorApplications /> : null}
       {tab === "feedback" ? <AllFeedback /> : null}
       {tab === "moderation" ? <Moderation /> : null}
@@ -149,6 +163,7 @@ function People({ me }: { me: User }) {
     api.users.setMembership(id, membership),
   );
   const remove = useAction((id: string) => api.users.remove(id));
+  const markVerified = useAction((id: string) => api.users.markVerified(id));
 
   const [inviting, setInviting] = useState(false);
   const [editing, setEditing] = useState<User | null>(null);
@@ -230,6 +245,22 @@ function People({ me }: { me: User }) {
             {!person.email ? (
               <Button size="sm" onClick={() => setAddingEmail(person)}>
                 Add email &amp; invite
+              </Button>
+            ) : null}
+
+            {person.email && !person.verified ? (
+              <Button
+                size="sm"
+                variant="secondary"
+                disabled={markVerified.pending}
+                title="When their code never arrived and you know the address is theirs"
+                onClick={() => {
+                  if (window.confirm(`Confirm ${person.email} for ${person.name}? Only do this if you know the address is theirs.`)) {
+                    void markVerified.run(person.id);
+                  }
+                }}
+              >
+                Mark verified
               </Button>
             ) : null}
 
@@ -784,6 +815,9 @@ const actionLabel: Record<string, string> = {
   post_moderated: "Moderated post",
   account_invited: "Invited",
   tutor_listed: "Listed tutor",
+  email_verified: "Confirmed email",
+  request_approved: "Approved request",
+  request_declined: "Declined request",
   tutor_review: "Reviewed tutor",
 };
 

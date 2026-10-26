@@ -488,7 +488,7 @@ Timestamps are ISO strings.
 | `verificationCodes` | Six-digit email codes | |
 | `resetTokens` | Single-use reset and invite links | `expiresAt` |
 | `availability` | `AvailabilityRule` | Weekday plus local `HH:mm` start and end |
-| `bookings` | `Booking` | Status, price, Meet link, Google event and owner, `payment`, `lessonReminders`, `feedbackReminders`, `cancelReason` |
+| `bookings` | `Booking` | Status, price, Meet link, Google event and owner, `payment` or `creditId`, `reschedules`, `lessonReminders`, `feedbackReminders`, `cancelReason` |
 | `paymentEvents` | Processed webhook event ids | De-duplication |
 | `lessonNotes` | Tutor write-ups | Summary, went well, work on, vocabulary, optional voice note |
 | `feedback` | `SessionFeedback` | 1–5 rating, comment, optional voice note |
@@ -501,6 +501,9 @@ Timestamps are ISO strings.
 | `threads`, `messages` | Conversations | `readBy` per message |
 | `alphabetAudio` | Tutor recordings per language and letter key | |
 | `profilePhotos` | Tutor photos (base64), keyed by user id | `User.photoId` versions the URL |
+| `lessonCredits` | Free lessons: reason, used-by booking | Given back if that booking is cancelled |
+| `studentRequests` | Free-session requests and missed-lesson reports | pending → approved / declined, with the admin's note |
+| `materialFeedback` | Ratings and comments on materials, per person | Student and tutor questions differ |
 | `waitlist` | "Register your interest" entries | |
 | `mail` | Every outgoing message (the demo inbox) | |
 | `auditLog` | Admin actions | |
@@ -534,7 +537,15 @@ Both `awaiting_payment` and `confirmed` hold the tutor's slot.
   zod), role, languages, timezone and character. Tutors can also fill in
   an optional application: headline, bio, home town and years teaching.
   A six-digit code is emailed, and the account is verified at
-  `/portal/verify`.
+  `/portal/verify`. **Any email address works** (Gmail, Yahoo, Outlook,
+  iCloud…); the forms say so, and "Create your account" is a full button
+  on the login card.
+- **Codes that never arrive.** The code only reaches a real inbox once
+  Gmail sending is connected (Administration → Google). Logging in before
+  verifying takes the person to the verify page (error code
+  `not_verified`), which tells them to check spam and how to reach us. An
+  admin can confirm a stuck account with **Mark verified** in
+  Administration → People.
 - **Login.** Login answers a wrong password and an unknown email with the
   **same message**, so it can't be used to find out which emails have
   accounts.
@@ -579,8 +590,31 @@ Both `awaiting_payment` and `confirmed` hold the tutor's slot.
   event with Meet on the tutor's calendar, or else on the shared Serendib
   calendar. Google invites both people. If neither calendar is connected,
   the tutor adds a link by hand.
+- **Rescheduling is free.** Either party can move a lesson to another time;
+  the price, payment and Meet link stay with it, the Google event moves,
+  and both are emailed. Students need 24 hours' notice and pick one of the
+  tutor's open hours; tutors and admins can move it any time before it
+  starts. Each move is kept on the booking ("Moved from …").
 - **Cancelling.** Either party can cancel, and the Google event is deleted
-  on a best-effort basis.
+  on a best-effort basis. If the tutor or an admin cancels a lesson the
+  student paid for, the student gets a free lesson in its place; a student
+  cancelling their own paid lesson is not refunded (they are pointed at
+  rescheduling). Cancelling a lesson booked with a free lesson gives it
+  back.
+
+### 8.2a Free lessons and help requests
+
+- **Free lessons** are one-hour lessons a student books instead of paying
+  ("Book with a free lesson" on the calendar and the checkout page).
+- **Students ask** from **Free lessons & help** on their calendar: a free
+  session (with a reason), or **Report missed lesson** on a past lesson
+  (what happened, up to 30 days later).
+- **Only admins decide** (the super admin included), under
+  Administration → Requests. Approving grants a free lesson; declining
+  needs a note. The student is emailed either way and sees the status and
+  the note on their calendar.
+- Who may do what as a student, tutor or admin is tabulated in
+  `server/README.md` → "Who can do what".
 
 ### 8.3 Payments (Payments.lk)
 
@@ -661,10 +695,16 @@ sequenceDiagram
 ### 8.5 The feedback loop
 
 1. Once a lesson's end time passes, `GET /feedback/pending` lists it for
-   both sides. The student owes a **rating** (1–5, a comment and an
-   optional voice note). The tutor owes a **write-up**: summary, what went
-   well, what to work on, vocabulary introduced and an optional voice
-   note. Writing it up also marks the booking `completed`.
+   both sides, and **each side is asked different things**:
+   - **Student:** a rating (1–5), the pace (too slow / about right / too
+     fast), how helpful the materials were, what to work on next, a
+     comment and an optional voice note.
+   - **Tutor:** a write-up (what was covered, what went well, what to work
+     on, new words, optional voice note), plus where the student stands
+     (needs support / on track / ahead, which the student sees), how
+     engaged they were (1–5, for the tutor and the team only) and the
+     materials used, which land in the student's learning hub. Writing it
+     up also marks the booking `completed`.
 2. The portal shows `feedback-prompt.tsx` on every page until it is done.
 3. **Email reminders** go out at the end of class and once more 24 hours
    later, only for what's still missing, within a 14-day window. They are
@@ -675,6 +715,12 @@ sequenceDiagram
    - **Who can attach them:** only the author, to their own feedback or
      write-up.
 5. Admins see all feedback under Administration → Feedback.
+6. **Materials feedback.** Every material card has "Rate this" for
+   students (how helpful it was, whether the level was right) and tutors
+   (how well it works in a lesson, a suggested improvement — tutors rate
+   the "Shared library" in their hub). One entry per person, editable.
+   The material's owner sees the average on each card and everyone's
+   feedback on click; admins see it all.
 
 Before the lesson, **lesson reminders** go to both people 24 hours ahead
 and 1 hour ahead, with the Meet link and a link to the calendar.
@@ -717,7 +763,8 @@ and 1 hour ahead, with the Meet link and a link to the calendar.
 
 | Tab | Purpose |
 | --- | --- |
-| People | Every account: change roles and membership, delete accounts (not super admins), invite someone, edit profiles |
+| People | Every account: change roles and membership, delete accounts (not super admins), invite someone, edit profiles, **Mark verified** for a code that never arrived |
+| Requests | Free-session requests and missed-lesson reports: approve (grants a free lesson) or decline with a note |
 | Tutor applications | Approve or reject pending tutors |
 | Feedback | All lesson ratings and write-ups |
 | Moderation | Approve or reject community posts |

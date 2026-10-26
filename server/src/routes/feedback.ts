@@ -87,7 +87,13 @@ const feedbackSchema = z.object({
     .max(5, "Give the lesson a rating from 1 to 5."),
   comment: z.string().trim().max(2000, "Keep it under 2000 characters.").default(""),
   voiceNoteId: z.string().optional(),
+  pace: z.enum(["too_slow", "just_right", "too_fast"]).optional(),
+  materialsRating: z.coerce.number().int().min(1).max(5).optional(),
+  nextFocus: z.string().trim().max(500, "Keep it under 500 characters.").optional(),
 });
+
+const paceLabel = { too_slow: "too slow", just_right: "about right", too_fast: "too fast" } as const;
+const progressLabel = { needs_support: "needs a bit more support", on_track: "on track", ahead: "ahead of where we expected" } as const;
 
 /** The student's feedback on one lesson. Once per lesson. */
 feedbackRouter.post(
@@ -111,16 +117,24 @@ feedbackRouter.post(
       rating: input.rating,
       comment: input.comment,
       voiceNoteId: input.voiceNoteId,
+      pace: input.pace,
+      materialsRating: input.materialsRating,
+      nextFocus: input.nextFocus || undefined,
       createdAt: nowIso(),
     };
     const created = await db().feedback.insertOne(feedback);
+    const extras = [
+      input.pace ? `Pace: ${paceLabel[input.pace]}` : "",
+      input.materialsRating ? `Materials: ${input.materialsRating}/5` : "",
+      input.nextFocus ? `Next time: ${input.nextFocus}` : "",
+    ].filter(Boolean);
 
     const tutor = await db().users.findById(booking.tutorId);
     if (tutor) {
       await deliver({
         to: tutor.email,
         subject: `${actor.name} rated your lesson ${"★".repeat(input.rating)}${"☆".repeat(5 - input.rating)}`,
-        body: `${input.comment || "(No written comment.)"}${input.voiceNoteId ? "\n\nThey also left a voice note — listen in your portal." : ""}`,
+        body: `${input.comment || "(No written comment.)"}${extras.length ? `\n\n${extras.join("\n")}` : ""}${input.voiceNoteId ? "\n\nThey also left a voice note — listen in your portal." : ""}`,
         kind: "notification",
       });
     }
@@ -162,6 +176,9 @@ const lessonNoteSchema = z.object({
   workOn: z.string().trim().max(1000).default(""),
   vocabIntroduced: z.array(z.string().trim().min(1).max(60)).max(40).default([]),
   voiceNoteId: z.string().optional(),
+  progress: z.enum(["needs_support", "on_track", "ahead"]).optional(),
+  engagement: z.coerce.number().int().min(1).max(5).optional(),
+  materialIds: z.array(z.string().min(1)).max(20).default([]),
 });
 
 /** The tutor's write-up after a lesson. Once per lesson. */
@@ -178,6 +195,21 @@ feedbackRouter.post(
     if (await tutorWroteUp(booking.id)) throw new ApiError("This lesson already has a write-up.", 409);
     await checkVoiceNote(input.voiceNoteId, actor, booking.id);
 
+    // Materials used in the lesson: the tutor's own (now assigned to this
+    // student, if they were not already) or the open library.
+    const materialIds = Array.from(new Set(input.materialIds));
+    for (const id of materialIds) {
+      const material = await db().materials.findById(id);
+      const usable = material && (material.ownerId === actor.id || material.assignedTo.length === 0);
+      if (!usable) throw new ApiError("One of those materials is not yours to share.");
+      if (material.ownerId === actor.id && material.assignedTo.length > 0 && !material.assignedTo.includes(booking.studentId)) {
+        await db().materials.updateOne(
+          { id: material.id },
+          { assignedTo: [...material.assignedTo, booking.studentId] },
+        );
+      }
+    }
+
     const note: LessonNote = {
       id: newId("ln"),
       bookingId: booking.id,
@@ -189,6 +221,9 @@ feedbackRouter.post(
       workOn: input.workOn,
       vocabIntroduced: input.vocabIntroduced,
       voiceNoteId: input.voiceNoteId,
+      progress: input.progress,
+      engagement: input.engagement,
+      materialIds: materialIds.length ? materialIds : undefined,
       createdAt: nowIso(),
     };
     const created = await db().lessonNotes.insertOne(note);
@@ -203,7 +238,7 @@ feedbackRouter.post(
       await deliver({
         to: student.email,
         subject: `${actor.name} wrote up your lesson`,
-        body: `${input.summary}${input.workOn ? `\n\nTo work on: ${input.workOn}` : ""}\n\nThe full write-up${input.voiceNoteId ? ", with a voice note," : ""} is in your learning hub.`,
+        body: `${input.summary}${input.progress ? `\n\nWhere you are: ${progressLabel[input.progress]}.` : ""}${input.workOn ? `\n\nTo work on: ${input.workOn}` : ""}${materialIds.length ? `\n\n${materialIds.length} material${materialIds.length === 1 ? "" : "s"} from the lesson ${materialIds.length === 1 ? "is" : "are"} in your learning hub.` : ""}\n\nThe full write-up${input.voiceNoteId ? ", with a voice note," : ""} is in your learning hub.`,
         kind: "notification",
       });
     }

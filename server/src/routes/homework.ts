@@ -2,7 +2,7 @@ import { Router } from "express";
 import { db } from "../db/database.ts";
 import { ApiError, forbidden, notFound, wrap } from "../lib/errors.ts";
 import { pathParam } from "../lib/http.ts";
-import { requireUserRecord } from "../lib/domain.ts";
+import { requireUserRecord, teaches } from "../lib/domain.ts";
 import { newId, nowIso } from "../lib/ids.ts";
 import { deliver } from "../lib/mail.ts";
 import { requireAuth, requireSelfOrAdmin, requireUser } from "../lib/sessions.ts";
@@ -59,6 +59,11 @@ homeworkRouter.post(
 
     const student = await requireUserRecord(studentId);
     const tutor = await requireUserRecord(tutorId);
+    if (tutor.role !== "tutor") throw new ApiError("Homework is set by a tutor.");
+    if (student.role !== "student") throw new ApiError("Homework is for students.");
+    if (actor.role !== "admin" && !(await teaches(tutor.id, student.id))) {
+      throw forbidden("You can only set homework for your own students.");
+    }
 
     const item: HomeworkItem = {
       id: newId("hw"),

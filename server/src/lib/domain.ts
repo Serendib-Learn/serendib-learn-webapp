@@ -148,6 +148,14 @@ export async function progressFor(student: User): Promise<StudentProgress> {
 }
 
 /**
+ * Whether a tutor may set work for, or look up, a student: one of their own
+ * students (see `tuteeIdsOf`). Administrators are checked separately.
+ */
+export async function teaches(tutorId: string, studentId: string): Promise<boolean> {
+  return (await tuteeIdsOf(tutorId)).includes(studentId);
+}
+
+/**
  * Anyone a tutor has a working relationship with: a booking, an assigned
  * material, or a piece of homework.
  */

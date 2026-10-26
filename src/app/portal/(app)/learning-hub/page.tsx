@@ -5,13 +5,21 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { useAction, useQuery } from "@/lib/hooks";
 import { ChapterBrowser, groupByStage } from "@/components/portal/chapter-browser";
+import { MaterialCard } from "@/components/portal/material-card";
+import { MaterialRatings, RateMaterialButton } from "@/components/portal/material-feedback";
 import { VoiceNotePlayer } from "@/components/portal/voice-note-player";
 import { PageHeader } from "@/components/portal/page-header";
 import { Button } from "@/components/ui/button";
 import { Checkbox, Field, Input, Select, Textarea } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
 import { Alert, Badge, Card, Loading } from "@/components/ui/primitives";
-import type { CourseChapter, LanguageCode, Material, MaterialKind, User } from "@/lib/types";
+import type { CourseChapter, LanguageCode, Material, MaterialKind, ProgressMark, User } from "@/lib/types";
+
+const progressText: Record<ProgressMark, { label: string; tone: "saffron" | "jade" | "ocean" }> = {
+  needs_support: { label: "Needs a little more support", tone: "saffron" },
+  on_track: { label: "On track", tone: "jade" },
+  ahead: { label: "Ahead of plan", tone: "ocean" },
+};
 
 export default function LearningHubPage() {
   const { user } = useAuth();
@@ -28,8 +36,13 @@ function StudentHub({ student }: { student: User }) {
   const library = useQuery(() => api.materials.library(), []);
   const notes = useQuery(() => api.lessonNotes.forStudent(student.id), [student.id]);
   const chapters = useQuery(() => api.chapters.list(), []);
+  const myFeedback = useQuery(() => api.materials.myFeedback(), []);
 
   if (mine.loading || chapters.loading) return <Loading label="Opening your hub" />;
+
+  const rated = new Map((myFeedback.data ?? []).map((entry) => [entry.materialId, entry]));
+  const allMaterials = [...(mine.data ?? []), ...(library.data ?? [])];
+  const titleOf = new Map(allMaterials.map((material) => [material.id, material.title]));
 
   return (
     <>
@@ -40,8 +53,11 @@ function StudentHub({ student }: { student: User }) {
       <section>
         <ChapterBrowser
           chapters={chapters.data ?? []}
-          materials={[...(mine.data ?? []), ...(library.data ?? [])]}
+          materials={allMaterials}
           languages={student.languages}
+          footerFor={(material) => (
+            <RateMaterialButton material={material} viewer={student} mine={rated.get(material.id)} />
+          )}
         />
       </section>
 
@@ -57,6 +73,11 @@ function StudentHub({ student }: { student: User }) {
                     month: "long",
                   })}
                 </p>
+                {note.progress ? (
+                  <div className="mt-2">
+                    <Badge tone={progressText[note.progress].tone}>{progressText[note.progress].label}</Badge>
+                  </div>
+                ) : null}
                 <p className="mt-2 text-sm leading-relaxed text-ink-700">{note.summary}</p>
 
                 <div className="mt-4 grid gap-4 sm:grid-cols-2">
@@ -83,6 +104,13 @@ function StudentHub({ student }: { student: User }) {
                     ))}
                   </div>
                 ) : null}
+
+                {note.materialIds?.length ? (
+                  <p className="mt-4 text-xs text-ink-500">
+                    From the lesson:{" "}
+                    {note.materialIds.map((id) => titleOf.get(id) ?? "a material").join(", ")} — in your folders above.
+                  </p>
+                ) : null}
               </div>
             ))}
           </div>
@@ -96,6 +124,13 @@ function StudentHub({ student }: { student: User }) {
 function TeachingHub({ owner }: { owner: User }) {
   const materials = useQuery(() => api.materials.forOwner(owner.id), [owner.id]);
   const tutees = useQuery(() => api.users.tuteesOf(owner.id), [owner.id]);
+  const summaries = useQuery(() => api.materials.feedbackSummary(), []);
+  // Tutors can review what others have shared in the open library.
+  const library = useQuery(
+    async () => (owner.role === "tutor" ? (await api.materials.library()).filter((item) => item.ownerId !== owner.id) : []),
+    [owner.id, owner.role],
+  );
+  const myFeedback = useQuery(() => api.materials.myFeedback(), []);
   const [composing, setComposing] = useState(false);
   const [assigning, setAssigning] = useState<Material | null>(null);
   const [managing, setManaging] = useState(false);
@@ -109,6 +144,8 @@ function TeachingHub({ owner }: { owner: User }) {
   if (materials.loading || chapters.loading) return <Loading label="Opening your hub" />;
 
   const students = (tutees.data ?? []).filter((person) => person.role === "student");
+  const summaryFor = new Map((summaries.data ?? []).map((summary) => [summary.materialId, summary]));
+  const rated = new Map((myFeedback.data ?? []).map((entry) => [entry.materialId, entry]));
 
   return (
     <>
@@ -177,9 +214,28 @@ function TeachingHub({ owner }: { owner: User }) {
             >
               Delete
             </Button>
+            <MaterialRatings material={material} summary={summaryFor.get(material.id)} />
           </div>
         )}
       />
+
+      {(library.data ?? []).length > 0 ? (
+        <section className="mt-12">
+          <h2 className="text-xl">Shared library</h2>
+          <p className="mt-1 text-sm text-ink-500">
+            What other tutors and the Serendib team have shared. Rate what you use — it helps them improve it.
+          </p>
+          <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {(library.data ?? []).map((material) => (
+              <MaterialCard
+                key={material.id}
+                material={material}
+                footer={<RateMaterialButton material={material} viewer={owner} mine={rated.get(material.id)} />}
+              />
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       {managing ? (
         <ManageChapters chapters={chapters.data ?? []} onClose={() => setManaging(false)} />

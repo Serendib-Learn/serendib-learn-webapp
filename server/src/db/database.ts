@@ -13,12 +13,15 @@ import type {
   CourseChapter,
   GameResult,
   HomeworkItem,
+  LessonCredit,
   LessonNote,
   MailMessage,
   Material,
+  MaterialFeedback,
   Message,
   PostReply,
   SessionFeedback,
+  StudentRequest,
   Thread,
   User,
   WaitlistEntry,
@@ -176,6 +179,9 @@ export interface Database {
   postImages: Collection<PostImage>;
   alphabetAudio: Collection<AlphabetAudio>;
   profilePhotos: Collection<ProfilePhoto>;
+  lessonCredits: Collection<LessonCredit>;
+  materialFeedback: Collection<MaterialFeedback>;
+  studentRequests: Collection<StudentRequest>;
   voiceNotes: Collection<VoiceNote>;
 }
 
@@ -212,6 +218,9 @@ function build(from: Store): Database {
     postImages: from.collection<PostImage>("postImages"),
     alphabetAudio: from.collection<AlphabetAudio>("alphabetAudio"),
     profilePhotos: from.collection<ProfilePhoto>("profilePhotos"),
+    lessonCredits: from.collection<LessonCredit>("lessonCredits"),
+    materialFeedback: from.collection<MaterialFeedback>("materialFeedback"),
+    studentRequests: from.collection<StudentRequest>("studentRequests"),
     voiceNotes: from.collection<VoiceNote>("voiceNotes"),
   };
 }
@@ -253,6 +262,9 @@ async function seedContents(): Promise<Record<string, Doc[]>> {
     postImages: [],
     alphabetAudio: [],
     profilePhotos: [],
+    lessonCredits: [],
+    materialFeedback: [],
+    studentRequests: [],
     chapters: defaultChapters.map((chapter) => ({ ...chapter, createdAt: new Date().toISOString() })),
     voiceNotes: [],
   };

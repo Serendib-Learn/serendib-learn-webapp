@@ -15,10 +15,14 @@ import type {
   HomeworkItem,
   InviteInput,
   LanguageCode,
+  LessonCredit,
   LessonNote,
   LessonNoteInput,
   MailMessage,
   Material,
+  MaterialFeedback,
+  MaterialFeedbackInput,
+  MaterialFeedbackSummary,
   MaterialInput,
   Message,
   PostReply,
@@ -31,6 +35,8 @@ import type {
   SessionFeedback,
   SessionFeedbackInput,
   SignUpInput,
+  StudentRequest,
+  StudentRequestInput,
   Slot,
   StudentProgress,
   Thread,
@@ -98,6 +104,8 @@ export interface Backend {
      * and invite them later with `addEmail`.
      */
     invite(input: InviteInput): Promise<User>;
+    /** Administrators: confirm someone's email for them, when the code never reached them. */
+    markVerified(id: string): Promise<User>;
     /** Administrators: give an account listed without an email its address, and send the invite. */
     addEmail(id: string, email: string): Promise<User>;
     /** A tutor's photo for the tutors page (the tutor, or an administrator). */
@@ -110,7 +118,8 @@ export interface Backend {
     setMembership(id: string, membership: User["membership"]): Promise<User>;
     remove(id: string): Promise<void>;
     tuteesOf(tutorId: string): Promise<User[]>;
-    tutorsOf(studentId: string): Promise<User[]>;
+    /** A student's tutors, as public profiles (no contact details). */
+    tutorsOf(studentId: string): Promise<PublicTutor[]>;
     /** Recent admin actions — role/membership changes, deletions, moderation. */
     auditLog(): Promise<AuditLogEntry[]>;
   };
@@ -140,6 +149,21 @@ export interface Backend {
     setMeetingLink(id: string, url: string): Promise<Booking>;
     cancel(id: string): Promise<Booking>;
     complete(id: string): Promise<Booking>;
+    /** Moves a lesson to a new time, free. Students: 24 hours' notice and an open hour. */
+    reschedule(id: string, startsAt: string): Promise<Booking>;
+    /** Confirms a booking with one of the student's free lessons instead of paying. */
+    useCredit(id: string): Promise<Booking>;
+  };
+
+  /** Free sessions and missed-lesson help: students ask, administrators decide. */
+  requests: {
+    /** Your own requests — or, for an administrator, everyone's (or one student's). */
+    list(studentId?: string): Promise<StudentRequest[]>;
+    create(input: StudentRequestInput): Promise<StudentRequest>;
+    approve(id: string, note?: string): Promise<StudentRequest>;
+    decline(id: string, note: string): Promise<StudentRequest>;
+    /** A student's free lessons: how many are left, and every one granted. */
+    credits(studentId?: string): Promise<{ available: number; credits: LessonCredit[] }>;
   };
 
   materials: {
@@ -151,6 +175,14 @@ export interface Backend {
     /** Files a material under a chapter; no chapter unfiles it. */
     setChapter(id: string, chapterId: string | undefined): Promise<Material>;
     remove(id: string): Promise<void>;
+    /** Your own feedback on materials (one entry per material). */
+    myFeedback(): Promise<MaterialFeedback[]>;
+    /** Rating counts and averages for materials you own (all, for an administrator). */
+    feedbackSummary(): Promise<MaterialFeedbackSummary[]>;
+    /** Everyone's feedback on one material: its owner and administrators. */
+    feedbackFor(id: string): Promise<MaterialFeedback[]>;
+    /** Gives (or changes) your feedback on a material. Students and tutors are asked different things. */
+    giveFeedback(id: string, input: MaterialFeedbackInput): Promise<MaterialFeedback>;
   };
 
   chapters: {

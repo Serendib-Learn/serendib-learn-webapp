@@ -50,6 +50,8 @@ availabilityRouter.post(
     if (actor.id !== tutorId && actor.role !== "admin") {
       throw forbidden("You can only publish your own hours.");
     }
+    const tutor = await db().users.findById(tutorId);
+    if (tutor?.role !== "tutor") throw forbidden("Only tutors publish teaching hours.");
     if (!Number.isInteger(weekday) || weekday < 0 || weekday > 6) {
       throw new ApiError("Pick a day of the week.");
     }

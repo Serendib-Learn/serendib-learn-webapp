@@ -10,7 +10,53 @@ import { Button } from "@/components/ui/button";
 import { Field, Input, Textarea } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
 import { Alert, Avatar } from "@/components/ui/primitives";
-import type { PendingFeedback, User } from "@/lib/types";
+import { Stars } from "@/components/ui/stars";
+import type { LessonPace, PendingFeedback, ProgressMark, User } from "@/lib/types";
+
+/** A row of pill buttons for picking one of a few answers. */
+function Choice<T extends string>({
+  options,
+  value,
+  onChange,
+  label,
+}: {
+  options: { value: T; label: string }[];
+  value: T | undefined;
+  onChange: (value: T) => void;
+  label: string;
+}) {
+  return (
+    <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={label}>
+      {options.map((option) => (
+        <button
+          key={option.value}
+          type="button"
+          role="radio"
+          aria-checked={value === option.value}
+          onClick={() => onChange(option.value)}
+          className={cn(
+            "rounded-full px-4 py-1.5 text-sm ring-1 ring-inset transition",
+            value === option.value ? "bg-jade-50 text-jade-700 ring-jade-200" : "bg-white text-ink-500 ring-ink-900/10",
+          )}
+        >
+          {option.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+const paceOptions: { value: LessonPace; label: string }[] = [
+  { value: "too_slow", label: "Too slow" },
+  { value: "just_right", label: "About right" },
+  { value: "too_fast", label: "Too fast" },
+];
+
+const progressOptions: { value: ProgressMark; label: string }[] = [
+  { value: "needs_support", label: "Needs more support" },
+  { value: "on_track", label: "On track" },
+  { value: "ahead", label: "Ahead" },
+];
 
 /** How often the portal checks whether a lesson has just ended. */
 const CHECK_EVERY_MS = 60_000;
@@ -64,31 +110,11 @@ export function FeedbackPrompt({ user }: { user: User }) {
   );
 }
 
-function Stars({ value, onChange }: { value: number; onChange: (value: number) => void }) {
-  return (
-    <div className="flex gap-1" role="radiogroup" aria-label="Rating">
-      {[1, 2, 3, 4, 5].map((star) => (
-        <button
-          key={star}
-          type="button"
-          role="radio"
-          aria-checked={value === star}
-          aria-label={`${star} star${star > 1 ? "s" : ""}`}
-          onClick={() => onChange(star)}
-          className={cn(
-            "text-3xl leading-none transition hover:scale-110",
-            star <= value ? "text-saffron-400" : "text-ink-900/15",
-          )}
-        >
-          ★
-        </button>
-      ))}
-    </div>
-  );
-}
-
 function FeedbackDialog({ item, onClose }: { item: PendingFeedback; onClose: () => void }) {
   const [rating, setRating] = useState(0);
+  const [pace, setPace] = useState<LessonPace | undefined>();
+  const [materialsRating, setMaterialsRating] = useState(0);
+  const [nextFocus, setNextFocus] = useState("");
   const [comment, setComment] = useState("");
   const [voice, setVoice] = useState<Recording | null>(null);
 
@@ -101,6 +127,9 @@ function FeedbackDialog({ item, onClose }: { item: PendingFeedback; onClose: () 
       rating,
       comment: comment.trim(),
       voiceNoteId: note?.id,
+      pace,
+      materialsRating: materialsRating || undefined,
+      nextFocus: nextFocus.trim() || undefined,
     });
   });
 
@@ -120,8 +149,28 @@ function FeedbackDialog({ item, onClose }: { item: PendingFeedback; onClose: () 
       >
         <div>
           <p className="mb-2 text-sm font-medium text-ink-700">How did it go?</p>
-          <Stars value={rating} onChange={setRating} />
+          <Stars value={rating} onChange={setRating} label="The lesson" />
         </div>
+        <div>
+          <p className="mb-2 text-sm font-medium text-ink-700">The pace</p>
+          <Choice options={paceOptions} value={pace} onChange={setPace} label="Pace" />
+        </div>
+        <div>
+          <p className="mb-2 text-sm font-medium text-ink-700">
+            The materials{" "}
+            <span className="font-normal text-ink-400">(if your tutor used any)</span>
+          </p>
+          <Stars value={materialsRating} onChange={setMaterialsRating} label="Materials" size="md" />
+        </div>
+        <Field label="What would you like to work on next time?" htmlFor="feedback-next">
+          <Input
+            id="feedback-next"
+            maxLength={500}
+            value={nextFocus}
+            onChange={(event) => setNextFocus(event.target.value)}
+            placeholder="Ordering food, numbers, talking to grandma…"
+          />
+        </Field>
         <Field label="Anything to add?" htmlFor="feedback-comment">
           <Textarea
             id="feedback-comment"
@@ -152,6 +201,18 @@ function WriteUpDialog({ item, onClose }: { item: PendingFeedback; onClose: () =
   const [workOn, setWorkOn] = useState("");
   const [vocab, setVocab] = useState("");
   const [voice, setVoice] = useState<Recording | null>(null);
+  const [progress, setProgress] = useState<ProgressMark | undefined>();
+  const [engagement, setEngagement] = useState(0);
+  const [materialIds, setMaterialIds] = useState<string[]>([]);
+  // Materials to point the student at: the tutor's own, and the open library.
+  const materials = useQuery(async () => {
+    const [own, library] = await Promise.all([
+      api.materials.forOwner(item.booking.tutorId),
+      api.materials.library(),
+    ]);
+    const seen = new Set<string>();
+    return [...own, ...library].filter((material) => !seen.has(material.id) && seen.add(material.id));
+  }, [item.booking.tutorId]);
 
   const send = useAction(async () => {
     const note = voice
@@ -167,6 +228,9 @@ function WriteUpDialog({ item, onClose }: { item: PendingFeedback; onClose: () =
         .map((word) => word.trim())
         .filter(Boolean),
       voiceNoteId: note?.id,
+      progress,
+      engagement: engagement || undefined,
+      materialIds,
     });
   });
 
@@ -205,6 +269,44 @@ function WriteUpDialog({ item, onClose }: { item: PendingFeedback; onClose: () =
         <Field label="New words" htmlFor="writeup-vocab" hint="Comma separated, in script or romanised.">
           <Input id="writeup-vocab" value={vocab} onChange={(event) => setVocab(event.target.value)} placeholder="අම්මා, තාත්තා, ආච්චි" />
         </Field>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <p className="mb-2 text-sm font-medium text-ink-700">Where they are now</p>
+            <Choice options={progressOptions} value={progress} onChange={setProgress} label="Progress" />
+            <p className="mt-1.5 text-[11px] text-earth/50">The student sees this.</p>
+          </div>
+          <div>
+            <p className="mb-2 text-sm font-medium text-ink-700">How engaged were they?</p>
+            <Stars value={engagement} onChange={setEngagement} label="Engagement" size="md" />
+            <p className="mt-1.5 text-[11px] text-earth/50">Only you and the Serendib team see this.</p>
+          </div>
+        </div>
+        {(materials.data ?? []).length > 0 ? (
+          <fieldset>
+            <legend className="mb-2 text-sm font-medium text-ink-700">
+              Materials you used or recommend{" "}
+              <span className="font-normal text-ink-400">— they go to the student&rsquo;s hub</span>
+            </legend>
+            <div className="max-h-36 space-y-1.5 overflow-y-auto pr-1">
+              {(materials.data ?? []).map((material) => (
+                <label key={material.id} className="flex items-center gap-2 text-sm text-ink-700">
+                  <input
+                    type="checkbox"
+                    checked={materialIds.includes(material.id)}
+                    onChange={() =>
+                      setMaterialIds((current) =>
+                        current.includes(material.id)
+                          ? current.filter((id) => id !== material.id)
+                          : [...current, material.id],
+                      )
+                    }
+                  />
+                  {material.title}
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        ) : null}
         <VoiceRecorder value={voice} onChange={setVoice} />
         {send.error ? <Alert>{send.error}</Alert> : null}
         <div className="flex justify-end gap-2">

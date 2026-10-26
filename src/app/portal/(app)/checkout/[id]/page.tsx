@@ -82,7 +82,9 @@ function Checkout() {
     <>
       <PageHeader title={current.status === "confirmed" ? "You're booked" : "Checkout"}>
         {current.status === "confirmed"
-          ? "Payment received. Your meeting link is below and in your calendar."
+          ? current.creditId
+            ? "Booked with your free lesson — nothing to pay. Your meeting link is below and in your calendar."
+            : "Payment received. Your meeting link is below and in your calendar."
           : "Check the details, then pay securely by card."}
       </PageHeader>
 
@@ -169,8 +171,8 @@ function Summary({
         <div className="flex justify-between gap-4 border-t border-ink-900/10 pt-2 font-medium">
           <dt className="text-ink-700">Total</dt>
           <dd className="text-right text-ink-900">
-            {lkr !== null ? rupees(lkr) : money(booking.priceUsd)}
-            {lkr !== null ? (
+            {booking.creditId ? "Free lesson" : lkr !== null ? rupees(lkr) : money(booking.priceUsd)}
+            {lkr !== null && !booking.creditId ? (
               <span className="block text-xs font-normal text-ink-400">
                 ≈ {money(booking.priceUsd)}
               </span>
@@ -191,9 +193,29 @@ function PayPanel({ booking, config }: { booking: Booking; config?: PaymentsConf
   const demoPay = useAction(() => api.bookings.pay(booking.id));
   const cancel = useAction(() => api.bookings.cancel(booking.id));
   const lkr = amountFor(booking, config);
+  const credits = useQuery(() => api.requests.credits(booking.studentId), [booking.studentId]);
+  const bookWithCredit = useAction(() => api.bookings.useCredit(booking.id));
+  const freeLessons = credits.data?.available ?? 0;
 
   return (
     <Card className="p-6">
+      {freeLessons > 0 ? (
+        <div className="mb-5 rounded-lg border border-fern/25 bg-mist/60 p-4">
+          <p className="text-sm text-ink-700">
+            You have {freeLessons} free lesson{freeLessons === 1 ? "" : "s"}. Use one for this
+            booking and there is nothing to pay.
+          </p>
+          {bookWithCredit.error ? <Alert className="mt-3">{bookWithCredit.error}</Alert> : null}
+          <Button
+            variant="forest"
+            className="mt-3 w-full"
+            disabled={bookWithCredit.pending || redirecting}
+            onClick={() => void bookWithCredit.run()}
+          >
+            {bookWithCredit.pending ? "Booking…" : "Book with a free lesson"}
+          </Button>
+        </div>
+      ) : null}
       {config?.enabled ? (
         <>
           <p className="text-sm leading-relaxed text-ink-600">

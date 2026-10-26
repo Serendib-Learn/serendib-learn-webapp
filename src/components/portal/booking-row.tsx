@@ -39,6 +39,7 @@ export function BookingRow({
           {isPast(booking.startsAt) && booking.status === "confirmed" ? (
             <Badge tone="ocean">Awaiting write-up</Badge>
           ) : null}
+          {booking.creditId ? <Badge tone="jade">Free lesson</Badge> : null}
         </div>
 
         <p className="mt-2.5 font-display text-lg leading-snug text-ink-900">{booking.focus}</p>
@@ -46,10 +47,18 @@ export function BookingRow({
           {formatDateTime(booking.startsAt)} · {booking.durationMins} min
           {counterpart ? ` · with ${counterpart.name}` : ""}
         </p>
+        {booking.reschedules?.length ? (
+          <p className="mt-1 text-xs text-ink-400">
+            Moved from {formatDateTime(booking.reschedules[booking.reschedules.length - 1].from)}
+            {booking.reschedules.length > 1 ? ` (moved ${booking.reschedules.length} times)` : ""}
+          </p>
+        ) : null}
       </div>
 
       <div className="flex shrink-0 flex-col items-end gap-2">
-        <span className="text-sm font-medium text-ink-700">{money(booking.priceUsd)}</span>
+        <span className="text-sm font-medium text-ink-700">
+          {booking.creditId ? "Free" : money(booking.priceUsd)}
+        </span>
         {actions}
       </div>
     </div>

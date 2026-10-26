@@ -5,7 +5,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { AuthCard, AuthFooterLink } from "@/components/portal/auth-card";
 import { GoogleButton } from "@/components/portal/google-button";
-import { Button } from "@/components/ui/button";
+import { Button, ButtonLink } from "@/components/ui/button";
 import { Field, Input } from "@/components/ui/field";
 import { Alert, Card } from "@/components/ui/primitives";
 import { ApiError, DEMO_PASSWORD, api, demoAccounts } from "@/lib/api";
@@ -15,7 +15,18 @@ export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const { run, pending, error } = useAction(api.auth.signIn);
+  const { run, pending, error } = useAction(async (address: string, secret: string) => {
+    try {
+      return await api.auth.signIn(address, secret);
+    } catch (failure) {
+      // Signed up but never entered the code: take them to where they can.
+      if (failure instanceof ApiError && failure.code === "not_verified") {
+        router.push(`/portal/verify?email=${encodeURIComponent(address)}`);
+        return undefined;
+      }
+      throw failure;
+    }
+  });
   const [googleError, setGoogleError] = useState<string | null>(null);
   const timezone = useTimezone();
   // The seeded accounts only exist in demo mode, so only offer them then.
@@ -49,7 +60,6 @@ export default function LoginPage() {
       intro="Portal for students, families and tutors"
       footer={
         <>
-          <AuthFooterLink label="No account yet?" href="/portal/signup" cta="Create one" />
           <AuthFooterLink label="Forgotten your password?" href="/portal/forgot-password" cta="Reset it" />
           <p>
             Questions? Email{" "}
@@ -129,7 +139,11 @@ export default function LoginPage() {
           if (user) router.push("/portal");
         }}
       >
-        <Field label="Email" htmlFor="login-email">
+        <Field
+          label="Email"
+          htmlFor="login-email"
+          hint="Any email address works — Gmail, Yahoo, Outlook, iCloud or your own."
+        >
           <Input
             id="login-email"
             type="email"
@@ -163,6 +177,13 @@ export default function LoginPage() {
 
       <div className="mt-6">
         <GoogleButton text="continue_with" onCredential={signInWithGoogle} />
+      </div>
+
+      <div className="mt-6 border-t border-ink-900/8 pt-6 text-center">
+        <p className="text-sm text-ink-500">New to Serendib Learn?</p>
+        <ButtonLink href="/portal/signup" variant="secondary" className="mt-3 w-full rounded-lg">
+          Create your account
+        </ButtonLink>
       </div>
     </AuthCard>
   );
