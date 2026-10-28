@@ -116,7 +116,7 @@ async function sendVerification(email: string): Promise<void> {
   await deliver({
     to: email,
     subject: `Confirm your email — your code is ${code}`,
-    body: `Welcome to Serendib Learn.\n\nYour confirmation code is ${code}. Enter it on the verification screen to finish setting up your account.\n\nIf you did not sign up, you can ignore this.`,
+    body: `Welcome to Serendib Learn — we're so glad you're here.\n\nEnter this code on the verification screen to finish setting up your account:\n\n${code}\n\nIf you ask for a new code, this one stops working. If you didn't sign up, you can safely ignore this email.`,
     kind: "verification",
     code,
   });

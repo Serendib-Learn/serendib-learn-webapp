@@ -2,6 +2,7 @@ import { OAuth2Client } from "google-auth-library";
 import { google } from "googleapis";
 import { config } from "../config.ts";
 import { ApiError } from "./errors.ts";
+import { buildMimeMessage } from "./email-template.ts";
 
 export interface GoogleIdentity {
   /** Google's stable id for the account. Survives an email change. */
@@ -220,6 +221,8 @@ export interface SendGmailInput {
   to: string;
   subject: string;
   body: string;
+  /** The branded version (lib/email-template.ts); sent alongside the text when given. */
+  html?: string;
 }
 
 /** RFC 2047 encoding for header values outside ASCII — subjects carry an em-dash. */
@@ -239,14 +242,22 @@ export async function sendGmail(input: SendGmailInput): Promise<void> {
   oauth2Client.setCredentials({ refresh_token: input.refreshToken });
   const gmail = google.gmail({ version: "v1", auth: oauth2Client });
 
-  const raw = [
-    `To: ${input.to}`,
-    `Subject: ${encodeHeaderWord(input.subject)}`,
-    "MIME-Version: 1.0",
-    "Content-Type: text/plain; charset=utf-8",
-    "",
-    input.body,
-  ].join("\r\n");
+  const raw = input.html
+    ? buildMimeMessage({
+        to: input.to,
+        subject: input.subject,
+        encodedSubject: encodeHeaderWord(input.subject),
+        text: input.body,
+        html: input.html,
+      })
+    : [
+        `To: ${input.to}`,
+        `Subject: ${encodeHeaderWord(input.subject)}`,
+        "MIME-Version: 1.0",
+        "Content-Type: text/plain; charset=utf-8",
+        "",
+        input.body,
+      ].join("\r\n");
 
   await gmail.users.messages.send({
     userId: "me",

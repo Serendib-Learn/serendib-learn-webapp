@@ -278,6 +278,17 @@ different pieces of it:
   through — sends for real from that account afterward, on top of (not
   instead of) recording the message for the demo inbox. A failed send never
   breaks whatever called `deliver()`; it only logs.
+- **What it looks like.** Every email is written as plain text, and
+  `lib/email-template.ts` turns it into the branded HTML version (cream page,
+  forest header with the flower, Georgia headings, amber buttons). Gmail
+  receives both: a `multipart/alternative` message with the text and the HTML.
+  The layout follows a few conventions in the text: paragraphs are separated by
+  a blank line; a paragraph that is exactly the message's `code` becomes a
+  large centred code box; `"Join on Google Meet: https://…"` becomes a button
+  (short action phrases name the button, otherwise it's named after where the
+  link goes); a sentence ending in a link becomes the sentence and a button;
+  short multi-line blocks (when, how long, focus) become a details panel. So a
+  new email needs no HTML — follow those conventions and it is branded.
 
 Both connection flows are optional — nothing breaks without them, the site
 just keeps behaving exactly as the demo always did. Refresh tokens live in

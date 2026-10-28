@@ -1,4 +1,5 @@
 import { db } from "../db/database.ts";
+import { renderEmail } from "./email-template.ts";
 import { sendGmail } from "./google.ts";
 import { newId } from "./ids.ts";
 import type { MailMessage } from "../../../shared/types.ts";
@@ -29,11 +30,14 @@ export async function deliver(
   const mailer = await db().googleMailer.findById("system");
   if (mailer) {
     try {
+      // The branded HTML, with the plain text alongside (lib/email-template.ts).
+      const { html, text } = renderEmail(message);
       await sendGmail({
         refreshToken: mailer.refreshToken,
         to: message.to,
         subject: message.subject,
-        body: message.body,
+        body: text,
+        html,
       });
     } catch (error) {
       console.error(`Gmail send to ${message.to} failed:`, error);
