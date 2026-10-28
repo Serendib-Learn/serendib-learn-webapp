@@ -92,6 +92,12 @@ a manual one are warranted: extend the relevant `routes/*.test.ts` (see
    gets a collection, a seed in `server/src/seed/`, and an entry in
    `routes/content.ts`'s `specs`. ESLint blocks importing seed or server
    files from `src/`.
+6. **Destructive actions** (delete, remove, cancel, decline, disconnect,
+   take down) use `<Button variant="danger-ghost">` and ask first with
+   `useConfirm()` from `src/components/ui/confirm.tsx` — a branded dialog
+   that says what will happen, with a red confirm button. Never
+   `window.confirm`, and never red text bolted onto a `ghost` button (the
+   ghost's own text colour wins).
 
 ## Google integration
 

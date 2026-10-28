@@ -10,6 +10,7 @@ import { MaterialRatings, RateMaterialButton } from "@/components/portal/materia
 import { VoiceNotePlayer } from "@/components/portal/voice-note-player";
 import { PageHeader } from "@/components/portal/page-header";
 import { Button } from "@/components/ui/button";
+import { useConfirm } from "@/components/ui/confirm";
 import { Checkbox, Field, Input, Select, Textarea } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
 import { Alert, Badge, Card, Loading } from "@/components/ui/primitives";
@@ -140,6 +141,7 @@ function TeachingHub({ owner }: { owner: User }) {
   const move = useAction((id: string, chapterId: string) =>
     api.materials.setChapter(id, chapterId || undefined),
   );
+  const { confirm, dialog } = useConfirm();
 
   if (materials.loading || chapters.loading) return <Loading label="Opening your hub" />;
 
@@ -206,11 +208,20 @@ function TeachingHub({ owner }: { owner: User }) {
                 : `${material.assignedTo.length} assigned`}
             </Button>
             <Button
-              variant="ghost"
+              variant="danger-ghost"
               size="sm"
-              className="text-clay-600 hover:bg-clay-50"
               disabled={remove.pending}
-              onClick={() => void remove.run(material.id)}
+              onClick={async () => {
+                const yes = await confirm({
+                  title: `Delete “${material.title}”?`,
+                  message:
+                    material.assignedTo.length > 0
+                      ? `It disappears from the learning hub of the ${material.assignedTo.length} student${material.assignedTo.length === 1 ? "" : "s"} it is assigned to, along with its ratings. This cannot be undone.`
+                      : "It disappears from the learning hub, along with its ratings. This cannot be undone.",
+                  confirmLabel: "Delete material",
+                });
+                if (yes) void remove.run(material.id);
+              }}
             >
               Delete
             </Button>
@@ -237,6 +248,7 @@ function TeachingHub({ owner }: { owner: User }) {
         </section>
       ) : null}
 
+      {dialog}
       {managing ? (
         <ManageChapters chapters={chapters.data ?? []} onClose={() => setManaging(false)} />
       ) : null}
@@ -603,6 +615,7 @@ function ChapterRow({ chapter, lists }: { chapter: CourseChapter; lists: PhraseL
     }),
   );
   const remove = useAction(() => api.chapters.remove(chapter.id));
+  const { confirm, dialog } = useConfirm();
   const dirty =
     title !== chapter.title ||
     summary !== chapter.summary ||
@@ -649,17 +662,20 @@ function ChapterRow({ chapter, lists }: { chapter: CourseChapter; lists: PhraseL
         </Button>
         <Button
           size="sm"
-          variant="ghost"
-          className="text-clay-600 hover:bg-clay-50"
+          variant="danger-ghost"
           disabled={remove.pending}
-          onClick={() => {
-            if (window.confirm(`Remove "${chapter.title}"? Its materials stay, unfiled.`)) {
-              void remove.run();
-            }
+          onClick={async () => {
+            const yes = await confirm({
+              title: `Remove the chapter “${chapter.title}”?`,
+              message: "Its materials are kept, moved to “Other material” until you file them again.",
+              confirmLabel: "Remove chapter",
+            });
+            if (yes) void remove.run();
           }}
         >
           Remove
         </Button>
+        {dialog}
       </div>
       {save.error || remove.error ? (
         <p className="text-xs text-clay-600 sm:col-span-5">{save.error ?? remove.error}</p>

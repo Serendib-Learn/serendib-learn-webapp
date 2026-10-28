@@ -8,6 +8,7 @@ import { HOLIDAY_CATEGORY_LABEL, slugify } from "@/lib/content";
 import { useAction, useQuery } from "@/lib/hooks";
 import { relativeTime } from "@/lib/format";
 import { Button } from "@/components/ui/button";
+import { useConfirm } from "@/components/ui/confirm";
 import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
 import { Alert, Badge, Card, EmptyState, Loading } from "@/components/ui/primitives";
@@ -149,6 +150,7 @@ function PhraseListForm({ list, isAdmin }: { list: PhraseList; isAdmin: boolean 
     }),
   );
   const remove = useAction(() => api.content.remove("phrase-lists", list.id));
+  const { confirm, dialog } = useConfirm();
 
   const setPhrase = (index: number, patch: Partial<Phrase>) =>
     setPhrases((current) => current.map((phrase, i) => (i === index ? { ...phrase, ...patch } : phrase)));
@@ -225,18 +227,21 @@ function PhraseListForm({ list, isAdmin }: { list: PhraseList; isAdmin: boolean 
           {isAdmin ? (
             <Button
               type="button"
-              variant="ghost"
-              className="text-clay-600 hover:bg-clay-50"
+              variant="danger-ghost"
               disabled={remove.pending}
-              onClick={() => {
-                if (window.confirm(`Delete “${list.title}” and its ${list.phrases.length} phrases? Chapters linked to it stop showing it.`)) {
-                  void remove.run();
-                }
+              onClick={async () => {
+                const yes = await confirm({
+                  title: `Delete “${list.title}”?`,
+                  message: `Its ${list.phrases.length} phrases are deleted, and chapters linked to it stop showing a phrase list. This cannot be undone.`,
+                  confirmLabel: "Delete list",
+                });
+                if (yes) void remove.run();
               }}
             >
               Delete list
             </Button>
           ) : null}
+          {dialog}
           <Button type="submit" disabled={save.pending || !title.trim() || !stage.trim()}>
             {save.pending ? "Saving…" : "Save phrase list"}
           </Button>
@@ -544,6 +549,7 @@ function HolidayRow({ holiday }: { holiday: Holiday }) {
   const changed = date !== holiday.date || name !== holiday.name || category !== holiday.category || funFact !== holiday.funFact;
   const save = useAction(() => api.content.save("holidays", holiday.id, { date, name: name.trim(), category, funFact: funFact.trim() }));
   const remove = useAction(() => api.content.remove("holidays", holiday.id));
+  const { confirm, dialog } = useConfirm();
 
   return (
     <Card className="space-y-2 p-4">
@@ -563,15 +569,20 @@ function HolidayRow({ holiday }: { holiday: Holiday }) {
       <div className="flex justify-end gap-2">
         <Button
           size="sm"
-          variant="ghost"
-          className="text-clay-600 hover:bg-clay-50"
+          variant="danger-ghost"
           disabled={remove.pending}
-          onClick={() => {
-            if (window.confirm(`Remove ${holiday.name}?`)) void remove.run();
+          onClick={async () => {
+            const yes = await confirm({
+              title: `Remove ${holiday.name}?`,
+              message: `It disappears from everyone's calendar on ${holiday.date}.`,
+              confirmLabel: "Remove holiday",
+            });
+            if (yes) void remove.run();
           }}
         >
           Remove
         </Button>
+        {dialog}
         <Button size="sm" disabled={!changed || save.pending} onClick={() => void save.run()}>
           {save.pending ? "Saving…" : "Save"}
         </Button>

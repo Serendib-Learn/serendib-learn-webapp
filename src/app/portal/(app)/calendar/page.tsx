@@ -22,6 +22,7 @@ import {
 import { GoogleCalendarConnect } from "@/components/portal/google-calendar-connect";
 import { PageHeader } from "@/components/portal/page-header";
 import { Button, ButtonLink } from "@/components/ui/button";
+import { useConfirm } from "@/components/ui/confirm";
 import { Field, Input, Select } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
 import { Alert, EmptyState, Loading } from "@/components/ui/primitives";
@@ -415,6 +416,7 @@ function Schedule({ viewer }: { viewer: User }) {
   const [filter, setFilter] = useState<Filter>("upcoming");
   const [moving, setMoving] = useState<Booking | null>(null);
   const [reporting, setReporting] = useState<Booking | null>(null);
+  const { confirm, dialog } = useConfirm();
   const bookings = useQuery(() => api.bookings.forUser(userId), [userId]);
   const people = useQuery(() => api.users.directory(), []);
 
@@ -539,19 +541,23 @@ function Schedule({ viewer }: { viewer: User }) {
                     !past ? (
                       <Button
                         size="sm"
-                        variant="ghost"
-                        className="text-clay-600 hover:bg-clay-50"
+                        variant="danger-ghost"
                         disabled={cancel.pending}
-                        onClick={() => {
-                          const warning =
+                        onClick={async () => {
+                          const message =
                             booking.status !== "confirmed"
-                              ? "Cancel this booking?"
+                              ? "The hour is released for other students. Nothing has been paid yet."
                               : booking.creditId
-                                ? "Cancel this lesson? Your free lesson comes back to you."
+                                ? "Your free lesson comes back to you, to book another time."
                                 : isTutor
-                                  ? "Cancel this paid lesson? The student gets a free lesson in its place, and is emailed."
-                                  : "Cancel this paid lesson? Cancelling is not refunded — you can move it to another time for free with “Reschedule” instead.";
-                          if (window.confirm(warning)) void cancel.run(booking.id);
+                                  ? "The student is emailed and gets a free lesson in its place."
+                                  : "A paid lesson is not refunded when you cancel. You can move it to another time for free with “Reschedule” instead.";
+                          const yes = await confirm({
+                            title: booking.status === "confirmed" ? "Cancel this lesson?" : "Cancel this booking?",
+                            message,
+                            confirmLabel: booking.status === "confirmed" ? "Cancel lesson" : "Cancel booking",
+                          });
+                          if (yes) void cancel.run(booking.id);
                         }}
                       >
                         Cancel
@@ -568,6 +574,7 @@ function Schedule({ viewer }: { viewer: User }) {
       {linking ? <MeetingLinkDialog booking={linking} onClose={() => setLinking(null)} /> : null}
       {moving ? <RescheduleDialog booking={moving} viewer={viewer} onClose={() => setMoving(null)} /> : null}
       {reporting ? <MissedLessonDialog booking={reporting} onClose={() => setReporting(null)} /> : null}
+      {dialog}
     </>
   );
 }

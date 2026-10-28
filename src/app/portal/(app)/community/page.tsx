@@ -9,6 +9,7 @@ import { useAction, useQuery } from "@/lib/hooks";
 import { relativeTime } from "@/lib/format";
 import { cn } from "@/lib/cn";
 import { Button, ButtonLink } from "@/components/ui/button";
+import { useConfirm } from "@/components/ui/confirm";
 import { Input, Select } from "@/components/ui/field";
 import {
   Alert,
@@ -136,6 +137,7 @@ function ConnectButton({ person }: { person: CommunityMember }) {
   const connect = useAction(() => api.community.connect(person.id));
   const accept = useAction((id: string) => api.community.accept(id));
   const cancel = useAction((id: string) => api.community.disconnect(id));
+  const { confirm, dialog } = useConfirm();
   const connection = person.connection;
 
   if (connection?.status === "accepted") {
@@ -154,15 +156,25 @@ function ConnectButton({ person }: { person: CommunityMember }) {
   }
   if (connection?.status === "pending") {
     return (
-      <Button
-        size="sm"
-        variant="ghost"
-        disabled={cancel.pending}
-        onClick={() => void cancel.run(connection.id)}
-        title="Cancel request"
-      >
-        Request sent · cancel
-      </Button>
+      <>
+        <Button
+          size="sm"
+          variant="danger-ghost"
+          disabled={cancel.pending}
+          onClick={async () => {
+            const yes = await confirm({
+              title: "Cancel your friend request?",
+              message: `${person.name} won't see it any more. You can send another later.`,
+              confirmLabel: "Cancel request",
+            });
+            if (yes) void cancel.run(connection.id);
+          }}
+          title="Cancel request"
+        >
+          Request sent · cancel
+        </Button>
+        {dialog}
+      </>
     );
   }
   return (
@@ -250,6 +262,7 @@ function PracticePartners({ me }: { me: User }) {
 function Friends({ connections }: { connections: CommunityMember[] }) {
   const decline = useAction((id: string) => api.community.decline(id));
   const remove = useAction((id: string) => api.community.disconnect(id));
+  const { confirm, dialog } = useConfirm();
 
   const incoming = connections.filter(
     (item) => item.connection?.status === "pending" && item.connection.direction === "incoming",
@@ -270,6 +283,7 @@ function Friends({ connections }: { connections: CommunityMember[] }) {
 
   return (
     <div className="space-y-8">
+      {dialog}
       {incoming.length > 0 ? (
         <section>
           <h2 className="mb-3 text-lg">Requests for you</h2>
@@ -280,9 +294,16 @@ function Friends({ connections }: { connections: CommunityMember[] }) {
                   <ConnectButton person={person} />
                   <Button
                     size="sm"
-                    variant="ghost"
+                    variant="danger-ghost"
                     disabled={decline.pending}
-                    onClick={() => void decline.run(person.connection!.id)}
+                    onClick={async () => {
+                      const yes = await confirm({
+                        title: `Decline ${person.name}'s request?`,
+                        message: "They aren't told; the request just goes away.",
+                        confirmLabel: "Decline request",
+                      });
+                      if (yes) void decline.run(person.connection!.id);
+                    }}
                   >
                     Decline
                   </Button>
@@ -303,13 +324,15 @@ function Friends({ connections }: { connections: CommunityMember[] }) {
                   <ConnectButton person={person} />
                   <Button
                     size="sm"
-                    variant="ghost"
-                    className="text-clay-600 hover:bg-clay-50"
+                    variant="danger-ghost"
                     disabled={remove.pending}
-                    onClick={() => {
-                      if (window.confirm(`Remove ${person.name} as a practice partner?`)) {
-                        void remove.run(person.connection!.id);
-                      }
+                    onClick={async () => {
+                      const yes = await confirm({
+                        title: `Remove ${person.name} as a practice partner?`,
+                        message: "You stop being friends, so you can no longer message each other. Either of you can send a new request later.",
+                        confirmLabel: "Remove partner",
+                      });
+                      if (yes) void remove.run(person.connection!.id);
                     }}
                   >
                     Remove

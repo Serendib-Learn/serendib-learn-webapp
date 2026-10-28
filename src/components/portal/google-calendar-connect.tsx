@@ -3,6 +3,7 @@
 import { api } from "@/lib/api";
 import { useAction, useQuery } from "@/lib/hooks";
 import { buttonClasses } from "@/components/ui/button";
+import { useConfirm } from "@/components/ui/confirm";
 import { Card, Loading } from "@/components/ui/primitives";
 
 /**
@@ -14,9 +15,11 @@ import { Card, Loading } from "@/components/ui/primitives";
 export function GoogleCalendarConnect() {
   const status = useQuery(() => api.integrations.google.status(), []);
   const disconnect = useAction(() => api.integrations.google.disconnect());
+  const { confirm, dialog } = useConfirm();
 
   return (
     <Card className="p-6">
+      {dialog}
       <div className="flex items-center justify-between">
         <h2 className="text-lg">Google Calendar</h2>
       </div>
@@ -33,8 +36,15 @@ export function GoogleCalendarConnect() {
           <button
             type="button"
             disabled={disconnect.pending}
-            onClick={() => void disconnect.run()}
-            className={buttonClasses("ghost", "sm", "mt-4 text-clay-600 hover:bg-clay-50")}
+            onClick={async () => {
+                const yes = await confirm({
+                  title: "Disconnect your Google Calendar?",
+                  message: "New bookings are made on the shared Serendib calendar instead (or need a link added by hand). Existing lessons keep their links.",
+                  confirmLabel: "Disconnect calendar",
+                });
+                if (yes) void disconnect.run();
+              }}
+            className={buttonClasses("danger-ghost", "sm", "mt-4")}
           >
             Disconnect
           </button>

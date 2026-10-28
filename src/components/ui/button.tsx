@@ -1,7 +1,15 @@
 import Link from "next/link";
 import { cn } from "@/lib/cn";
 
-type Variant = "primary" | "forest" | "secondary" | "ghost" | "ghost-light" | "danger" | "saffron";
+type Variant =
+  | "primary"
+  | "forest"
+  | "secondary"
+  | "ghost"
+  | "ghost-light"
+  | "danger"
+  | "danger-ghost"
+  | "saffron";
 type Size = "sm" | "md" | "lg";
 
 // The original site's buttons: squared-off (rounded-md), flat, amber or forest.
@@ -16,6 +24,8 @@ const variants: Record<Variant, string> = {
   ghost: "text-ink-700 hover:bg-forest/6",
   "ghost-light": "text-sage hover:text-cream",
   danger: "bg-clay-500 text-white hover:bg-clay-600",
+  /** Delete, remove, cancel, disconnect: red text, quiet until hovered. Pair with useConfirm. */
+  "danger-ghost": "text-clay-600 hover:bg-clay-50 hover:text-clay-600",
 };
 
 const sizes: Record<Size, string> = {

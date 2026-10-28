@@ -1,7 +1,14 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { cn } from "@/lib/cn";
+
+/**
+ * Open dialogs, innermost last — a confirmation opened from inside another
+ * dialog (Manage chapters → Remove) sits on top, and Escape closes only it.
+ */
+const openDialogs: symbol[] = [];
 
 export function Modal({
   open,
@@ -18,11 +25,15 @@ export function Modal({
   children: React.ReactNode;
   className?: string;
 }) {
+  const self = useRef(Symbol("dialog"));
+
   useEffect(() => {
     if (!open) return;
+    const me = self.current;
+    openDialogs.push(me);
 
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape" && openDialogs[openDialogs.length - 1] === me) onClose();
     };
     document.addEventListener("keydown", onKeyDown);
     const previousOverflow = document.body.style.overflow;
@@ -31,12 +42,15 @@ export function Modal({
     return () => {
       document.removeEventListener("keydown", onKeyDown);
       document.body.style.overflow = previousOverflow;
+      openDialogs.splice(openDialogs.indexOf(me), 1);
     };
   }, [open, onClose]);
 
-  if (!open) return null;
+  if (!open || typeof document === "undefined") return null;
 
-  return (
+  // Rendered on <body>, so a dialog opened from inside another (whose
+  // animation transform would otherwise trap it) still covers the page.
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-6">
       <button
         type="button"
@@ -72,6 +86,7 @@ export function Modal({
         </button>
         {children}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

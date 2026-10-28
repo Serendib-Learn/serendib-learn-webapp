@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import { useAction, useQuery } from "@/lib/hooks";
 import { formatClock, weekdayNames } from "@/lib/format";
 import { Button } from "@/components/ui/button";
+import { useConfirm } from "@/components/ui/confirm";
 import { Field, Input, Select } from "@/components/ui/field";
 import { Alert, Card, Loading } from "@/components/ui/primitives";
 
@@ -18,9 +19,11 @@ export function AvailabilityEditor({ tutorId }: { tutorId: string }) {
     api.availability.add({ tutorId, weekday, start, end }),
   );
   const remove = useAction((id: string) => api.availability.remove(id));
+  const { confirm, dialog } = useConfirm();
 
   return (
     <Card className="p-6">
+      {dialog}
       <h2 className="text-xl">Weekly availability</h2>
       <p className="mt-1.5 text-sm leading-relaxed text-ink-500">
         Students can only book inside these blocks, split into one-hour slots. Times are in
@@ -44,11 +47,17 @@ export function AvailabilityEditor({ tutorId }: { tutorId: string }) {
                 </p>
               </div>
               <Button
-                variant="ghost"
+                variant="danger-ghost"
                 size="sm"
-                className="text-clay-600 hover:bg-clay-50"
                 disabled={remove.pending}
-                onClick={() => void remove.run(rule.id)}
+                onClick={async () => {
+                  const yes = await confirm({
+                    title: `Remove your ${weekdayNames[rule.weekday]} hours?`,
+                    message: `Students can no longer book ${formatClock(rule.start)}–${formatClock(rule.end)} on ${weekdayNames[rule.weekday]}s. Lessons already booked are not affected.`,
+                    confirmLabel: "Remove hours",
+                  });
+                  if (yes) void remove.run(rule.id);
+                }}
               >
                 Remove
               </Button>

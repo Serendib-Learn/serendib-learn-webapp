@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import { profilePhotoUrl } from "@/lib/api/public";
 import { useAction } from "@/lib/hooks";
 import { Button } from "@/components/ui/button";
+import { useConfirm } from "@/components/ui/confirm";
 import { Alert, Avatar } from "@/components/ui/primitives";
 import type { User } from "@/lib/types";
 
@@ -42,6 +43,7 @@ export function PhotoField({ user }: { user: User }) {
     api.users.uploadPhoto(user.id, await resizedJpeg(file)),
   );
   const remove = useAction(() => api.users.removePhoto(user.id));
+  const { confirm, dialog } = useConfirm();
   const busy = upload.pending || remove.pending;
 
   return (
@@ -73,10 +75,16 @@ export function PhotoField({ user }: { user: User }) {
           {photoId ? (
             <Button
               type="button"
-              variant="ghost"
+              variant="danger-ghost"
               size="sm"
               disabled={busy}
               onClick={async () => {
+                const yes = await confirm({
+                  title: "Remove this photo?",
+                  message: "The tutors page shows their character instead, until a new photo is uploaded.",
+                  confirmLabel: "Remove photo",
+                });
+                if (!yes) return;
                 const updated = await remove.run();
                 if (updated) setPhotoId(undefined);
               }}
@@ -84,6 +92,7 @@ export function PhotoField({ user }: { user: User }) {
               Remove
             </Button>
           ) : null}
+          {dialog}
         </div>
       </div>
       <p className="text-[11px] leading-relaxed text-earth/50">

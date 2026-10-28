@@ -15,6 +15,7 @@ import { GoogleSystemCalendarConnect } from "@/components/portal/google-system-c
 import { PageHeader } from "@/components/portal/page-header";
 import { ProfileEditor } from "@/components/portal/profile-editor";
 import { Modal } from "@/components/ui/modal";
+import { useConfirm } from "@/components/ui/confirm";
 import { Button } from "@/components/ui/button";
 import { Checkbox, Field, Input, Select, Textarea } from "@/components/ui/field";
 import {
@@ -164,6 +165,7 @@ function People({ me }: { me: User }) {
   );
   const remove = useAction((id: string) => api.users.remove(id));
   const markVerified = useAction((id: string) => api.users.markVerified(id));
+  const { confirm, dialog } = useConfirm();
 
   const [inviting, setInviting] = useState(false);
   const [editing, setEditing] = useState<User | null>(null);
@@ -205,7 +207,7 @@ function People({ me }: { me: User }) {
             photoUrl={person.photoId ? profilePhotoUrl(person.id, person.photoId) : undefined}
           />
 
-          <div className="min-w-0 flex-1">
+          <div className="min-w-[14rem] flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <p className="font-medium text-ink-800">{person.name}</p>
               {!person.email ? (
@@ -229,18 +231,21 @@ function People({ me }: { me: User }) {
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <Select
-              aria-label={`Role for ${person.name}`}
-              className="h-9 w-auto py-0 text-sm"
-              value={person.role}
-              disabled={person.id === me.id || person.superAdmin || setRole.pending}
-              onChange={(event) => void setRole.run(person.id, event.target.value as Role)}
-            >
-              <option value="student">Student</option>
-              <option value="tutor">Tutor</option>
-              <option value="admin">Admin</option>
-            </Select>
+          <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+            {/* A fixed width, so every row's role picker lines up. */}
+            <div className="w-32 shrink-0">
+              <Select
+                aria-label={`Role for ${person.name}`}
+                className="h-9 py-0 text-sm"
+                value={person.role}
+                disabled={person.id === me.id || person.superAdmin || setRole.pending}
+                onChange={(event) => void setRole.run(person.id, event.target.value as Role)}
+              >
+                <option value="student">Student</option>
+                <option value="tutor">Tutor</option>
+                <option value="admin">Admin</option>
+              </Select>
+            </div>
 
             {!person.email ? (
               <Button size="sm" onClick={() => setAddingEmail(person)}>
@@ -254,10 +259,14 @@ function People({ me }: { me: User }) {
                 variant="secondary"
                 disabled={markVerified.pending}
                 title="When their code never arrived and you know the address is theirs"
-                onClick={() => {
-                  if (window.confirm(`Confirm ${person.email} for ${person.name}? Only do this if you know the address is theirs.`)) {
-                    void markVerified.run(person.id);
-                  }
+                onClick={async () => {
+                  const yes = await confirm({
+                    title: `Confirm ${person.name}'s email?`,
+                    message: `Marks ${person.email} as theirs, so they can log in without the code. Only do this if you know the address is theirs.`,
+                    confirmLabel: "Mark verified",
+                    tone: "neutral",
+                  });
+                  if (yes) void markVerified.run(person.id);
                 }}
               >
                 Mark verified
@@ -285,14 +294,16 @@ function People({ me }: { me: User }) {
             </Button>
 
             <Button
-              variant="ghost"
+              variant="danger-ghost"
               size="sm"
-              className="text-clay-600 hover:bg-clay-50"
               disabled={person.id === me.id || person.superAdmin || remove.pending}
-              onClick={() => {
-                if (window.confirm(`Delete ${person.name}'s account?`)) {
-                  void remove.run(person.id);
-                }
+              onClick={async () => {
+                const yes = await confirm({
+                  title: `Delete ${person.name}'s account?`,
+                  message: `${person.name} is signed out and can no longer log in. Their bookings, messages and posts stay on record. This cannot be undone.`,
+                  confirmLabel: "Delete account",
+                });
+                if (yes) void remove.run(person.id);
               }}
             >
               Delete
@@ -300,6 +311,7 @@ function People({ me }: { me: User }) {
           </div>
         </Card>
       ))}
+      {dialog}
     </div>
   );
 }
@@ -536,6 +548,7 @@ function TutorApplicationRow({ tutor }: { tutor: User }) {
   const decide = useAction((status: "approved" | "rejected") =>
     api.users.setTutorStatus(tutor.id, status, note.trim() || undefined),
   );
+  const { confirm, dialog } = useConfirm();
 
   return (
     <Card className="p-6">
@@ -592,14 +605,24 @@ function TutorApplicationRow({ tutor }: { tutor: User }) {
         {tutor.tutorStatus !== "rejected" ? (
           <Button
             size="sm"
-            variant="secondary"
+            variant="danger-ghost"
             disabled={decide.pending}
-            onClick={() => void decide.run("rejected")}
+            onClick={async () => {
+              const yes = await confirm({
+                title: `Decline ${tutor.name}'s application?`,
+                message: note.trim()
+                  ? "They are emailed your note, and stay off the tutors page."
+                  : "They are emailed that we can't take their application forward, and stay off the tutors page. Add a note above to say more.",
+                confirmLabel: "Decline application",
+              });
+              if (yes) void decide.run("rejected");
+            }}
           >
             Decline
           </Button>
         ) : null}
       </div>
+      {dialog}
     </Card>
   );
 }
@@ -688,6 +711,7 @@ function ModerationRow({ post, author }: { post: CommunityPost; author?: User })
   const moderate = useAction((status: "approved" | "rejected") =>
     api.community.moderate(post.id, status, note.trim() || undefined),
   );
+  const { confirm, dialog } = useConfirm();
 
   return (
     <Card className="p-6">
@@ -733,13 +757,21 @@ function ModerationRow({ post, author }: { post: CommunityPost; author?: User })
         </Button>
         <Button
           size="sm"
-          variant="secondary"
+          variant="danger-ghost"
           disabled={moderate.pending}
-          onClick={() => void moderate.run("rejected")}
+          onClick={async () => {
+            const yes = await confirm({
+              title: "Reject this post?",
+              message: "It won't appear in the community. The author sees it was not approved, with your note if you wrote one.",
+              confirmLabel: "Reject post",
+            });
+            if (yes) void moderate.run("rejected");
+          }}
         >
           Reject
         </Button>
       </div>
+      {dialog}
     </Card>
   );
 }
@@ -749,16 +781,27 @@ function TakeDown({ postId }: { postId: string }) {
     api.community.moderate(postId, "rejected", "Taken down by a moderator."),
   );
 
+  const { confirm, dialog } = useConfirm();
+
   return (
-    <Button
-      variant="ghost"
-      size="sm"
-      className="text-clay-600 hover:bg-clay-50"
-      disabled={moderate.pending}
-      onClick={() => void moderate.run()}
-    >
-      Take down
-    </Button>
+    <>
+      <Button
+        variant="danger-ghost"
+        size="sm"
+        disabled={moderate.pending}
+        onClick={async () => {
+          const yes = await confirm({
+            title: "Take this post down?",
+            message: "It disappears from the community straight away, and its author sees it was taken down by a moderator.",
+            confirmLabel: "Take down",
+          });
+          if (yes) void moderate.run();
+        }}
+      >
+        Take down
+      </Button>
+      {dialog}
+    </>
   );
 }
 

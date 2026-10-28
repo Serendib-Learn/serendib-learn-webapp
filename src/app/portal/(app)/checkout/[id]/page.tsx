@@ -8,6 +8,7 @@ import { errorMessage, useAction, useQuery } from "@/lib/hooks";
 import { formatLongDate, formatTime, money, rupees } from "@/lib/format";
 import { PageHeader } from "@/components/portal/page-header";
 import { Button, ButtonLink } from "@/components/ui/button";
+import { useConfirm } from "@/components/ui/confirm";
 import { Alert, Avatar, Card, Loading, Spinner } from "@/components/ui/primitives";
 import type { Booking, PaymentsConfig, PublicProfile } from "@/lib/types";
 
@@ -192,6 +193,7 @@ function PayPanel({ booking, config }: { booking: Booking; config?: PaymentsConf
   const [error, setError] = useState<string | null>(null);
   const demoPay = useAction(() => api.bookings.pay(booking.id));
   const cancel = useAction(() => api.bookings.cancel(booking.id));
+  const { confirm, dialog } = useConfirm();
   const lkr = amountFor(booking, config);
   const credits = useQuery(() => api.requests.credits(booking.studentId), [booking.studentId]);
   const bookWithCredit = useAction(() => api.bookings.useCredit(booking.id));
@@ -266,14 +268,22 @@ function PayPanel({ booking, config }: { booking: Booking; config?: PaymentsConf
       )}
 
       <Button
-        variant="ghost"
+        variant="danger-ghost"
         size="sm"
-        className="mt-3 w-full text-clay-600 hover:bg-clay-50"
+        className="mt-3 w-full"
         disabled={cancel.pending || redirecting}
-        onClick={() => void cancel.run()}
+        onClick={async () => {
+          const yes = await confirm({
+            title: "Cancel this booking?",
+            message: "The hour is released for other students. Nothing has been charged.",
+            confirmLabel: "Cancel booking",
+          });
+          if (yes) void cancel.run();
+        }}
       >
         Cancel and release the slot
       </Button>
+      {dialog}
     </Card>
   );
 }

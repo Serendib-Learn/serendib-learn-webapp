@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import { useAction, useQuery } from "@/lib/hooks";
 import { formatDateTime, relativeTime } from "@/lib/format";
 import { Button } from "@/components/ui/button";
+import { useConfirm } from "@/components/ui/confirm";
 import { Field, Textarea } from "@/components/ui/field";
 import { Alert, Avatar, Badge, Card, EmptyState, Loading } from "@/components/ui/primitives";
 import type { MissedCause, PublicProfile, StudentRequest } from "@/lib/types";
@@ -84,6 +85,7 @@ function PendingRequest({ item, people }: { item: StudentRequest; people: Map<st
     [item.bookingId, item.studentId],
   );
   const busy = approve.pending || decline.pending;
+  const { confirm, dialog } = useConfirm();
 
   return (
     <Card className="space-y-4 p-5">
@@ -128,10 +130,16 @@ function PendingRequest({ item, people }: { item: StudentRequest; people: Map<st
       {approve.error || decline.error ? <Alert>{approve.error ?? decline.error}</Alert> : null}
       <div className="flex flex-wrap justify-end gap-2">
         <Button
-          variant="ghost"
-          className="text-clay-600 hover:bg-clay-50"
+          variant="danger-ghost"
           disabled={busy || !note.trim()}
-          onClick={() => void decline.run()}
+          onClick={async () => {
+            const yes = await confirm({
+              title: "Decline this request?",
+              message: `${student?.name ?? "The student"} is emailed your note and sees the request as not approved. No free lesson is given.`,
+              confirmLabel: "Decline request",
+            });
+            if (yes) void decline.run();
+          }}
         >
           Decline
         </Button>
@@ -139,6 +147,7 @@ function PendingRequest({ item, people }: { item: StudentRequest; people: Map<st
           {approve.pending ? "Approving…" : "Approve — give a free lesson"}
         </Button>
       </div>
+      {dialog}
     </Card>
   );
 }

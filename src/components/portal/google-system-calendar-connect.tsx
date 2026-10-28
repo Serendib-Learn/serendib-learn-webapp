@@ -4,6 +4,7 @@ import { useState } from "react";
 import { api } from "@/lib/api";
 import { useAction, useQuery } from "@/lib/hooks";
 import { buttonClasses } from "@/components/ui/button";
+import { useConfirm } from "@/components/ui/confirm";
 import { Card, Loading } from "@/components/ui/primitives";
 
 /**
@@ -14,11 +15,13 @@ import { Card, Loading } from "@/components/ui/primitives";
 export function GoogleSystemCalendarConnect() {
   const status = useQuery(() => api.integrations.google.systemCalendarStatus(), []);
   const disconnect = useAction(() => api.integrations.google.systemCalendarDisconnect());
+  const { confirm, dialog } = useConfirm();
   const test = useAction(() => api.integrations.google.testSystemCalendar());
   const [result, setResult] = useState<string | null>(null);
 
   return (
     <Card className="p-6">
+      {dialog}
       <h2 className="text-lg">Google Meet for every booking</h2>
 
       {status.loading ? (
@@ -46,8 +49,15 @@ export function GoogleSystemCalendarConnect() {
             <button
               type="button"
               disabled={disconnect.pending}
-              onClick={() => void disconnect.run()}
-              className={buttonClasses("ghost", "sm", "text-clay-600 hover:bg-clay-50")}
+              onClick={async () => {
+                const yes = await confirm({
+                  title: "Disconnect the Serendib calendar?",
+                  message: "New bookings stop getting Meet links unless their tutor has connected their own calendar. Existing lessons keep their links.",
+                  confirmLabel: "Disconnect calendar",
+                });
+                if (yes) void disconnect.run();
+              }}
+              className={buttonClasses("danger-ghost", "sm")}
             >
               Disconnect
             </button>

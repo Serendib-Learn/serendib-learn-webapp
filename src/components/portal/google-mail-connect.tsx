@@ -4,6 +4,7 @@ import { useState } from "react";
 import { api } from "@/lib/api";
 import { useAction, useQuery } from "@/lib/hooks";
 import { buttonClasses } from "@/components/ui/button";
+import { useConfirm } from "@/components/ui/confirm";
 import { Card, Loading } from "@/components/ui/primitives";
 
 /**
@@ -14,11 +15,13 @@ import { Card, Loading } from "@/components/ui/primitives";
 export function GoogleMailConnect() {
   const status = useQuery(() => api.integrations.google.mailStatus(), []);
   const disconnect = useAction(() => api.integrations.google.mailDisconnect());
+  const { confirm, dialog } = useConfirm();
   const test = useAction(() => api.integrations.google.testMail());
   const [sentTo, setSentTo] = useState<string | null>(null);
 
   return (
     <Card className="p-6">
+      {dialog}
       <h2 className="text-lg">Outgoing mail</h2>
 
       {status.loading ? (
@@ -45,8 +48,15 @@ export function GoogleMailConnect() {
             <button
               type="button"
               disabled={disconnect.pending}
-              onClick={() => void disconnect.run()}
-              className={buttonClasses("ghost", "sm", "text-clay-600 hover:bg-clay-50")}
+              onClick={async () => {
+                const yes = await confirm({
+                  title: "Disconnect Gmail?",
+                  message: "Emails stop reaching real inboxes straight away — verification codes, receipts and reminders only go to the log until you connect it again.",
+                  confirmLabel: "Disconnect Gmail",
+                });
+                if (yes) void disconnect.run();
+              }}
+              className={buttonClasses("danger-ghost", "sm")}
             >
               Disconnect
             </button>
