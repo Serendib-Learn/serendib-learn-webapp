@@ -1277,17 +1277,17 @@ Before pushing, run the four commands in `DEPLOYMENT.md` → "Local testing".
 ready; these need the owners. The *blocking* items stop real users from
 signing up, paying or getting lesson links.
 
-1. **Email (blocking).** Admin → Google → connect the Gmail sender, then
-   press its test button. Until then no verification code, receipt or
-   reminder reaches anyone.
+1. ~~**Email.**~~ **Done 28 Oct 2026:** the Gmail sender
+   (serendib.learn@gmail.com) is connected and the test email arrived.
+   The test button appears once a connection exists.
 2. **Google consent screen (blocking).** In Google Cloud → APIs &
    Services → OAuth consent screen, **publish** the app and submit it for
    verification (`calendar.events` and `gmail.send` are sensitive
    scopes). Until it is verified, people see an "unverified app" warning
    and Google caps it at 100 users.
-3. **Meet links.** Admin → Google → connect the shared Serendib calendar
-   and test it. Tutors can also connect their own under Calendar → My
-   hours.
+3. ~~**Meet links.**~~ **Done 28 Oct 2026:** the shared Serendib calendar
+   is connected, so every booking gets a Meet link. Tutors can also
+   connect their own under Calendar → My hours.
 4. **Payments (blocking for paid lessons).**
    - Get the Payments.lk account approved.
    - Register the live webhook (`https://<API>/api/payments/webhook`).

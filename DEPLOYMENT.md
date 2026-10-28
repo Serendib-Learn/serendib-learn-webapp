@@ -489,9 +489,9 @@ The site is installable like the prototype was ("Add to Home Screen" /
 - [ ] (optional) Cloudflare Turnstile site created at [dash.cloudflare.com](https://dash.cloudflare.com/?to=/:account/turnstile) if you want CAPTCHA on signup/waitlist — `TURNSTILE_SECRET_KEY` as a Cloud Run secret, `NEXT_PUBLIC_TURNSTILE_SITE_KEY` as a Vercel env var. Skipping this just means no CAPTCHA, same as local dev today.
 - [ ] Owners' super admin created (`SUPER_ADMIN_EMAIL` or `create-admin`), and any demo accounts left over from a demo-mode start deleted (step 9)
 - [x] Payments.lk sandbox profile created, `PAYMENTS_LK_SECRET_KEY` + `PAYMENTS_LK_WEBHOOK_SECRET` in Secret Manager and referenced in `deploy-backend.yml`, webhook registered (step 7) — sandbox card payment and signed webhook verified. Still to do: swap in the `sk_live_…` key (and the live webhook's secret) once Payments.lk approves the account
-- [ ] (recommended) Serendib Google account connected under Administration → Google, so every booking gets a Meet link
+- [x] Serendib Google account connected under Administration → Google, so every booking gets a Meet link — done 28 Oct 2026
 - [x] `CRON_SECRET` + the Cloud Scheduler job for lesson and feedback reminders (step 8) — set up
-- [ ] Gmail sender connected under Administration → Google and its test button pressed — without it no verification code, receipt or reminder is delivered
+- [x] Gmail sender connected under Administration → Google and its test button pressed — done 28 Oct 2026 (serendib.learn@gmail.com)
 - [ ] Google OAuth consent screen **published** and submitted for verification (sensitive scopes: `calendar.events`, `gmail.send`)
 - [ ] Terms of service and a refund/cancellation policy written and linked (payment providers expect them), privacy policy wording confirmed
 - [ ] Real tutors invited or approved, with their profiles, rates and weekly hours filled in
