@@ -708,8 +708,9 @@ export const httpBackend: Backend = {
         return request<GoogleCalendarStatus>("/integrations/google/status");
       },
 
-      connectUrl() {
-        return url("/integrations/google/connect");
+      async connectUrl() {
+        const { url: consent } = await request<{ url: string }>("/integrations/google/connect", { query: { format: "json" } });
+        return consent;
       },
 
       disconnect() {
@@ -720,8 +721,9 @@ export const httpBackend: Backend = {
         return request<GoogleCalendarStatus>("/integrations/google/mail/status");
       },
 
-      mailConnectUrl() {
-        return url("/integrations/google/mail/connect");
+      async mailConnectUrl() {
+        const { url: consent } = await request<{ url: string }>("/integrations/google/mail/connect", { query: { format: "json" } });
+        return consent;
       },
 
       mailDisconnect() {
@@ -732,8 +734,9 @@ export const httpBackend: Backend = {
         return request<GoogleCalendarStatus>("/integrations/google/system-calendar/status");
       },
 
-      systemCalendarConnectUrl() {
-        return url("/integrations/google/system-calendar/connect");
+      async systemCalendarConnectUrl() {
+        const { url: consent } = await request<{ url: string }>("/integrations/google/system-calendar/connect", { query: { format: "json" } });
+        return consent;
       },
 
       systemCalendarDisconnect() {

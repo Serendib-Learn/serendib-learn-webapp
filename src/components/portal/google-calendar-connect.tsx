@@ -4,6 +4,7 @@ import { api } from "@/lib/api";
 import { useAction, useQuery } from "@/lib/hooks";
 import { buttonClasses } from "@/components/ui/button";
 import { useConfirm } from "@/components/ui/confirm";
+import { GoogleConnectButton } from "./google-connect-button";
 import { Card, Loading } from "@/components/ui/primitives";
 
 /**
@@ -58,9 +59,9 @@ export function GoogleCalendarConnect() {
             Connect your Google account so confirmed bookings create a real Calendar event
             with a Google Meet link, sent to you and your student automatically.
           </p>
-          <a href={api.integrations.google.connectUrl()} className={buttonClasses("secondary", "sm", "mt-4")}>
+          <GoogleConnectButton getUrl={api.integrations.google.connectUrl} className="mt-4">
             Connect Google Calendar
-          </a>
+          </GoogleConnectButton>
         </>
       )}
     </Card>

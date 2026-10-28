@@ -306,8 +306,11 @@ export interface Backend {
   integrations: {
     google: {
       status(): Promise<GoogleCalendarStatus>;
-      /** Full-page navigation target, not a fetch — Google's consent screen is not an XHR. */
-      connectUrl(): string;
+      /**
+       * Google's consent screen URL, fetched in the background (where the
+       * session cookie works in every browser); then send the browser there.
+       */
+      connectUrl(): Promise<string>;
       disconnect(): Promise<void>;
 
       /**
@@ -315,7 +318,7 @@ export interface Backend {
        * admin-only, separate from any tutor's own Calendar connection.
        */
       mailStatus(): Promise<GoogleCalendarStatus>;
-      mailConnectUrl(): string;
+      mailConnectUrl(): Promise<string>;
       mailDisconnect(): Promise<void>;
 
       /**
@@ -323,7 +326,7 @@ export interface Backend {
        * for any booking whose tutor has not connected their own calendar.
        */
       systemCalendarStatus(): Promise<GoogleCalendarStatus>;
-      systemCalendarConnectUrl(): string;
+      systemCalendarConnectUrl(): Promise<string>;
       systemCalendarDisconnect(): Promise<void>;
 
       /** Sends a real email through the connected Gmail account, to you. */

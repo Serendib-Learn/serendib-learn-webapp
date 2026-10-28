@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import { useAction, useQuery } from "@/lib/hooks";
 import { buttonClasses } from "@/components/ui/button";
 import { useConfirm } from "@/components/ui/confirm";
+import { GoogleConnectButton } from "./google-connect-button";
 import { Card, Loading } from "@/components/ui/primitives";
 
 /**
@@ -75,12 +76,9 @@ export function GoogleMailConnect() {
             Not connected — no email reaches a real inbox: not verification codes, receipts
             or lesson reminders. Connect the Serendib Google account to send them over Gmail.
           </p>
-          <a
-            href={api.integrations.google.mailConnectUrl()}
-            className={buttonClasses("secondary", "sm", "mt-4")}
-          >
+          <GoogleConnectButton getUrl={api.integrations.google.mailConnectUrl} className="mt-4">
             Connect Gmail
-          </a>
+          </GoogleConnectButton>
         </>
       )}
     </Card>

@@ -1,4 +1,4 @@
-import { Router } from "express";
+import { Router, type Request, type Response } from "express";
 import { config } from "../config.ts";
 import { db, SYSTEM_CALENDAR_ID } from "../db/database.ts";
 import { ApiError, wrap } from "../lib/errors.ts";
@@ -17,6 +17,19 @@ import { requireAdmin, requireAuth, requireUser } from "../lib/sessions.ts";
 import type { GoogleCalendarStatus } from "../../../shared/types.ts";
 
 export const integrationsRouter = Router();
+
+/**
+ * Hands over Google's consent screen. The portal asks with ?format=json, in
+ * the background, and then sends the browser to Google itself: a browser
+ * that keeps the API's cookie for background requests only (Brave, Safari,
+ * Chrome with third-party cookies off — the site and the API are different
+ * domains) would arrive here logged out if it navigated to this URL. A plain
+ * visit still gets the redirect.
+ */
+function sendToGoogle(request: Request, response: Response, url: string) {
+  if (request.query.format === "json") response.json({ url });
+  else response.redirect(url);
+}
 
 /** How long a connect attempt has to finish before its state token expires. */
 const STATE_TTL_MS = 10 * 60 * 1000;
@@ -68,7 +81,7 @@ integrationsRouter.get(
       createdAt: nowIso(),
     });
 
-    response.redirect(googleCalendarAuthUrl(state));
+    sendToGoogle(request, response, googleCalendarAuthUrl(state));
   }),
 );
 
@@ -111,7 +124,7 @@ integrationsRouter.get(
       createdAt: nowIso(),
     });
 
-    response.redirect(googleMailAuthUrl(state));
+    sendToGoogle(request, response, googleMailAuthUrl(state));
   }),
 );
 
@@ -156,7 +169,7 @@ integrationsRouter.get(
       createdAt: nowIso(),
     });
 
-    response.redirect(googleCalendarAuthUrl(state));
+    sendToGoogle(request, response, googleCalendarAuthUrl(state));
   }),
 );
 

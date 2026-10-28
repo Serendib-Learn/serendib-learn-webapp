@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import { useAction, useQuery } from "@/lib/hooks";
 import { buttonClasses } from "@/components/ui/button";
 import { useConfirm } from "@/components/ui/confirm";
+import { GoogleConnectButton } from "./google-connect-button";
 import { Card, Loading } from "@/components/ui/primitives";
 
 /**
@@ -81,12 +82,9 @@ export function GoogleSystemCalendarConnect() {
             tutor adds one by hand. Connect the Serendib Google account here and every booking
             gets a Meet link automatically.
           </p>
-          <a
-            href={api.integrations.google.systemCalendarConnectUrl()}
-            className={buttonClasses("secondary", "sm", "mt-4")}
-          >
+          <GoogleConnectButton getUrl={api.integrations.google.systemCalendarConnectUrl} className="mt-4">
             Connect the Serendib calendar
-          </a>
+          </GoogleConnectButton>
         </>
       )}
     </Card>
