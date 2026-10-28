@@ -35,7 +35,7 @@ export function Header() {
   const portal = { href: user ? "/portal" : "/portal/login", label: "Portal" };
 
   return (
-    <header className="sticky top-0 z-50 border-b border-white/5 bg-forest print:hidden">
+    <header className="sticky top-0 z-50 bg-forest print:hidden">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
         <Logo />
 

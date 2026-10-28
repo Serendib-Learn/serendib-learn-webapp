@@ -10,9 +10,14 @@ import { AraliyaFlower } from "@/components/site/araliya-flower";
 
 function Hero() {
   return (
-    <section id="top" className="relative scroll-mt-16 overflow-hidden bg-forest">
+    // At least a full screen of green below the 4rem header, content centred,
+    // so the white "About us" section never shows on the first screen.
+    <section
+      id="top"
+      className="relative flex min-h-[calc(100svh-4rem)] scroll-mt-16 items-center overflow-hidden bg-forest"
+    >
       <AraliyaFlower className="absolute -right-24 -bottom-24 hidden h-[520px] w-[520px] opacity-[0.06] md:block" />
-      <div className="relative mx-auto max-w-4xl px-6 py-24 text-center md:py-32">
+      <div className="relative mx-auto w-full max-w-4xl px-6 py-24 text-center md:py-32">
         <p className="label-eyebrow mb-5">&nbsp;TUTORS FOR SRI LANKANS WHEREVER THEY CALL HOME&nbsp;</p>
         <h1 className="font-display text-4xl leading-[1.1] tracking-tight text-cream md:text-6xl">
           The language you speak with your grandmother is worth fighting for.
