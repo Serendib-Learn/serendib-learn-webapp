@@ -1,4 +1,4 @@
-import type { PublicTutor } from "@/lib/types";
+import type { ContentKind, ContentKinds, PublicTutor } from "@/lib/types";
 
 /**
  * Server-side reads for the public marketing pages, which render on the
@@ -11,6 +11,36 @@ const BASE = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000").replac
 /** Where a tutor's photo is served from; `photoId` versions it, so a new upload is never cached stale. */
 export function profilePhotoUrl(userId: string, photoId: string): string {
   return `${BASE}/api/profile-photos/${userId}?v=${encodeURIComponent(photoId)}`;
+}
+
+/**
+ * Teaching content for a server-rendered public page (the alphabet sheet,
+ * the games). Empty when the API is unreachable, like the tutor roster.
+ */
+export async function fetchContent<K extends ContentKind>(kind: K): Promise<ContentKinds[K][]> {
+  try {
+    const response = await fetch(`${BASE}/api/content/${kind}`, {
+      next: { revalidate: TUTOR_REVALIDATE_SECONDS },
+    });
+    if (!response.ok) return [];
+    return (await response.json()) as ContentKinds[K][];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * The phrase lists as the (parked) language game shows them: one stage's
+ * lists in order, with the stage's name and description — all from the API.
+ */
+export async function fetchPhrasePhase() {
+  const [lists, stages] = await Promise.all([fetchContent("phrase-lists"), fetchContent("stages")]);
+  const name = lists[0]?.stage ?? "Phrase lists";
+  return {
+    name,
+    blurb: stages.find((stage) => stage.name === name)?.description ?? "",
+    chapters: lists.filter((list) => list.stage === name).sort((a, b) => a.number - b.number),
+  };
 }
 
 /** How often a public page re-reads the tutor roster, in seconds. */

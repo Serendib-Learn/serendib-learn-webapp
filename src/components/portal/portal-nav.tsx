@@ -1,4 +1,5 @@
 import {
+  BookOpenText,
   Calendar,
   ClipboardList,
   FolderOpen,
@@ -77,6 +78,14 @@ export const portalSections: PortalSection[] = [
     tagline: "Quick questions between lessons - scheduling, a word you forgot, a link you promised.",
     Icon: Mail,
     roles: everyone,
+  },
+  {
+    href: "/portal/content",
+    label: "Content",
+    description: "Phrase lists, alphabet sheets, holidays",
+    tagline: "The course's teaching content — edit it here and every page uses it.",
+    Icon: BookOpenText,
+    roles: ["tutor", "admin"],
   },
   {
     href: "/portal/profile",

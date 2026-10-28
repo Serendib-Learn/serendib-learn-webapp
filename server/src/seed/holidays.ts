@@ -1,15 +1,13 @@
-// From the original serendib.learn site (src/lib/portal/holidays.ts), unchanged.
-export interface Holiday {
-  date: string; // ISO yyyy-mm-dd
-  name: string;
-  category: "poya" | "national" | "hindu" | "muslim" | "christian";
-  funFact: string;
-}
+import type { Holiday } from "../../../shared/types.ts";
 
-// Sri Lanka's gazetted public holidays for 2026. Poya (full moon) dates and
-// lunar-calendar Muslim observances are set annually by the relevant
-// authorities and may shift slightly if the official gazette differs - // worth a quick check each year rather than assuming this list is evergreen.
-export const HOLIDAYS_2026: Holiday[] = [
+/**
+ * Sri Lanka's gazetted public holidays for 2026, from the original
+ * serendib.learn site — what a fresh database starts with. Poya (full moon)
+ * dates and lunar-calendar Muslim observances are set each year, so admins
+ * update them in the portal's content editor. Only read to fill an empty
+ * `holidays` collection; the site never imports this file.
+ */
+const holidays2026: Omit<Holiday, "id" | "updatedAt">[] = [
   {
     date: "2026-01-03",
     name: "Duruthu Full Moon Poya Day",
@@ -180,24 +178,7 @@ export const HOLIDAYS_2026: Holiday[] = [
   },
 ];
 
-export function upcomingHolidays(from: Date = new Date(), count = 5): Holiday[] {
-  const fromISO = from.toISOString().slice(0, 10);
-  return HOLIDAYS_2026.filter((h) => h.date >= fromISO).slice(0, count);
-}
-
-export function holidaysByMonth(): Record<string, Holiday[]> {
-  const out: Record<string, Holiday[]> = {};
-  for (const h of HOLIDAYS_2026) {
-    const month = h.date.slice(0, 7);
-    (out[month] ??= []).push(h);
-  }
-  return out;
-}
-
-export const CATEGORY_LABEL: Record<Holiday["category"], string> = {
-  poya: "Poya day",
-  national: "National",
-  hindu: "Hindu",
-  muslim: "Muslim",
-  christian: "Christian",
-};
+export const holidaySeed: Omit<Holiday, "updatedAt">[] = holidays2026.map((holiday) => ({
+  ...holiday,
+  id: `hol_${holiday.date}_${holiday.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")}`,
+}));

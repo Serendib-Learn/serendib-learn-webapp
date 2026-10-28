@@ -8,10 +8,10 @@ import { useAuth } from "@/lib/auth";
 import { useAction, useQuery } from "@/lib/hooks";
 import { cn } from "@/lib/cn";
 import { formatTime, isPast, money } from "@/lib/format";
-import { CATEGORY_LABEL } from "@/data/holidays";
+import { HOLIDAY_CATEGORY_LABEL as CATEGORY_LABEL } from "@/lib/content";
 import { AvailabilityEditor } from "@/components/portal/availability-editor";
 import { HolidaysPanel } from "@/components/portal/holidays-panel";
-import { HOLIDAY_BY_DATE, MonthCalendar, toISODate, type DayMarks } from "@/components/portal/month-calendar";
+import { MonthCalendar, toISODate, type DayMarks } from "@/components/portal/month-calendar";
 import { BookingRow } from "@/components/portal/booking-row";
 import {
   FreeLessonsPanel,
@@ -96,14 +96,6 @@ function Calendar() {
   );
 }
 
-const focusIdeas = [
-  "Survival phrases for a Colombo trip",
-  "Greetings and family words",
-  "Reading the Sinhala alphabet",
-  "Tamil pronunciation drill",
-  "Talking to relatives on the phone",
-];
-
 /**
  * The original site's calendar: a month on the left, the chosen day and the
  * Sri Lankan holidays on the right. Days show dots for open hours (students),
@@ -121,6 +113,13 @@ function CalendarWorkspace({ user }: { user: User }) {
 
   const bookings = useQuery(() => api.bookings.forUser(user.id), [user.id]);
   const people = useQuery(() => api.users.directory(), []);
+  // Holidays and lesson ideas come from the database, never the code.
+  const holidays = useQuery(() => api.content.list("holidays"), []);
+  const chapters = useQuery(() => (isStudent ? api.chapters.list() : Promise.resolve([])), [isStudent]);
+  const holidayByDate = new Map((holidays.data ?? []).map((holiday) => [holiday.date, holiday]));
+  const focusIdeas = [...(chapters.data ?? [])]
+    .sort((a, b) => a.order - b.order)
+    .map((chapter) => chapter.title);
   // Bookable only: a tutor listed before they have an account is on the
   // tutors page, but has no hours to book yet.
   const tutors = useQuery(
@@ -156,7 +155,7 @@ function CalendarWorkspace({ user }: { user: User }) {
   const daySlots = (slots.data ?? [])
     .filter((slot) => toISODate(new Date(slot.startsAt)) === selected)
     .sort((a, b) => a.startsAt.localeCompare(b.startsAt));
-  const holiday = HOLIDAY_BY_DATE.get(selected);
+  const holiday = holidayByDate.get(selected);
 
   return (
     <div className="grid items-start gap-6 lg:grid-cols-[320px_1fr]">
@@ -167,6 +166,7 @@ function CalendarWorkspace({ user }: { user: User }) {
           todayISO={todayISO}
           marks={marks}
           onSelect={setSelected}
+          holidays={holidayByDate}
           onPrev={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1))}
           onNext={() => setCursor(new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1))}
           onToday={() => {
@@ -245,6 +245,7 @@ function CalendarWorkspace({ user }: { user: User }) {
                   tutor={tutorsById.get(slot.tutorId)}
                   student={user}
                   freeLessons={credits.data ?? 0}
+                  focusIdeas={focusIdeas}
                 />
               ))}
             </ul>
@@ -257,7 +258,7 @@ function CalendarWorkspace({ user }: { user: User }) {
           ) : null}
         </div>
 
-        <HolidaysPanel />
+        <HolidaysPanel holidays={holidays.data ?? []} />
       </div>
     </div>
   );
@@ -275,12 +276,15 @@ function OpenSlot({
   tutor,
   student,
   freeLessons,
+  focusIdeas,
 }: {
   slot: Slot;
   tutor?: PublicTutor;
   student: User;
   /** Free lessons the student can book this hour with instead of paying. */
   freeLessons: number;
+  /** Suggestions for what the lesson should cover: the course's chapter titles. */
+  focusIdeas: string[];
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -288,7 +292,7 @@ function OpenSlot({
   const [language, setLanguage] = useState<LanguageCode>(
     languages.includes(student.languages[0]) ? student.languages[0] : languages[0],
   );
-  const [focus, setFocus] = useState(focusIdeas[0]);
+  const [focus, setFocus] = useState("");
   const create = useAction(() =>
     api.bookings.create({
       tutorId: slot.tutorId,
@@ -326,7 +330,10 @@ function OpenSlot({
           <span className="rounded-full bg-mist px-2 py-1 text-[10px] text-fern">Open</span>
           <button
             type="button"
-            onClick={() => setOpen((value) => !value)}
+            onClick={() => {
+              if (!focus && focusIdeas[0]) setFocus(focusIdeas[0]);
+              setOpen((value) => !value);
+            }}
             className="text-xs font-medium whitespace-nowrap text-amber-spice hover:underline"
           >
             Book

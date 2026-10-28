@@ -9,8 +9,10 @@ import { formatDate, formatDateTime, isPast, relativeTime } from "@/lib/format";
 import { ButtonLink } from "@/components/ui/button";
 // GAMES-HIDDEN: add Progress back to this import when the games progress card returns.
 import { Badge, Card, EmptyState, Loading, Stat } from "@/components/ui/primitives";
-// GAMES-HIDDEN: used by the games progress card below.
-// import { getChapter, phaseOne } from "@/data/vocabulary";
+// GAMES-HIDDEN: the games progress card below reads the phrase lists from the API:
+//   const lists = useQuery(() => api.content.list("phrase-lists"), []);
+//   const getChapter = (id: string) => lists.data?.find((list) => list.id === id);
+//   const phaseOne = { chapters: lists.data ?? [] };
 import type { User } from "@/lib/types";
 
 export function StudentDashboard({ user }: { user: User }) {

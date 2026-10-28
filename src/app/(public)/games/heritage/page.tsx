@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { HeritageExplorer } from "@/components/games/heritage-explorer";
 import { Badge } from "@/components/ui/primitives";
-import { heritageSites, meltingPotSites } from "@/data/heritage";
+import { fetchContent } from "@/lib/api/public";
 
 export const metadata: Metadata = {
   title: "Explore Heritage",
@@ -9,7 +9,11 @@ export const metadata: Metadata = {
     "Sri Lanka's heritage sites, from Sigiriya and Anuradhapura to Galle Face Green and the streets of Pettah — and why Colombo is a melting pot.",
 };
 
-export default function HeritagePage() {
+export const revalidate = 60;
+
+export default async function HeritagePage() {
+  const heritageSites = await fetchContent("heritage");
+  const meltingPotSites = heritageSites.filter((site) => site.meltingPot);
   const colombo = heritageSites.filter((site) => site.region === "Colombo");
 
   return (
@@ -43,7 +47,7 @@ export default function HeritagePage() {
       </section>
 
       <section className="mx-auto max-w-6xl px-5 py-16 sm:px-8">
-        <HeritageExplorer />
+        <HeritageExplorer sites={heritageSites} />
       </section>
     </>
   );

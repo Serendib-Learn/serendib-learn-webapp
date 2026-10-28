@@ -19,7 +19,7 @@ and stay the source of truth for step-by-step setup.
 ## Contents
 
 1. [The product](#1-the-product)
-2. [Who uses it](#2-who-uses-it)
+2. [Users, access and user flows](#2-users-access-and-user-flows)
 3. [Design](#3-design)
 4. [Architecture](#4-architecture)
 5. [The frontend](#5-the-frontend)
@@ -73,27 +73,235 @@ prototype's look on purpose (see [Design](#3-design)).
 
 ---
 
-## 2. Who uses it
+## 2. Users, access and user flows
 
-| Role | How they arrive | What they can do |
+### 2.1 Types of user
+
+Everyone is one of five roles. Students and tutors also pass through a few
+states on the way to full access.
+
+| Type | How they get here | In one line |
 | --- | --- | --- |
-| **Visitor** | The public site | Read the site, browse tutors, use the alphabet sheet, join the waitlist |
-| **Student** | `/portal/signup` | Book and pay for lessons, get materials and homework, give lesson feedback, join the community once vetted, message tutors and friends |
-| **Tutor** | `/portal/signup?role=tutor` (then approved), or an admin invite | Publish weekly hours, run lessons, connect Google Calendar, write up lessons, assign materials and homework, track student progress, record alphabet audio |
-| **Admin** | Promoted by another admin, or invited | Everything above, plus People, Tutor applications, Feedback, Moderation, Waitlist, Google connections and the Audit log |
-| **Super admin** | `SUPER_ADMIN_EMAIL` or `npm run create-admin` | An admin who cannot be demoted or deleted from the admin area, so the owners can never be locked out |
+| **Visitor** | Lands on the public site; no account | Reads about Serendib, browses tutors, uses the alphabet sheet, registers interest |
+| **Student — unverified** | Signed up at `/portal/signup`, has not entered the email code yet | Cannot log in yet; is sent to the verify page |
+| **Student — verified** | Entered the code (or used Google, or an admin pressed **Mark verified**) | Books and pays for lessons, asks for a free session; not yet in the community directory |
+| **Student — member (vetted)** | Their first lesson is paid for (or booked with a free lesson) | Everything a student can do, including the vetted community and practice partners |
+| **Tutor — applicant** | Signed up at `/portal/signup?role=tutor` | Can log in and fill in a profile; not listed, not bookable, cannot edit course content |
+| **Tutor — not approved** | An admin declined the application | Same as an applicant, and told why by email |
+| **Tutor — listed, no email yet** | An admin listed them without an address | On the public Tutors page with profile and photo; cannot log in, cannot be booked or messaged |
+| **Tutor — approved** | An admin approved them, or invited them | Listed and bookable; teaches, writes up lessons, sets work, edits phrase lists and the alphabet |
+| **Admin** | Promoted by another admin, or invited | Runs the site: people, requests, moderation, content, Google, everything a tutor and student can see |
+| **Super admin** | `SUPER_ADMIN_EMAIL` (or `npm run create-admin`) | An admin who cannot be demoted or deleted from the admin area, so the owners can never be locked out |
 
-**Account states:**
+**Account states, in the data:** `verified` (email confirmed);
+`membership` (`none` / `active`, active after the first paid or free
+booking); `tutorStatus` (`pending` / `approved` / `rejected`; none counts as
+approved); `email: ""` (a listed tutor not yet invited); `superAdmin`.
+*Vetted* = verified, and an active member, an approved tutor or an admin.
 
-- **Verified:** the email was confirmed with a six-digit code, or the
-  account was created through Google or an invite.
-- **Membership** (`none` / `active`): becomes `active` with the first
-  paid booking.
-- **Tutor status** (`pending` / `approved` / `rejected`): only approved
-  tutors are listed and bookable. A tutor with no status predates the
-  approval process and counts as approved.
-- **Vetted:** verified, and an active member, an approved tutor or an
-  admin. Only vetted members appear in the community directory.
+### 2.2 Who can do what
+
+The API enforces every row below; the portal only hides what a role cannot
+use. ✓ = yes, — = no, *own* = only their own.
+
+| Area | Action | Visitor | Student | Tutor (approved) | Admin |
+| --- | --- | --- | --- | --- | --- |
+| **Public site** | Home, How it works, Tutors, Alphabet sheet, Privacy, waitlist | ✓ | ✓ | ✓ | ✓ |
+| **Account** | Sign up with any email, verify, log in, Google sign-in, reset password | ✓ | ✓ | ✓ | ✓ |
+| | Edit own profile and character | — | ✓ | ✓ | ✓ |
+| | Rate, years teaching, specialties, photo | — | — | ✓ *own* | ✓ any tutor |
+| | Read someone's full account (email) | — | *own* | *own* + own students | ✓ |
+| **Lessons** | Publish weekly teaching hours | — | — | ✓ *own* | ✓ any tutor |
+| | Book and pay for a lesson | — | ✓ | — | ✓ for a student |
+| | Book with a free lesson | — | ✓ | — | ✓ for a student |
+| | Reschedule (free) | — | ✓ ≥24h before, to an open hour | ✓ any time before it starts | ✓ |
+| | Cancel | — | ✓ (no refund if paid) | ✓ (student gets a free lesson) | ✓ (student gets a free lesson) |
+| | Add / change the meeting link, mark complete | — | — | ✓ *own lessons* | ✓ |
+| | Join the Google Meet | — | ✓ | ✓ | — |
+| **Help** | Ask for a free session, report a missed lesson | — | ✓ | — | — |
+| | Approve or decline those requests | — | — | — | ✓ |
+| **Feedback** | Rate a lesson (stars, pace, materials, what next, voice note) | — | ✓ *own lessons* | — | reads all |
+| | Write up a lesson (progress, engagement, materials used) | — | — | ✓ *own lessons* | reads all |
+| | See the engagement score | — | — | ✓ | ✓ |
+| | Rate a material | — | ✓ (helpful? level?) | ✓ shared library (works in lessons? suggestion) | reads all |
+| **Learning** | See materials assigned to them and the open library | — | ✓ | ✓ | ✓ |
+| | Add, file and assign materials | — | — | ✓ *own students* | ✓ |
+| | Set and mark homework | — | submits *own* | ✓ *own students* | ✓ |
+| | See a student's progress | — | *own* | ✓ *own students* | ✓ |
+| **Course content** | Read phrase lists, alphabet, holidays, stages | ✓ | ✓ | ✓ | ✓ |
+| | Edit phrase lists and alphabet sheets | — | — | ✓ | ✓ |
+| | Add / remove phrase lists; holidays; stage descriptions | — | — | — | ✓ |
+| | Manage course chapters | — | — | — | ✓ |
+| | Record alphabet pronunciations | — | — | ✓ | ✓ |
+| **Community** | Read and post stories (posts are moderated) | — | ✓ members | ✓ | ✓ |
+| | Practice partners and friend requests | — | ✓ members | — | — |
+| | Message | — | own tutors + friends | own students | anyone |
+| | Moderate posts | — | — | — | ✓ |
+| **Admin** | People: roles, membership, invite, list tutor without email, Mark verified, delete | — | — | — | ✓ (not super admins) |
+| | Tutor applications, Requests, Feedback, Waitlist, Google, Audit log | — | — | — | ✓ |
+
+Applicant and not-approved tutors, and listed tutors without an email, get
+none of the tutor rows. Unverified students cannot log in at all.
+
+### 2.3 User flows
+
+#### Visitor → student
+
+1. Lands on the home page (from search, Instagram or a link) and reads
+   *About us* and *Why families choose Serendib*.
+2. Browses **Tutors** (photos, bios, languages) and the free **Alphabet
+   sheet**, with audio.
+3. Either **Joins the waitlist** (name, email, language, level, reason),
+   which goes to Admin → Waitlist, or presses **Portal → Create your
+   account**.
+4. Signs up with any email address (Gmail, Yahoo, Outlook, iCloud…), a
+   password, the language(s) they want, and a character. Or uses
+   **Continue with Google**, which skips the code.
+5. Gets a six-digit code by email and enters it at `/portal/verify`. If it
+   doesn't arrive: check spam, **Send me a new code**, or email us and an
+   admin presses **Mark verified**.
+6. Lands on the portal home (*Welcome back*).
+
+#### Student: book and pay for a lesson
+
+1. **Calendar** shows a month with dots for open hours, their own lessons
+   and Sri Lankan holidays. They pick a day, optionally filtering by tutor.
+2. On an open hour, **Book** → choose the language and what it should cover
+   (suggestions come from the course chapters).
+3. **Continue to payment** holds the hour and opens checkout. They pay by
+   card on Payments.lk (rupees, converted from the tutor's USD rate). Or
+   **Book with a free lesson** if they have one: no payment.
+4. Back on Serendib, the booking confirms. They get a receipt, a Google
+   Calendar invite with the **Meet** link (when Google is connected), and
+   reminders a day and an hour before.
+5. At lesson time: **Join link** in the calendar, the email or the
+   Calendar invite.
+6. If the checkout is left unpaid, the hour is released after 30 minutes
+   and they are emailed.
+
+#### Student: change of plans
+
+- **Move a lesson** (free): Your sessions → **Reschedule** → pick another
+  of the tutor's open hours. This works up to 24 hours before; the tutor is
+  emailed and the Meet link moves too.
+- **Later than 24 hours:** message the tutor, or, once the time has passed,
+  **Report missed lesson**.
+- **Cancel:** possible, but a paid lesson isn't refunded (the dialog
+  suggests rescheduling). If the *tutor* cancels, the student automatically
+  gets a free lesson.
+
+#### Student: free lessons and help
+
+1. Calendar → **Free lessons & help** → **Ask for a free session**, with a
+   sentence on why. One request can wait at a time.
+2. Or on a past lesson, **Report missed lesson**: what happened (tutor
+   didn't come, technical problems, couldn't make it, other) and a few
+   words. Up to 30 days afterwards.
+3. An admin decides. The student is emailed, and the panel shows
+   **Approved** or **Not approved** with the admin's note.
+4. An approval adds a free lesson. **Book with a free lesson** appears on
+   every open hour and at checkout.
+
+#### Student: after the lesson
+
+1. When the lesson ends, a banner on every portal page asks **How was your
+   lesson?** Email reminders follow at the end of class and a day later.
+2. They rate the lesson (1–5) and the pace, rate the materials if any were
+   used, say what they want next time, and can add a comment or a voice
+   note.
+3. The tutor's write-up appears in **Learning hub → Lesson notes**: what
+   was covered, went well, work on, new words, *where they are now*
+   (progress) and the lesson's materials, which are already in their
+   folders.
+4. They do any **Homework** the tutor sets and submit it; the tutor marks
+   it with feedback and a score.
+5. In the learning hub they open materials, read each chapter's phrase
+   list, and **Rate this** on any material (helpful? right level?).
+
+#### Student: community
+
+1. After the first paid or free lesson, they become a **member**: the
+   community page opens fully.
+2. They read and share stories, reviews, ideas and photos. New posts wait
+   for an admin's approval.
+3. **Practice partners** lists other vetted learners of the same language
+   (they can opt out in Profile). They send a friend request; once it is
+   accepted, they can message each other. They can always message their
+   own tutors.
+
+#### Tutor: joining
+
+- **Applying:** `/portal/signup?role=tutor` with a short application
+  (headline, bio, home town, years teaching), then verify the email. Admins
+  are emailed. The tutor stays unlisted until an admin approves, then is
+  emailed.
+- **Invited:** an admin adds them from Admin → People, already approved.
+  They get an email to set a password (valid for 7 days).
+- **Listed before they have an account:** an admin can list a tutor with
+  no email, so the profile shows on the Tutors page. **Add email &
+  invite** later sends the invitation.
+
+#### Tutor: setting up
+
+1. **Profile:** headline, bio, home town, years teaching, hourly rate
+   (USD), specialties, languages, character and **photo**.
+2. **Calendar → My hours:** weekly blocks (for example Monday 09:00–12:00).
+   Students see one-hour open slots inside them.
+3. **Connect Google Calendar** (optional): their bookings then get a Meet
+   link on their own calendar. Without it, the shared Serendib calendar
+   makes the link, or they paste one with **Add meeting link**.
+
+#### Tutor: teaching
+
+1. When a student books and pays, they get a **New booking** email (with
+   the Meet link) and a Calendar invite. Reminders follow a day and an
+   hour before.
+2. They teach on Meet. If needed, they **Reschedule** (any time before
+   the start; the student is emailed) or **Cancel** (the student
+   automatically gets a free lesson).
+3. Afterwards they **Write it up**: covered, went well, work on, new words,
+   progress (shown to the student), engagement (only for them and the
+   team), the **materials used** (added to the student's hub) and an
+   optional voice note.
+4. In **Learning hub** they add materials, file them under chapters and
+   assign them to their own students. They see each material's ratings and
+   read the feedback, and rate other tutors' materials in **Shared
+   library**.
+5. In **Homework** they set tasks for their own students, then mark what
+   comes back.
+6. In **Content** they improve the **phrase lists** and **alphabet sheets**
+   (and mark a sheet *checked*). On `/alphabet` → **Record
+   pronunciations**, they record each letter.
+
+#### Admin
+
+1. **Daily:**
+   - The **Admin** badge counts what is waiting.
+   - **Requests:** approve (gives a free lesson) or decline (a note is
+     required) free-session requests and missed-lesson reports.
+   - **Moderation:** approve or reject community posts.
+   - **Tutor applications:** approve or decline.
+2. **People:**
+   - Invite a tutor or admin.
+   - List a tutor without an email, then **Add email & invite**.
+   - **Mark verified** when a code never arrived.
+   - Change roles and membership; delete accounts.
+   - **Edit profile** and add a photo for any tutor.
+3. **Content:**
+   - Everything tutors can edit, plus new or deleted phrase lists.
+   - **Holidays:** add each year's dates once gazetted.
+   - **Course stages:** the descriptions on the learning hub folders.
+4. **Learning hub → Manage chapters:** rename, reorder, add and remove
+   chapters, and link each to its phrase list.
+5. **Google:** connect the shared Serendib calendar and the Gmail sender,
+   and use the test buttons.
+6. **Feedback, Waitlist, Audit log:** read the lesson feedback, follow up
+   the waitlist, and review the record of every admin action.
+
+#### Super admin
+
+Everything an admin does. The account can't be demoted or deleted from the
+admin area; `SUPER_ADMIN_EMAIL` restores it on every deploy if needed.
 
 ---
 
@@ -267,6 +475,7 @@ flowchart LR
 | **Hosted checkout for payments** | Card details never touch this app, so PCI scope stays with Payments.lk/Payable. |
 | **The webhook confirms, and the status poll backs it up** | The webhook is authoritative in production. The poll covers localhost and slow webhooks. Confirmation is idempotent, so both can run. |
 | **Google features are optional enhancements** | Without credentials, sign-in hides its button, bookings still confirm (a tutor adds a link by hand) and mail goes only to the demo inbox. Nothing breaks. |
+| **Teaching content lives in the database** | Phrase lists, alphabet sheets, holidays, stage descriptions and heritage sites are read through `/api/content` and edited in the portal's Content page. The site never hard-codes them, and a lint rule stops anyone importing the seed files that fill a fresh database. |
 | **Features are parked, not deleted** | The games are switched off by a flag, and their links are commented out with a `GAMES-HIDDEN` marker, so developers can bring them back. |
 | **Revision counter instead of a client cache** | Every write bumps a counter and open queries refetch. It is simple and consistent, with no cache invalidation to get wrong. |
 
@@ -319,6 +528,7 @@ flowchart LR
 | `/portal/homework` | Assign, submit and review |
 | `/portal/community` | "Stories worth keeping" (story, review, idea and photo posts), a share card, kind filters, practice partners and friends |
 | `/portal/messages` | Conversations |
+| `/portal/content` | **Course content** (tutors and admins): phrase lists, alphabet sheets, holidays, stage descriptions |
 | `/portal/profile` | Profile editor and character picker |
 | `/portal/admin` | Tabs: People, Tutor applications, Feedback, Moderation, Waitlist, Google, Audit log (`?tab=google` deep-links to Google) |
 
@@ -359,9 +569,8 @@ writes ──useAction(...)──► http-backend ──► API ──► bumpRe
 | Module | What it does |
 | --- | --- |
 | `src/components/alphabet/alphabet-view.tsx` | Renders the alphabet sheets. **Playback priority:** a tutor's recording, then the generated Tamil file, then the browser's speech synthesis. `RecordChip` gives signed-in tutors a record mode. Marks with no sound of their own get no audio. |
-| `src/data/alphabet.ts` | Every letter: script, romanisation, plain-English sound hint, IPA, example word. Groups: Sinhala (vowels, everyday consonants, two signs, aspirated/formal letters) and Tamil (vowels, hard/soft/middle consonants, and more). `audioKey()` names each letter's audio file. Drafted with AI and labelled for tutor review. |
-| `src/data/holidays.ts` | Sri Lanka's 2026 gazetted holidays (Poya, national, Hindu, Muslim, Christian), each with a fun fact. Copied from the original site. Lunar dates need a yearly check. |
-| `src/data/vocabulary.ts`, `heritage.ts` | Survival Sri Lanka phrase lists, used by chapters, and the parked games' content |
+| `src/components/portal/content-editor.tsx` | The Content page's editors: phrase lists, alphabet sheets, holidays, stage descriptions |
+| `src/lib/content.ts` | Pure helpers for teaching content (`audioKey`, `scriptOf`, holiday category labels). **No content**: that is fetched with `api.content` or, on public pages, `fetchContent` |
 | `month-calendar.tsx`, `holidays-panel.tsx` | The original calendar. Day keys are local `yyyy-mm-dd`, never `toISOString` (which shifts days across UTC midnight). |
 | `voice-recorder.tsx`, `voice-note-player.tsx` | `MediaRecorder` capture, capped at **180 seconds**; playback of private notes |
 | `feedback-prompt.tsx`, `feedback-list.tsx` | The in-portal half of the feedback loop |
@@ -432,6 +641,7 @@ The full endpoint table is in `server/README.md` → "Endpoints".
 | `/api/community` | `routes/connections.ts` | Practice partners, friend requests |
 | `/api/threads` | `routes/messages.ts` | Conversations and messages |
 | `/api/alphabet-audio` | `routes/alphabet-audio.ts` | Public list and audio; tutors and admins upload or delete |
+| `/api/content` | `routes/content.ts` | Teaching content by kind (`phrase-lists`, `alphabet`, `holidays`, `stages`, `heritage`): public reads; tutors edit phrase lists and alphabet; admins everything |
 | `/api/profile-photos` | `routes/profile-photos.ts` | Tutor photos: public for listed tutors; the tutor or an admin uploads or removes |
 | `/api/integrations` | `routes/integrations.ts` | Google Calendar (per tutor and system), Gmail, OAuth callback, test buttons |
 | `/api/jobs` | `routes/jobs.ts` | `POST /reminders`, guarded by `X-Cron-Secret` |
@@ -500,6 +710,11 @@ Timestamps are ISO strings.
 | `connections` | Friend requests | pending, accepted or declined |
 | `threads`, `messages` | Conversations | `readBy` per message |
 | `alphabetAudio` | Tutor recordings per language and letter key | |
+| `phraseLists` | Phrase lists (`PhraseList`): stage, order, emoji, title, scene, phrases in English + both scripts + romanisations | Filled once from `server/src/seed/`; edited in Content |
+| `alphabetSheets` | One sheet per language: groups, letters (sound, IPA, example), vowel signs, `draft`/`reviewed` | Same |
+| `holidays` | Sri Lankan holidays by date, category and a fun fact | Same; admins add each year's dates |
+| `courseStages` | The description on each learning hub stage folder | Same |
+| `heritageSites` | The parked heritage game's places | Same |
 | `profilePhotos` | Tutor photos (base64), keyed by user id | `User.photoId` versions the URL |
 | `lessonCredits` | Free lessons: reason, used-by booking | Given back if that booking is cancelled |
 | `studentRequests` | Free-session requests and missed-lesson reports | pending → approved / declined, with the admin's note |
@@ -680,9 +895,11 @@ sequenceDiagram
     story.
   - **Worksheets & printables.**
 
-  Admins can rename, reorder, add and remove chapters. Deleting a chapter
-  unfiles its materials rather than deleting them. Survival chapters link
-  to their phrase lists, so no chapter is ever empty.
+  Admins can rename, reorder, add and remove chapters, and link each to a
+  phrase list (Learning hub → Manage chapters). Deleting a chapter unfiles
+  its materials rather than deleting them. Survival chapters link to their
+  phrase lists, so no chapter is ever empty. The stage folders' text and
+  the phrase lists come from the database (see 8.10).
 - **Materials.** A material is a pdf, audio, video, link or deck, with a
   language (Sinhala, Tamil or both) and a level. Its owner files it under
   a chapter and assigns it to students.
@@ -727,13 +944,16 @@ and 1 hour ahead, with the Meet link and a link to the calendar.
 
 ### 8.6 Alphabet sheet
 
-- **Content.** `/alphabet` shows both scripts. Each letter has a
-  romanisation, a sound hint, IPA and an example word. The page says the
-  sheet was drafted with AI for tutor review.
+- **Content.** `/alphabet` shows both scripts, read from the database
+  through `/api/content/alphabet` (refreshed every minute). Each letter has
+  a romanisation, a sound hint, IPA and an example word. Tutors edit the
+  sheets under Content → Alphabet sheets. Until one marks a sheet
+  *checked*, the page says it was drafted with AI for tutor review.
 - **Tamil audio.** Tamil plays generated files in
   `public/audio/alphabet/tamil/` (83 files). They were made by
   `node scripts/generate-alphabet-audio.mjs` using Google Cloud
-  Text-to-Speech, voice `ta-IN-Wavenet-A`.
+  Text-to-Speech, voice `ta-IN-Wavenet-A`. The script reads the Tamil
+  sheet from the API (`API_URL`), so rerun it after letters change.
 - **Sinhala audio.** Google has **no Sinhala voice**. Sinhala audio comes
   from tutors recording each letter on the page (signed in → "Record
   pronunciations"). Recordings are served by `/api/alphabet-audio`, and a
@@ -785,6 +1005,33 @@ Production runs with `DEMO_MODE=false`, which closes the inbox and the
 reset endpoint, and never seeds the database.
 
 ---
+
+### 8.10 Course content (all from the database)
+
+Nothing a tutor teaches from is written into the code. It is all in the
+database, and every screen reads it through one API:
+
+| Content | Shown on | Edited by (Content page) |
+| --- | --- | --- |
+| **Phrase lists** (8 Survival Sri Lanka lists to start) | Learning hub chapters; the parked language game | Tutors and admins; admins add and remove lists |
+| **Alphabet sheets** (Sinhala, Tamil) | `/alphabet`; learning hub Alphabet folder | Tutors and admins |
+| **Holidays** | Portal calendar dots and the holidays panel | Admins |
+| **Course stage descriptions** | Learning hub stage folders | Admins |
+| **Course chapters** | Learning hub; suggestions in the booking form | Admins (Learning hub → Manage chapters) |
+| **Heritage sites** | The parked heritage game | Admins, through the API |
+| **Materials, homework, write-ups** | Learning hub, homework, lesson notes | Their tutors |
+
+- **The API.** `GET /api/content/:kind` and `/:kind/:id` are public.
+  `PUT` creates (admins) or changes (its editors) an item. `DELETE` is for
+  admins. Every change is in the audit log, with who made it.
+- **First start.** A fresh database fills each empty collection once from
+  `server/src/seed/` (production filled itself on its first deploy with
+  this code). After that, edit in the portal, not the seed files.
+- **Guard.** An ESLint rule makes it an error for any file under `src/` to
+  import seed data or server code, so content can't creep back into the
+  site's code.
+- **Not content.** Marketing copy (home, how it works, privacy), the
+  character avatars and their words, and the demo seed stay in code.
 
 ## 9. Integrations
 
@@ -990,8 +1237,9 @@ Before pushing, run the four commands in `DEPLOYMENT.md` → "Local testing".
 | Reminder job | Cloud Scheduler `serendib-reminders`. Without the header the endpoint returns 403. |
 | Reseed (local only) | `npm --prefix server run seed` |
 | Back up the production database | Export the collections to JSON (an earlier backup is in `server/data/backups/`, which is gitignored) |
-| Update holidays | Edit `src/data/holidays.ts` each year (lunar dates shift) |
-| Regenerate Tamil audio | `node scripts/generate-alphabet-audio.mjs` (needs Google Cloud TTS) |
+| Update holidays | Portal → Content → Holidays: add next year's dates once gazetted (Poya and Muslim dates shift every year) |
+| Edit phrase lists or the alphabet | Portal → Content (tutors or admins); link a list to a chapter in Learning hub → Manage chapters |
+| Regenerate Tamil audio | `API_URL=https://… node scripts/generate-alphabet-audio.mjs` (needs Google Cloud TTS; reads the Tamil sheet from the API) |
 
 **Common problems.**
 
@@ -1019,23 +1267,66 @@ Before pushing, run the four commands in `DEPLOYMENT.md` → "Local testing".
 
 **Demo-shaped.**
 
-- The alphabet sheet and the character words are AI first drafts, waiting
-  for tutor review.
+- The alphabet sheets start as AI first drafts (status *draft*). Tutors
+  correct them in Content and mark them *checked*. The character words are
+  AI drafts too, in code.
 - The seeded tutors (Nimali, Arjun and Dilani) are placeholders that exist
   only in demo mode.
 
-**Open items (October 2026).**
+**Before launch: the owners' checklist (October 2026).** The code is
+ready; these need the owners. The *blocking* items stop real users from
+signing up, paying or getting lesson links.
 
-- Payments.lk account approval, then the switch to live keys.
-- Publish the Google OAuth consent screen, and connect the Serendib
-  calendar and Gmail.
-- Invite or approve the real tutors, with their profiles.
-- Tutors to record the Sinhala alphabet.
-- Confirm the privacy policy wording and the LKR exchange rate.
-- Move `serendiblearn.com` from the prototype to Vercel (`DEPLOYMENT.md`
-  §10).
-- Later: frontend tests, a strict CSP, request logging, and verification
-  of the Google OAuth consent screen.
+1. **Email (blocking).** Admin → Google → connect the Gmail sender, then
+   press its test button. Until then no verification code, receipt or
+   reminder reaches anyone.
+2. **Google consent screen (blocking).** In Google Cloud → APIs &
+   Services → OAuth consent screen, **publish** the app and submit it for
+   verification (`calendar.events` and `gmail.send` are sensitive
+   scopes). Until it is verified, people see an "unverified app" warning
+   and Google caps it at 100 users.
+3. **Meet links.** Admin → Google → connect the shared Serendib calendar
+   and test it. Tutors can also connect their own under Calendar → My
+   hours.
+4. **Payments (blocking for paid lessons).**
+   - Get the Payments.lk account approved.
+   - Register the live webhook (`https://<API>/api/payments/webhook`).
+   - Store the `sk_live_…` key and the `whsec_…` secret as new secret
+     versions (DEPLOYMENT §7), then redeploy.
+   - Do one real low-value payment end to end.
+   - Confirm the rupee rate (`USD_TO_LKR`, now 300).
+5. **Terms and refunds.** Payment providers usually require Terms of
+   service and a refund and cancellation policy on the site. Write them
+   (they should match the rules in 2.2: free reschedules up to 24 hours,
+   no refund when a student cancels, a free lesson when the tutor
+   cancels), and confirm the privacy policy wording.
+6. **Tutors.**
+   - Send the four listed tutors' emails, so you can **Add email &
+     invite**.
+   - Send Zeynab's and Amani's details.
+   - Each tutor sets a rate, weekly hours and (optionally) Google
+     Calendar.
+7. **Content.**
+   - Tutors check both alphabet sheets and mark them *checked*.
+   - Tutors record the Sinhala alphabet.
+   - Review the phrase lists.
+   - **Add 2027 holidays before January** (the starting list covers
+     2026).
+8. **Domain.** Point `serendiblearn.com` at Vercel and
+   `api.serendiblearn.com` at Cloud Run (DEPLOYMENT §10), then update:
+   - `APP_URL` and `API_URL`;
+   - the OAuth origins and redirect;
+   - the Payments.lk webhook;
+   - `NEXT_PUBLIC_API_URL` and `NEXT_PUBLIC_SITE_URL`.
+9. **Accounts.** Use **Mark verified** for the gmail.com student stuck
+   since before Gmail was connected. Then tell the waitlist you are open.
+10. **Safety nets (recommended).**
+    - Atlas M0 has no automatic backups: export the database regularly or
+      move to a paid tier.
+    - Add an uptime check on `/api/health`.
+    - Optionally switch on Turnstile CAPTCHA for sign-ups.
+
+Later: frontend tests, a strict CSP and request logging.
 
 ---
 
@@ -1054,7 +1345,7 @@ Before pushing, run the four commands in `DEPLOYMENT.md` → "Local testing".
 ├── docs/                        Source content: vocabulary cards, website review tracker
 ├── public/                      Brand images, app icons, audio/alphabet/tamil/*.mp3
 ├── scripts/
-│   └── generate-alphabet-audio.mjs   Google TTS → Tamil letter audio
+│   └── generate-alphabet-audio.mjs   Google TTS → Tamil letter audio (reads the sheet from the API)
 ├── shared/                      The contract between site and API
 │   ├── types.ts                 Every domain type
 │   ├── seed.ts                  Demo data (demo mode only)
@@ -1066,7 +1357,7 @@ Before pushing, run the four commands in `DEPLOYMENT.md` → "Local testing".
 │   │   ├── (public)/            Home, how-it-works, tutors, alphabet, privacy, games (parked)
 │   │   ├── portal/              login, signup, verify, forgot/reset password
 │   │   │   └── (app)/           Signed-in portal: home, calendar, checkout, learning hub,
-│   │   │                        homework, community, messages, profile, admin
+│   │   │                        homework, community, messages, content, profile, admin
 │   │   ├── globals.css          Theme tokens and base styles
 │   │   ├── layout.tsx           Fonts, metadata, AuthProvider, DemoInbox
 │   │   └── manifest.ts          Installable app manifest
@@ -1077,8 +1368,8 @@ Before pushing, run the four commands in `DEPLOYMENT.md` → "Local testing".
 │   │   ├── home/                Waitlist form, phrase cards
 │   │   ├── games/               Parked game components
 │   │   └── ui/                  Button, Card, Field, Modal, characters, primitives
-│   ├── data/                    alphabet, holidays, vocabulary, heritage
-│   └── lib/                     api/ (Backend + HTTP client + revision), auth, hooks, features, format
+│   └── lib/                     api/ (Backend + HTTP client + revision), auth, hooks, features, format,
+│                                content.ts (helpers only — content comes from the API)
 └── server/                      Express API
     ├── Dockerfile
     └── src/
@@ -1088,7 +1379,9 @@ Before pushing, run the four commands in `DEPLOYMENT.md` → "Local testing".
         ├── lib/                 sessions, passwords, accounts, domain, payments,
         │                        booking-confirmation, feedback, reminders, community,
         │                        google, mail, rate-limit, turnstile, validate, audit…
-        ├── routes/              One file per area (+ *.test.ts)
+        ├── routes/              One file per area (+ *.test.ts), content.ts for teaching content
+        ├── seed/                Teaching content a fresh database starts with (phrase lists,
+        │                        alphabet, holidays, stages, heritage) — never imported by the site
         ├── scripts/             create-admin.ts, reseed.ts
         └── test-support/        harness, account helpers, fake Payments.lk
 ```

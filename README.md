@@ -113,7 +113,6 @@ src/
     home/ games/       page-specific pieces
     portal/            dashboards, booking flow, availability, shared portal UI
     ui/                buttons, fields, modal, primitives
-  data/                vocabulary and heritage content for the games
   lib/
     api/               Backend interface, HTTP client, revision counter
     auth.tsx           session context
@@ -176,8 +175,9 @@ server/README.md's "Tests" section for what's not covered yet.
   message. `DEMO_MODE=false` closes it and the reset endpoint.
 - The seeded tutors (Nimali, Arjun, Dilani) are placeholders; real tutors come in through the
   tutor sign-up or an admin invite.
-- The alphabet sheet and the avatar characters were drafted with AI as a first pass and are
-  labelled for tutor review.
+- The alphabet sheets and the avatar characters were drafted with AI as a first pass. The
+  sheets live in the database (like all teaching content — phrase lists, holidays, stage
+  text) and tutors correct them under Portal → Content, marking each *checked* when done.
 - Alphabet audio: Tamil plays generated files (Google Text-to-Speech, Indian Tamil voice;
   `node scripts/generate-alphabet-audio.mjs` makes them). Google has no Sinhala voice, so
   Sinhala audio comes from tutors recording each letter on `/alphabet` (signed in, "Record

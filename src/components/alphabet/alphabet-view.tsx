@@ -2,12 +2,12 @@
 
 import { Mic, Square, Volume2 } from "lucide-react";
 import { useRef, useState, useSyncExternalStore } from "react";
-import { alphabetSheets, audioKey, type AlphabetSheet, type Letter } from "@/data/alphabet";
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { useQuery } from "@/lib/hooks";
-import type { LanguageCode } from "@/lib/types";
+import { audioKey } from "@/lib/content";
+import type { AlphabetLetter as Letter, AlphabetSheet, LanguageCode } from "@/lib/types";
 
 import { cn } from "@/lib/cn";
 
@@ -138,10 +138,14 @@ function RecordChip({
   );
 }
 
-export function AlphabetView({ initial }: { initial: "sinhala" | "tamil" }) {
+/**
+ * The alphabet sheets, as the database has them (the page fetches them
+ * through the content API; tutors edit them in the portal's content editor).
+ */
+export function AlphabetView({ initial, sheets }: { initial: "sinhala" | "tamil"; sheets: AlphabetSheet[] }) {
   const [language, setLanguage] = useState(initial);
-  const sheet = alphabetSheets.find((item) => item.language === language)!;
-  const voice = useVoice(sheet.voiceLangs);
+  const sheet = sheets.find((item) => item.id === language) ?? sheets[0];
+  const voice = useVoice(sheet?.voiceLangs ?? []);
   const { user } = useAuth();
   const canRecord = !!user && (user.role === "admin" || (user.role === "tutor" && (user.tutorStatus ?? "approved") === "approved"));
   const [recording, setRecording] = useState(false);
@@ -151,6 +155,15 @@ export function AlphabetView({ initial }: { initial: "sinhala" | "tamil" }) {
     (recordings.data ?? []).map((item) => [`${item.language}:${item.key}`, item.createdAt]),
   );
   const audio = { recorded, voice, recording, onSaved: () => setRefresh((value) => value + 1) };
+
+  if (!sheet) {
+    return (
+      <section className="mx-auto max-w-3xl px-5 py-20 text-center sm:px-8">
+        <h1 className="text-3xl">The alphabet sheet</h1>
+        <p className="mt-4 text-ink-600">The sheet could not be loaded just now. Please try again in a minute.</p>
+      </section>
+    );
+  }
 
   return (
     <>
@@ -167,15 +180,15 @@ export function AlphabetView({ initial }: { initial: "sinhala" | "tamil" }) {
 
           <div className="mt-7 flex flex-wrap items-center gap-3 print:hidden">
             <div className="flex gap-1 rounded-full bg-white p-1 border border-forest/10">
-              {alphabetSheets.map((item) => (
+              {sheets.map((item) => (
                 <button
-                  key={item.language}
+                  key={item.id}
                   type="button"
-                  onClick={() => setLanguage(item.language)}
-                  aria-pressed={item.language === language}
+                  onClick={() => setLanguage(item.id)}
+                  aria-pressed={item.id === language}
                   className={cn(
                     "rounded-full px-5 py-2 text-sm font-medium transition",
-                    item.language === language ? "bg-ink-900 text-sand-50" : "text-ink-500 hover:text-ink-900",
+                    item.id === language ? "bg-ink-900 text-sand-50" : "text-ink-500 hover:text-ink-900",
                   )}
                 >
                   {item.name}
@@ -259,7 +272,9 @@ export function AlphabetView({ initial }: { initial: "sinhala" | "tamil" }) {
         </section>
 
         <p className="max-w-3xl rounded-2xl bg-sand-100 px-5 py-4 text-xs leading-relaxed text-ink-500 print:hidden">
-          This sheet was drafted with AI as a first pass and is being checked by our tutors.
+          {sheet.status === "reviewed"
+            ? "Checked by our tutors. "
+            : "This sheet was drafted with AI as a first pass and is being checked by our tutors. "}
           Sound hints compare to English where there is a close match; IPA is given for anyone who
           reads it. Spotted something off? Tell your tutor, or write to us at
           serendib.learn@gmail.com.
@@ -284,11 +299,11 @@ function LetterCard({
   recording,
   onSaved,
 }: { letter: Letter; sheet: AlphabetSheet } & AudioProps) {
-  const scriptClass = sheet.language === "sinhala" ? "text-sinhala" : "text-tamil";
+  const scriptClass = sheet.id === "sinhala" ? "text-sinhala" : "text-tamil";
   const sayable = !SILENT.has(letter.letter);
   const sources = [
-    sayable ? audioSource(sheet.language, letter.letter, recorded) : null,
-    letter.example ? audioSource(sheet.language, letter.example.word, recorded) : null,
+    sayable ? audioSource(sheet.id, letter.letter, recorded) : null,
+    letter.example ? audioSource(sheet.id, letter.example.word, recorded) : null,
   ].filter((source): source is string => !!source);
   const fallback = sources.length === 0 && voice;
 
@@ -313,19 +328,19 @@ function LetterCard({
           <div className="mt-2 flex flex-wrap gap-1.5">
             {sayable ? (
               <RecordChip
-                language={sheet.language}
+                language={sheet.id}
                 text={letter.letter}
                 label="Letter"
-                done={recorded.has(`${sheet.language}:${audioKey(letter.letter)}`)}
+                done={recorded.has(`${sheet.id}:${audioKey(letter.letter)}`)}
                 onSaved={onSaved}
               />
             ) : null}
             {letter.example ? (
               <RecordChip
-                language={sheet.language}
+                language={sheet.id}
                 text={letter.example.word}
                 label="Word"
-                done={recorded.has(`${sheet.language}:${audioKey(letter.example.word)}`)}
+                done={recorded.has(`${sheet.id}:${audioKey(letter.example.word)}`)}
                 onSaved={onSaved}
               />
             ) : null}

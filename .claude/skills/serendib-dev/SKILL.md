@@ -85,6 +85,13 @@ a manual one are warranted: extend the relevant `routes/*.test.ts` (see
    and the per-role dashboard components in `src/components/portal/`.
 4. Reuse primitives from `src/components/ui/` (button, field, modal) rather
    than styling new ones from scratch.
+5. **Never hard-code teaching content** (phrases, letters, holidays, stage
+   text, heritage places, lesson topics). It lives in the database: read it
+   with `api.content.list(kind)` (or `fetchContent(kind)` on a public server
+   page) and edit it in the portal's Content page. A new kind of content
+   gets a collection, a seed in `server/src/seed/`, and an entry in
+   `routes/content.ts`'s `specs`. ESLint blocks importing seed or server
+   files from `src/`.
 
 ## Google integration
 

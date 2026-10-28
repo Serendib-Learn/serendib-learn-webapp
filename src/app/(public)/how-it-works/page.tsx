@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import { ButtonLink } from "@/components/ui/button";
 import { Card, SectionHeading } from "@/components/ui/primitives";
 // GAMES-HIDDEN: deck counts, only used by the commented-out detail line below.
-// import { allChapters, totalPhraseCount } from "@/data/vocabulary";
+// Phrase lists come from the API: make the page async and use
+//   const { chapters: allChapters } = await fetchPhrasePhase();   // from "@/lib/api/public"
+//   const totalPhraseCount = allChapters.reduce((sum, chapter) => sum + chapter.phrases.length, 0);
 
 export const metadata: Metadata = {
   title: "How it works",

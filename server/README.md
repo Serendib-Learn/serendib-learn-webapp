@@ -76,6 +76,7 @@ form, the tutor list and the demo inbox needs a session cookie.
 | Messages | `GET /threads`, `POST /threads` (student-to-student needs a friend connection), `GET\|POST /threads/:id/messages`, `POST /threads/:id/read` |
 | Jobs | `POST /jobs/reminders` (header `X-Cron-Secret`; off unless `CRON_SECRET` is set) |
 | Profile photos | `GET /profile-photos/:userId` (public, listed tutors only, `?v=<photoId>`), `PUT\|DELETE /profile-photos/:userId` (the tutor, or an admin) |
+| Content | `GET /content/:kind`, `GET /content/:kind/:id` (public), `PUT /content/:kind/:id` (create: admin; change: its editors), `DELETE /content/:kind/:id` (admin) — kinds `phrase-lists`, `alphabet`, `holidays`, `stages`, `heritage` |
 | Alphabet audio | `GET /alphabet-audio` (public list), `GET /alphabet-audio/:language/:key` (public audio), `PUT\|DELETE /alphabet-audio/:language/:key` (approved tutors and admins) |
 | Waitlist | `POST /waitlist`, `GET /waitlist` (admin) |
 | Demo | `GET /mail`, `POST /mail/:id/read`, `DELETE /mail`, `POST /demo/reset` |
@@ -210,6 +211,28 @@ Voice notes are uploaded as base64 JSON with their own 5 MB body limit
 (index.ts skips the general 256 KB parser for `/api/voice-notes`), capped at
 three minutes, and served only to the two people on the lesson and admins.
 Only the author can attach a note to their own feedback or write-up.
+
+## Teaching content
+
+`routes/content.ts`, `server/src/seed/`. Phrase lists, alphabet sheets,
+holidays, course stage descriptions and heritage sites live in the database
+(`phraseLists`, `alphabetSheets`, `holidays`, `courseStages`,
+`heritageSites`) and every screen reads them through `/api/content/:kind`.
+Nothing in `src/` hard-codes them, and ESLint fails any import of
+`server/`, `seed/` or `shared/curriculum` from the site.
+
+- **Filling.** `db/database.ts`'s `seedTeachingContent` fills each
+  collection once, while it is empty, from `server/src/seed/*.ts` (demo or
+  not, like the course chapters). After that the database is the source:
+  edit in the portal's Content page, not the seed files.
+- **Who edits.** Reads are public (the alphabet sheet and the games are
+  public pages). Approved, verified tutors and admins change phrase lists
+  and alphabet sheets; only admins create or delete, and only admins touch
+  holidays, stages and heritage sites. Each kind has its own zod schema; a
+  phrase list's phrases are renumbered on save; deleting a phrase list
+  unlinks the chapters that showed it; alphabet sheets can't be deleted.
+- **Audit.** Every change is logged (`content_added`, `content_updated`,
+  `content_removed`) with who made it, and the item keeps `updatedById`.
 
 ## Course chapters
 

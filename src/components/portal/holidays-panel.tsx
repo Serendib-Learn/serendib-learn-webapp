@@ -2,7 +2,8 @@
 
 import { Sparkles } from "lucide-react";
 import { useState } from "react";
-import { CATEGORY_LABEL, HOLIDAYS_2026, upcomingHolidays, type Holiday } from "@/data/holidays";
+import { HOLIDAY_CATEGORY_LABEL as CATEGORY_LABEL } from "@/lib/content";
+import type { Holiday } from "@/lib/types";
 
 const CATEGORY_DOT: Record<Holiday["category"], string> = {
   poya: "bg-sage",
@@ -20,10 +21,18 @@ function formatDate(iso: string) {
   });
 }
 
-/** The original site's Sri Lankan holidays list: what is coming up, or the whole year. */
-export function HolidaysPanel() {
+/**
+ * The original site's Sri Lankan holidays list: what is coming up, or the
+ * whole year. The holidays come from the database (admins keep them up to
+ * date in the content editor); the calendar page passes them in.
+ */
+export function HolidaysPanel({ holidays }: { holidays: Holiday[] }) {
   const [showAll, setShowAll] = useState(false);
-  const list = showAll ? HOLIDAYS_2026 : upcomingHolidays(new Date(), 5);
+  const [today] = useState(() => new Date().toISOString().slice(0, 10));
+  const year = today.slice(0, 4);
+  const list = showAll
+    ? holidays.filter((holiday) => holiday.date.startsWith(year))
+    : holidays.filter((holiday) => holiday.date >= today).slice(0, 5);
 
   return (
     <div className="rounded-xl border border-forest/10 bg-white p-5">
@@ -41,15 +50,15 @@ export function HolidaysPanel() {
         </button>
       </div>
       <p className="mb-4 text-xs text-earth/55">
-        {showAll ? "All of 2026, gazetted public holidays." : "What's coming up next."}
+        {showAll ? `All of ${year}, gazetted public holidays.` : "What's coming up next."}
       </p>
 
       {list.length === 0 ? (
-        <p className="text-xs text-earth/50">That is everything for 2026 — next year&apos;s dates are added once they are gazetted.</p>
+        <p className="text-xs text-earth/50">That is everything we have so far — next year&apos;s dates are added once they are gazetted.</p>
       ) : (
         <div className="max-h-[420px] space-y-3 overflow-y-auto pr-1">
           {list.map((holiday) => (
-            <div key={holiday.date} className="flex gap-3 border-b border-forest/8 pb-3 last:border-0 last:pb-0">
+            <div key={holiday.id} className="flex gap-3 border-b border-forest/8 pb-3 last:border-0 last:pb-0">
               <div className="flex w-14 shrink-0 flex-col items-center pt-0.5">
                 <span className={`mb-1 h-2 w-2 rounded-full ${CATEGORY_DOT[holiday.category]}`} />
                 <span className="text-center text-[10px] leading-tight text-earth/50">{formatDate(holiday.date)}</span>

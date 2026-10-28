@@ -2,18 +2,19 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { VocabMission } from "@/components/games/vocab-mission";
-import { allChapters, getChapter } from "@/data/vocabulary";
-import { heritageSites } from "@/data/heritage";
+import { fetchContent, fetchPhrasePhase } from "@/lib/api/public";
 
-export function generateStaticParams() {
-  return allChapters.map((chapter) => ({ chapter: chapter.id }));
+export const revalidate = 60;
+
+export async function generateStaticParams() {
+  return (await fetchContent("phrase-lists")).map((chapter) => ({ chapter: chapter.id }));
 }
 
 export async function generateMetadata(
   props: PageProps<"/games/languages/[chapter]">,
 ): Promise<Metadata> {
   const { chapter: chapterId } = await props.params;
-  const chapter = getChapter(chapterId);
+  const chapter = (await fetchContent("phrase-lists")).find((item) => item.id === chapterId);
   if (!chapter) return { title: "Chapter not found" };
 
   return {
@@ -24,7 +25,9 @@ export async function generateMetadata(
 
 export default async function ChapterPage(props: PageProps<"/games/languages/[chapter]">) {
   const { chapter: chapterId } = await props.params;
-  const chapter = getChapter(chapterId);
+  const [phase, heritageSites] = await Promise.all([fetchPhrasePhase(), fetchContent("heritage")]);
+  const allChapters = phase.chapters;
+  const chapter = allChapters.find((item) => item.id === chapterId);
   if (!chapter) notFound();
 
   const index = allChapters.findIndex((candidate) => candidate.id === chapter.id);
@@ -40,13 +43,13 @@ export default async function ChapterPage(props: PageProps<"/games/languages/[ch
         </Link>
         <span aria-hidden>/</span>
         <Link href="/games/languages" className="transition hover:text-ink-700">
-          Survival Sri Lanka
+          {phase.name}
         </Link>
         <span aria-hidden>/</span>
         <span className="text-ink-700">{chapter.title}</span>
       </nav>
 
-      <VocabMission chapter={chapter} />
+      <VocabMission chapter={chapter} allChapters={allChapters} />
 
       {pairedSites.length > 0 ? (
         <section className="mt-16 rounded-2xl bg-white p-8 border border-forest/10">
@@ -57,8 +60,8 @@ export default async function ChapterPage(props: PageProps<"/games/languages/[ch
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
             {pairedSites.map((site) => (
               <Link
-                key={site.slug}
-                href={`/games/heritage/${site.slug}`}
+                key={site.id}
+                href={`/games/heritage/${site.id}`}
                 className="group rounded-xl bg-sand-100/70 p-5 border border-forest/8 transition hover:bg-saffron-50 hover:ring-saffron-300"
               >
                 <p className="text-xs font-medium tracking-wide text-ink-400 uppercase">

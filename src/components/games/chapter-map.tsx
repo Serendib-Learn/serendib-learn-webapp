@@ -6,9 +6,10 @@ import { useAuth } from "@/lib/auth";
 import { useQuery } from "@/lib/hooks";
 import { cn } from "@/lib/cn";
 import { Badge, Progress } from "@/components/ui/primitives";
-import { phaseOne } from "@/data/vocabulary";
+import type { PhraseList } from "@/lib/types";
 
-export function ChapterMap() {
+/** The phrase lists as a map of chapters; the page fetches them from the API. */
+export function ChapterMap({ chapters }: { chapters: PhraseList[] }) {
   const { user } = useAuth();
   const { data: results } = useQuery(
     () => (user ? api.games.resultsFor(user.id) : Promise.resolve([])),
@@ -22,7 +23,7 @@ export function ChapterMap() {
   }
 
   const attempted = bestByChapter.size;
-  const totalChapters = phaseOne.chapters.length;
+  const totalChapters = chapters.length;
 
   return (
     <div>
@@ -65,7 +66,7 @@ export function ChapterMap() {
           className="absolute top-8 bottom-8 left-6 hidden w-px bg-gradient-to-b from-jade-200 via-saffron-300 to-clay-100 sm:block"
         />
 
-        {phaseOne.chapters.map((chapter) => {
+        {chapters.map((chapter) => {
           const best = bestByChapter.get(chapter.id);
           const mastered = typeof best === "number" && best >= 80;
 

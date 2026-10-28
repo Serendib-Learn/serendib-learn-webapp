@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Badge, Card } from "@/components/ui/primitives";
-import { heritageSites } from "@/data/heritage";
-import { allChapters, phaseOne, totalPhraseCount } from "@/data/vocabulary";
+import { fetchContent, fetchPhrasePhase } from "@/lib/api/public";
 
 export const metadata: Metadata = {
   title: "Games",
@@ -10,7 +9,12 @@ export const metadata: Metadata = {
     "Two free ways to learn Sri Lanka — the Survival Sri Lanka phrase decks in Sinhala and Tamil, and a heritage explorer covering the island and Colombo.",
 };
 
-export default function GamesPage() {
+export const revalidate = 60;
+
+export default async function GamesPage() {
+  const [phaseOne, heritageSites] = await Promise.all([fetchPhrasePhase(), fetchContent("heritage")]);
+  const allChapters = phaseOne.chapters;
+  const totalPhraseCount = allChapters.reduce((sum, chapter) => sum + chapter.phrases.length, 0);
   const colomboCount = heritageSites.filter((site) => site.region === "Colombo").length;
 
   return (

@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox, Field, Input, Select, Textarea } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
 import { Alert, Badge, Card, Loading } from "@/components/ui/primitives";
-import type { CourseChapter, LanguageCode, Material, MaterialKind, ProgressMark, User } from "@/lib/types";
+import type { CourseChapter, LanguageCode, Material, MaterialKind, PhraseList, ProgressMark, User } from "@/lib/types";
 
 const progressText: Record<ProgressMark, { label: string; tone: "saffron" | "jade" | "ocean" }> = {
   needs_support: { label: "Needs a little more support", tone: "saffron" },
@@ -515,6 +515,7 @@ function AssignDialog({
 
 /** Administrators: rename, reorder, add and remove the course's chapters. */
 function ManageChapters({ chapters, onClose }: { chapters: CourseChapter[]; onClose: () => void }) {
+  const lists = useQuery(() => api.content.list("phrase-lists"), []);
   const [stage, setStage] = useState("");
   const [title, setTitle] = useState("");
   const add = useAction(() =>
@@ -540,7 +541,7 @@ function ManageChapters({ chapters, onClose }: { chapters: CourseChapter[]; onCl
             <p className="text-xs font-semibold tracking-[0.16em] text-jade-600 uppercase">{heading}</p>
             <ul className="mt-2 space-y-2">
               {items.map((chapter) => (
-                <ChapterRow key={chapter.id} chapter={chapter} />
+                <ChapterRow key={chapter.id} chapter={chapter} lists={lists.data ?? []} />
               ))}
             </ul>
           </div>
@@ -587,19 +588,29 @@ function ManageChapters({ chapters, onClose }: { chapters: CourseChapter[]; onCl
   );
 }
 
-function ChapterRow({ chapter }: { chapter: CourseChapter }) {
+function ChapterRow({ chapter, lists }: { chapter: CourseChapter; lists: PhraseList[] }) {
   const [title, setTitle] = useState(chapter.title);
   const [summary, setSummary] = useState(chapter.summary);
   const [order, setOrder] = useState(String(chapter.order));
+  // The phrase list shown inside this chapter (Course content → Phrase lists).
+  const [vocab, setVocab] = useState(chapter.vocabChapterId ?? "");
   const save = useAction(() =>
-    api.chapters.update(chapter.id, { title: title.trim(), summary: summary.trim(), order: Number(order) }),
+    api.chapters.update(chapter.id, {
+      title: title.trim(),
+      summary: summary.trim(),
+      order: Number(order),
+      vocabChapterId: vocab,
+    }),
   );
   const remove = useAction(() => api.chapters.remove(chapter.id));
   const dirty =
-    title !== chapter.title || summary !== chapter.summary || order !== String(chapter.order);
+    title !== chapter.title ||
+    summary !== chapter.summary ||
+    order !== String(chapter.order) ||
+    vocab !== (chapter.vocabChapterId ?? "");
 
   return (
-    <li className="grid gap-2 rounded-xl px-3 py-2.5 border border-forest/10 sm:grid-cols-[4rem_1fr_1.4fr_auto] sm:items-center">
+    <li className="grid gap-2 rounded-xl px-3 py-2.5 border border-forest/10 sm:grid-cols-[4rem_1fr_1.4fr_10rem_auto] sm:items-center">
       <Input
         aria-label={`Order of ${chapter.title}`}
         type="number"
@@ -619,6 +630,19 @@ function ChapterRow({ chapter }: { chapter: CourseChapter }) {
         value={summary}
         onChange={(event) => setSummary(event.target.value)}
       />
+      <Select
+        aria-label={`Phrase list for ${chapter.title}`}
+        className="h-9 py-0 text-sm"
+        value={vocab}
+        onChange={(event) => setVocab(event.target.value)}
+      >
+        <option value="">No phrase list</option>
+        {lists.map((list) => (
+          <option key={list.id} value={list.id}>
+            {list.emoji} {list.title}
+          </option>
+        ))}
+      </Select>
       <div className="flex gap-1">
         <Button size="sm" variant="secondary" disabled={!dirty || save.pending} onClick={() => void save.run()}>
           Save
@@ -638,7 +662,7 @@ function ChapterRow({ chapter }: { chapter: CourseChapter }) {
         </Button>
       </div>
       {save.error || remove.error ? (
-        <p className="text-xs text-clay-600 sm:col-span-4">{save.error ?? remove.error}</p>
+        <p className="text-xs text-clay-600 sm:col-span-5">{save.error ?? remove.error}</p>
       ) : null}
     </li>
   );

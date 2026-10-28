@@ -3,18 +3,19 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ButtonLink } from "@/components/ui/button";
 import { Badge, Card } from "@/components/ui/primitives";
-import { getHeritageSite, heritageSites } from "@/data/heritage";
-import { getChapter } from "@/data/vocabulary";
+import { fetchContent } from "@/lib/api/public";
 
-export function generateStaticParams() {
-  return heritageSites.map((site) => ({ slug: site.slug }));
+export const revalidate = 60;
+
+export async function generateStaticParams() {
+  return (await fetchContent("heritage")).map((site) => ({ slug: site.id }));
 }
 
 export async function generateMetadata(
   props: PageProps<"/games/heritage/[slug]">,
 ): Promise<Metadata> {
   const { slug } = await props.params;
-  const site = getHeritageSite(slug);
+  const site = (await fetchContent("heritage")).find((item) => item.id === slug);
   if (!site) return { title: "Site not found" };
 
   return { title: site.name, description: site.hook };
@@ -22,12 +23,13 @@ export async function generateMetadata(
 
 export default async function HeritageSitePage(props: PageProps<"/games/heritage/[slug]">) {
   const { slug } = await props.params;
-  const site = getHeritageSite(slug);
+  const [heritageSites, lists] = await Promise.all([fetchContent("heritage"), fetchContent("phrase-lists")]);
+  const site = heritageSites.find((item) => item.id === slug);
   if (!site) notFound();
 
-  const chapter = site.pairedChapter ? getChapter(site.pairedChapter) : undefined;
+  const chapter = site.pairedChapter ? lists.find((item) => item.id === site.pairedChapter) : undefined;
   const nearby = heritageSites
-    .filter((candidate) => candidate.region === site.region && candidate.slug !== site.slug)
+    .filter((candidate) => candidate.region === site.region && candidate.id !== site.id)
     .slice(0, 3);
 
   return (
@@ -144,8 +146,8 @@ export default async function HeritageSitePage(props: PageProps<"/games/heritage
             <div className="mt-5 grid gap-4 sm:grid-cols-3">
               {nearby.map((other) => (
                 <Link
-                  key={other.slug}
-                  href={`/games/heritage/${other.slug}`}
+                  key={other.id}
+                  href={`/games/heritage/${other.id}`}
                   className="group rounded-xl bg-white p-5 border border-forest/10 transition hover:-translate-y-0.5 hover:shadow-card"
                 >
                   <p className="font-display text-base leading-snug text-ink-900 transition group-hover:text-jade-700">

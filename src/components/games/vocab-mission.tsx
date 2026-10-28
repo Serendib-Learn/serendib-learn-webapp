@@ -7,7 +7,8 @@ import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/cn";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { Badge, Card, Progress } from "@/components/ui/primitives";
-import { allChapters, romanOf, scriptOf, type Chapter, type Phrase } from "@/data/vocabulary";
+import { romanOf, scriptOf } from "@/lib/content";
+import type { Phrase, PhraseList as Chapter } from "@/lib/types";
 import type { LanguageCode } from "@/lib/types";
 
 type Stage = "setup" | "study" | "quiz" | "results";
@@ -32,7 +33,7 @@ function shuffle<T>(items: T[]): T[] {
 }
 
 /** Distractors come from the same chapter first, then the wider phase. */
-function buildQuestions(chapter: Chapter, language: LanguageCode): Question[] {
+function buildQuestions(chapter: Chapter, allChapters: Chapter[], language: LanguageCode): Question[] {
   const pool = allChapters
     .flatMap((candidate) => candidate.phrases)
     .filter((phrase) => !chapter.phrases.includes(phrase));
@@ -90,7 +91,8 @@ function ScriptToggle({
   );
 }
 
-export function VocabMission({ chapter }: { chapter: Chapter }) {
+/** One phrase list as a quiz. `allChapters` (from the API) supplies distractors from the other lists. */
+export function VocabMission({ chapter, allChapters }: { chapter: Chapter; allChapters: Chapter[] }) {
   const { user } = useAuth();
   const [language, setLanguage] = useState<LanguageCode>("sinhala");
   const [stage, setStage] = useState<Stage>("setup");
@@ -111,7 +113,7 @@ export function VocabMission({ chapter }: { chapter: Chapter }) {
   };
 
   const startQuiz = () => {
-    setQuestions(buildQuestions(chapter, language));
+    setQuestions(buildQuestions(chapter, allChapters, language));
     setQuestionIndex(0);
     setPicked(null);
     setCorrectCount(0);

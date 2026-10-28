@@ -4,14 +4,23 @@ import { openMongoStore } from "./mongo-store.ts";
 import { openStore, type Collection, type Doc, type Store } from "./store.ts";
 import { defaultChapters } from "../../../shared/curriculum.ts";
 import { DEMO_PASSWORD, createSeedData } from "../../../shared/seed.ts";
+import { alphabetSeed } from "../seed/alphabet.ts";
+import { heritageSeed } from "../seed/heritage.ts";
+import { holidaySeed } from "../seed/holidays.ts";
+import { phraseListSeed } from "../seed/phrase-lists.ts";
+import { stageSeed } from "../seed/stages.ts";
 import type {
+  AlphabetSheet,
   AuditLogEntry,
   AvailabilityRule,
   Booking,
   CommunityPost,
   Connection,
   CourseChapter,
+  CourseStage,
   GameResult,
+  HeritageSite,
+  Holiday,
   HomeworkItem,
   LessonCredit,
   LessonNote,
@@ -19,6 +28,7 @@ import type {
   Material,
   MaterialFeedback,
   Message,
+  PhraseList,
   PostReply,
   SessionFeedback,
   StudentRequest,
@@ -182,6 +192,12 @@ export interface Database {
   lessonCredits: Collection<LessonCredit>;
   materialFeedback: Collection<MaterialFeedback>;
   studentRequests: Collection<StudentRequest>;
+  /** Teaching content — see `ContentKinds` in shared/types.ts and routes/content.ts. */
+  phraseLists: Collection<PhraseList>;
+  alphabetSheets: Collection<AlphabetSheet>;
+  holidays: Collection<Holiday>;
+  courseStages: Collection<CourseStage>;
+  heritageSites: Collection<HeritageSite>;
   voiceNotes: Collection<VoiceNote>;
 }
 
@@ -221,6 +237,11 @@ function build(from: Store): Database {
     lessonCredits: from.collection<LessonCredit>("lessonCredits"),
     materialFeedback: from.collection<MaterialFeedback>("materialFeedback"),
     studentRequests: from.collection<StudentRequest>("studentRequests"),
+    phraseLists: from.collection<PhraseList>("phraseLists"),
+    alphabetSheets: from.collection<AlphabetSheet>("alphabetSheets"),
+    holidays: from.collection<Holiday>("holidays"),
+    courseStages: from.collection<CourseStage>("courseStages"),
+    heritageSites: from.collection<HeritageSite>("heritageSites"),
     voiceNotes: from.collection<VoiceNote>("voiceNotes"),
   };
 }
@@ -265,6 +286,11 @@ async function seedContents(): Promise<Record<string, Doc[]>> {
     lessonCredits: [],
     materialFeedback: [],
     studentRequests: [],
+    phraseLists: [],
+    alphabetSheets: [],
+    holidays: [],
+    courseStages: [],
+    heritageSites: [],
     chapters: defaultChapters.map((chapter) => ({ ...chapter, createdAt: new Date().toISOString() })),
     voiceNotes: [],
   };
@@ -294,15 +320,34 @@ export async function connect(): Promise<Database> {
     }
   }
 
-  // Not demo data: every site starts with the course outline, demo or not.
-  if ((await database.chapters.count()) === 0) {
-    const createdAt = new Date().toISOString();
-    for (const chapter of defaultChapters) {
-      await database.chapters.insertOne({ ...chapter, createdAt });
-    }
-  }
-
+  await seedTeachingContent(database);
   return database;
+}
+
+/**
+ * Not demo data: every site starts with the course outline and its teaching
+ * content, demo or not — each collection filled once, while it is empty.
+ * From then on the database is the only source; it changes through the API
+ * (the portal's content editor), never by editing server/src/seed/.
+ */
+async function seedTeachingContent(target: Database): Promise<void> {
+  const now = new Date().toISOString();
+  const fill = async <T extends Doc>(collection: Collection<T>, docs: T[], label: string) => {
+    if ((await collection.count()) > 0) return;
+    for (const doc of docs) await collection.insertOne(doc);
+    console.log(`Filled ${label} (${docs.length}).`);
+  };
+
+  await fill(
+    target.chapters,
+    defaultChapters.map((chapter) => ({ ...chapter, createdAt: now })),
+    "the course chapters",
+  );
+  await fill(target.phraseLists, phraseListSeed.map((item) => ({ ...item, updatedAt: now })), "phrase lists");
+  await fill(target.alphabetSheets, alphabetSeed.map((item) => ({ ...item, updatedAt: now })), "alphabet sheets");
+  await fill(target.holidays, holidaySeed.map((item) => ({ ...item, updatedAt: now })), "holidays");
+  await fill(target.courseStages, stageSeed.map((item) => ({ ...item, updatedAt: now })), "course stages");
+  await fill(target.heritageSites, heritageSeed.map((item) => ({ ...item, updatedAt: now })), "heritage sites");
 }
 
 /**
@@ -327,4 +372,5 @@ export function db(): Database {
 export async function reseed(): Promise<void> {
   if (!store) throw new Error("connect() has not run yet.");
   await store.replaceAll(await seedContents());
+  if (database) await seedTeachingContent(database);
 }

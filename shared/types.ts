@@ -692,3 +692,139 @@ export interface StudentProgress {
   lastLessonAt?: string;
   chaptersPractised: number;
 }
+
+/*
+ * Teaching content. All of it lives in the database and is read through
+ * /api/content/:kind — nothing in the site hard-codes it. A fresh database is
+ * filled once from server/src/seed/; after that the content editor
+ * (/portal/content) is the way to change it.
+ */
+
+/** One phrase in a phrase list, in English and both scripts. */
+export interface Phrase {
+  /** Position in the list, from 1. */
+  n: number;
+  english: string;
+  sinhala: string;
+  sinhalaRoman: string;
+  tamil: string;
+  tamilRoman: string;
+  note?: string;
+}
+
+/** A themed list of phrases (Survival Sri Lanka's "Arriving", say). Course chapters link to one. */
+export interface PhraseList {
+  /** A readable slug, e.g. "tuk-tuk-adventure". */
+  id: string;
+  /** Order within its stage. */
+  number: number;
+  emoji: string;
+  title: string;
+  /** The situation the phrases are for. */
+  scene: string;
+  /** The course stage it belongs to, e.g. "Survival Sri Lanka". */
+  stage: string;
+  phrases: Phrase[];
+  updatedAt: string;
+  updatedById?: string;
+}
+
+export interface AlphabetLetter {
+  letter: string;
+  roman: string;
+  /** Plain-English guide to the sound. */
+  sound: string;
+  ipa: string;
+  example?: { word: string; roman: string; meaning: string };
+}
+
+export interface AlphabetLetterGroup {
+  title: string;
+  /** The group's name in the script itself, and romanised. */
+  native?: string;
+  intro: string;
+  letters: AlphabetLetter[];
+}
+
+export interface AlphabetVowelSign {
+  /** The consonant with the sign attached. */
+  form: string;
+  roman: string;
+}
+
+/** One language's alphabet sheet, as /alphabet shows it. */
+export interface AlphabetSheet {
+  /** The language, which is also the sheet's id. */
+  id: LanguageCode;
+  name: string;
+  native: string;
+  intro: string;
+  groups: AlphabetLetterGroup[];
+  /** How each vowel looks once it is attached to a consonant. */
+  vowelSigns: { base: string; intro: string; signs: AlphabetVowelSign[] };
+  /** BCP 47 tags to look for a speech-synthesis voice with. */
+  voiceLangs: string[];
+  /** "draft" until a tutor has checked it; the page says which. */
+  status: "draft" | "reviewed";
+  updatedAt: string;
+  updatedById?: string;
+}
+
+export type HolidayCategory = "poya" | "national" | "hindu" | "muslim" | "christian";
+
+/** A Sri Lankan public holiday, shown on the portal calendar. */
+export interface Holiday {
+  id: string;
+  /** yyyy-mm-dd */
+  date: string;
+  name: string;
+  category: HolidayCategory;
+  funFact: string;
+  updatedAt: string;
+}
+
+/** A course stage's description, shown on its learning hub folder. Keyed by the stage name chapters use. */
+export interface CourseStage {
+  id: string;
+  name: string;
+  description: string;
+  updatedAt: string;
+}
+
+export type HeritageRegion = "Colombo" | "Cultural Triangle" | "Hill Country" | "South Coast" | "North" | "East";
+
+/** A place for the (parked) heritage game. */
+export interface HeritageSite {
+  /** The slug, used in its URL. */
+  id: string;
+  name: string;
+  alsoKnownAs?: string;
+  sinhala?: string;
+  tamil?: string;
+  region: HeritageRegion;
+  era: string;
+  /** Real coordinates, projected onto the stylised island map. */
+  lat: number;
+  lng: number;
+  unesco?: boolean;
+  /** One line shown on the card. */
+  hook: string;
+  story: string[];
+  facts: { label: string; value: string }[];
+  /** Why this place is a meeting point of peoples — the Colombo thesis. */
+  meltingPot?: string;
+  /** The phrase list that pairs well with this site. */
+  pairedChapter?: string;
+  updatedAt: string;
+}
+
+/** Every kind of teaching content, by its URL name in /api/content/:kind. */
+export interface ContentKinds {
+  "phrase-lists": PhraseList;
+  alphabet: AlphabetSheet;
+  holidays: Holiday;
+  stages: CourseStage;
+  heritage: HeritageSite;
+}
+
+export type ContentKind = keyof ContentKinds;

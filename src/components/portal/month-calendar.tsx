@@ -1,8 +1,8 @@
 "use client";
 
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { HOLIDAYS_2026 } from "@/data/holidays";
 import { cn } from "@/lib/cn";
+import type { Holiday } from "@/lib/types";
 
 /** A local-date key, yyyy-mm-dd — not toISOString, which would shift across midnight in UTC. */
 export function toISODate(date: Date): string {
@@ -11,8 +11,6 @@ export function toISODate(date: Date): string {
   const d = String(date.getDate()).padStart(2, "0");
   return `${y}-${m}-${d}`;
 }
-
-export const HOLIDAY_BY_DATE = new Map(HOLIDAYS_2026.map((holiday) => [holiday.date, holiday]));
 
 const WEEKDAY_LABELS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
@@ -41,6 +39,7 @@ export function MonthCalendar({
   onPrev,
   onNext,
   onToday,
+  holidays,
 }: {
   cursor: Date;
   selected: string;
@@ -50,6 +49,8 @@ export function MonthCalendar({
   onPrev: () => void;
   onNext: () => void;
   onToday: () => void;
+  /** Holidays by yyyy-mm-dd, from the database (see the calendar page). */
+  holidays: Map<string, Holiday>;
 }) {
   const cells = monthMatrix(cursor.getFullYear(), cursor.getMonth());
 
@@ -90,7 +91,7 @@ export function MonthCalendar({
           if (!date) return <div key={`blank-${index}`} />;
           const iso = toISODate(date);
           const mark = marks[iso] ?? {};
-          const holiday = HOLIDAY_BY_DATE.get(iso);
+          const holiday = holidays.get(iso);
           const isToday = iso === todayISO;
           const isSelected = iso === selected;
           return (

@@ -1,9 +1,12 @@
 // Generates the Tamil alphabet sheet's audio with Google Cloud Text-to-Speech:
 // every letter, every example word and every vowel sign, as small MP3s in
-// public/audio/alphabet/tamil/, named by audioKey() from src/data/alphabet.ts.
+// public/audio/alphabet/tamil/, named by audioKey() (src/lib/content.ts).
+// The letters come from the alphabet sheet in the database, through the API —
+// so run it again after tutors change the Tamil sheet.
 //
 //   node scripts/generate-alphabet-audio.mjs            # only what is missing
 //   node scripts/generate-alphabet-audio.mjs --force    # regenerate everything
+//   API_URL=https://… node scripts/generate-alphabet-audio.mjs   # another API (default: the local one)
 //
 // Needs `gcloud auth login` with access to the serendib-learn project and the
 // Text-to-Speech API enabled there. Google has no Sinhala voice, so Sinhala
@@ -12,7 +15,18 @@
 import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { audioKey, tamilAlphabet } from "../src/data/alphabet.ts";
+
+/** Same as audioKey() in src/lib/content.ts: the text's code points, e.g. 0B85-0BAE. */
+function audioKey(text) {
+  return Array.from(text)
+    .map((char) => char.codePointAt(0).toString(16).toUpperCase().padStart(4, "0"))
+    .join("-");
+}
+
+const API = (process.env.API_URL ?? "http://localhost:4000").replace(/\/$/, "");
+const sheetResponse = await fetch(`${API}/api/content/alphabet/tamil`);
+if (!sheetResponse.ok) throw new Error(`Could not read the Tamil sheet from ${API}: ${sheetResponse.status}`);
+const tamilAlphabet = await sheetResponse.json();
 
 const PROJECT = "serendib-learn";
 const VOICE = { languageCode: "ta-IN", name: "ta-IN-Wavenet-A" };

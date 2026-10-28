@@ -314,6 +314,24 @@ export const httpBackend: Backend = {
     },
   },
 
+  content: {
+    list(kind) {
+      return request(`/content/${kind}`);
+    },
+
+    get(kind, id) {
+      return request(`/content/${kind}/${encodeURIComponent(id)}`);
+    },
+
+    save(kind, id, body) {
+      return request(`/content/${kind}/${encodeURIComponent(id)}`, { method: "PUT", body });
+    },
+
+    remove(kind, id) {
+      return request<void>(`/content/${kind}/${encodeURIComponent(id)}`, { method: "DELETE" });
+    },
+  },
+
   requests: {
     list(studentId) {
       return request<StudentRequest[]>("/requests", { query: { studentId } });

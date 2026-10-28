@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { ChapterMap } from "@/components/games/chapter-map";
 import { Badge } from "@/components/ui/primitives";
-import { phaseOne, totalPhraseCount } from "@/data/vocabulary";
+import { fetchPhrasePhase } from "@/lib/api/public";
 
 export const metadata: Metadata = {
   title: "Survival Sri Lanka",
@@ -9,7 +9,11 @@ export const metadata: Metadata = {
     "Eight chapters of Sinhala and Tamil phrases, from arriving at the airport to meeting your relatives.",
 };
 
-export default function LanguagesPage() {
+export const revalidate = 60;
+
+export default async function LanguagesPage() {
+  const phaseOne = await fetchPhrasePhase();
+  const totalPhraseCount = phaseOne.chapters.reduce((sum, chapter) => sum + chapter.phrases.length, 0);
   return (
     <>
       <section className="bg-weave border-b border-ink-900/8">
@@ -27,7 +31,7 @@ export default function LanguagesPage() {
       </section>
 
       <section className="mx-auto max-w-6xl px-5 py-16 sm:px-8">
-        <ChapterMap />
+        <ChapterMap chapters={phaseOne.chapters} />
       </section>
     </>
   );

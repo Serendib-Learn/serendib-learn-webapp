@@ -1,34 +1,36 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { allChapters } from "@/data/vocabulary";
+import { api } from "@/lib/api";
 import { cn } from "@/lib/cn";
+import { useQuery } from "@/lib/hooks";
 
-const featured = [
-  { chapter: "arriving", n: 1 },
-  { chapter: "ordering-food", n: 6 },
-  { chapter: "tuk-tuk-adventure", n: 1 },
-  { chapter: "meeting-relatives", n: 4 },
-  { chapter: "weather-chat", n: 3 },
-].map(({ chapter, n }) => {
-  const found = allChapters.find((candidate) => candidate.id === chapter);
-  const phrase = found?.phrases.find((candidate) => candidate.n === n);
-  return { phrase: phrase!, chapterTitle: found!.title, emoji: found!.emoji };
-});
-
+/**
+ * A rotating card of phrases (parked with the decks — not on any page now).
+ * The phrases come from the database: the first phrase of the first five
+ * phrase lists.
+ */
 export function PhraseCardStack() {
+  const lists = useQuery(() => api.content.list("phrase-lists"), []);
+  const featured = (lists.data ?? [])
+    .filter((list) => list.phrases.length > 0)
+    .slice(0, 5)
+    .map((list) => ({ phrase: list.phrases[0], chapterTitle: list.title, emoji: list.emoji }));
   const [index, setIndex] = useState(0);
   const [paused, setPaused] = useState(false);
 
   useEffect(() => {
     if (paused) return;
+    const count = featured.length;
+    if (count === 0) return;
     const timer = setInterval(() => {
-      setIndex((current) => (current + 1) % featured.length);
+      setIndex((current) => (current + 1) % count);
     }, 3800);
     return () => clearInterval(timer);
-  }, [paused]);
+  }, [paused, featured.length]);
 
-  const active = featured[index];
+  const active = featured[index % Math.max(featured.length, 1)];
+  if (!active) return null;
 
   return (
     <div

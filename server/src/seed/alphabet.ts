@@ -1,50 +1,18 @@
+import type { AlphabetSheet } from "../../../shared/types.ts";
+
 /**
- * The Sinhala and Tamil alphabet sheets: every letter with its romanisation,
- * a plain-English sound hint, its IPA, and an example word.
- *
- * A first pass drafted with AI for the tutors to review — the page says so.
- * Sound hints compare to (British) English where a close match exists and
- * describe the mouth position where none does. Example words are everyday
- * ones where possible; the rarer letters have none rather than a forced one.
+ * The alphabet sheets a fresh database starts with: every letter with its
+ * romanisation, a plain-English sound hint, its IPA, and an example word.
+ * A first pass drafted with AI for the tutors to review (status "draft"),
+ * then edited in the portal's content editor. Only read to fill an empty
+ * `alphabetSheets` collection; the site never imports this file.
  */
 
-export interface Letter {
-  letter: string;
-  roman: string;
-  /** Plain-English guide to the sound. */
-  sound: string;
-  ipa: string;
-  example?: { word: string; roman: string; meaning: string };
-}
+type Seed = Omit<AlphabetSheet, "updatedAt">;
 
-export interface LetterGroup {
-  title: string;
-  /** The group's name in the script itself, and romanised. */
-  native?: string;
-  intro: string;
-  letters: Letter[];
-}
-
-export interface VowelSign {
-  /** The consonant with the sign attached. */
-  form: string;
-  roman: string;
-}
-
-export interface AlphabetSheet {
-  language: "sinhala" | "tamil";
-  name: string;
-  native: string;
-  intro: string;
-  groups: LetterGroup[];
-  /** How each vowel looks once it is attached to a consonant. */
-  vowelSigns: { base: string; intro: string; signs: VowelSign[] };
-  /** BCP 47 tags to look for a speech-synthesis voice with. */
-  voiceLangs: string[];
-}
-
-export const sinhalaAlphabet: AlphabetSheet = {
-  language: "sinhala",
+const sinhala: Seed = {
+  id: "sinhala",
+  status: "draft",
   name: "Sinhala",
   native: "සිංහල හෝඩිය",
   intro:
@@ -158,8 +126,9 @@ export const sinhalaAlphabet: AlphabetSheet = {
   },
 };
 
-export const tamilAlphabet: AlphabetSheet = {
-  language: "tamil",
+const tamil: Seed = {
+  id: "tamil",
+  status: "draft",
   name: "Tamil",
   native: "தமிழ் எழுத்துகள்",
   intro:
@@ -267,15 +236,4 @@ export const tamilAlphabet: AlphabetSheet = {
   },
 };
 
-export const alphabetSheets = [sinhalaAlphabet, tamilAlphabet];
-
-/**
- * The file name a letter's (or word's) recorded audio is stored under: its
- * Unicode code points, so it is stable and safe in a URL. Shared by the
- * audio generator (scripts/generate-alphabet-audio.mjs) and the page.
- */
-export function audioKey(text: string): string {
-  return Array.from(text)
-    .map((char) => char.codePointAt(0)!.toString(16).toUpperCase().padStart(4, "0"))
-    .join("-");
-}
+export const alphabetSeed: Seed[] = [sinhala, tamil];

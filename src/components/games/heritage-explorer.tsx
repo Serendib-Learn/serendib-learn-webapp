@@ -4,12 +4,8 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 import { cn } from "@/lib/cn";
 import { Badge, Card } from "@/components/ui/primitives";
-import {
-  heritageRegions,
-  heritageSites,
-  type HeritageRegion,
-  type HeritageSite,
-} from "@/data/heritage";
+import { HERITAGE_REGIONS as heritageRegions } from "@/lib/content";
+import type { HeritageRegion, HeritageSite } from "@/lib/types";
 
 // Bounding box of the island, used to place pins on the stylised map.
 const BOUNDS = { minLat: 5.85, maxLat: 9.95, minLng: 79.5, maxLng: 82.0 };
@@ -31,7 +27,8 @@ const regionTone: Record<HeritageRegion, string> = {
 
 type Filter = HeritageRegion | "all" | "melting-pot";
 
-export function HeritageExplorer() {
+/** The heritage sites come from the database, through the page that renders this. */
+export function HeritageExplorer({ sites: heritageSites }: { sites: HeritageSite[] }) {
   const [filter, setFilter] = useState<Filter>("all");
   const [hovered, setHovered] = useState<string | null>(null);
 
@@ -39,9 +36,9 @@ export function HeritageExplorer() {
     if (filter === "all") return heritageSites;
     if (filter === "melting-pot") return heritageSites.filter((site) => site.meltingPot);
     return heritageSites.filter((site) => site.region === filter);
-  }, [filter]);
+  }, [filter, heritageSites]);
 
-  const visibleSlugs = new Set(visible.map((site) => site.slug));
+  const visibleSlugs = new Set(visible.map((site) => site.id));
 
   return (
     <div>
@@ -93,14 +90,14 @@ export function HeritageExplorer() {
 
               {heritageSites.map((site) => {
                 const { x, y } = project(site);
-                const active = visibleSlugs.has(site.slug);
-                const isHovered = hovered === site.slug;
+                const active = visibleSlugs.has(site.id);
+                const isHovered = hovered === site.id;
 
                 return (
                   <Link
-                    key={site.slug}
-                    href={`/games/heritage/${site.slug}`}
-                    onMouseEnter={() => setHovered(site.slug)}
+                    key={site.id}
+                    href={`/games/heritage/${site.id}`}
+                    onMouseEnter={() => setHovered(site.id)}
                     onMouseLeave={() => setHovered(null)}
                     style={{ left: `${x}%`, top: `${y}%` }}
                     className={cn(
@@ -159,9 +156,9 @@ export function HeritageExplorer() {
           <div className="grid gap-5 sm:grid-cols-2">
             {visible.map((site) => (
               <Link
-                key={site.slug}
-                href={`/games/heritage/${site.slug}`}
-                onMouseEnter={() => setHovered(site.slug)}
+                key={site.id}
+                href={`/games/heritage/${site.id}`}
+                onMouseEnter={() => setHovered(site.id)}
                 onMouseLeave={() => setHovered(null)}
                 className="group flex flex-col rounded-2xl bg-white p-6 border border-forest/10 transition hover:-translate-y-0.5 hover:shadow-lifted"
               >

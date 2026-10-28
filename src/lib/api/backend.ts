@@ -7,6 +7,8 @@ import type {
   CommunityPost,
   CommunityPostInput,
   Connection,
+  ContentKind,
+  ContentKinds,
   CourseChapter,
   GameResult,
   GoogleCalendarStatus,
@@ -153,6 +155,22 @@ export interface Backend {
     reschedule(id: string, startsAt: string): Promise<Booking>;
     /** Confirms a booking with one of the student's free lessons instead of paying. */
     useCredit(id: string): Promise<Booking>;
+  };
+
+  /**
+   * Teaching content — phrase lists, alphabet sheets, holidays, stage
+   * descriptions, heritage sites. Always from the database; never hard-coded.
+   */
+  content: {
+    list<K extends ContentKind>(kind: K): Promise<ContentKinds[K][]>;
+    get<K extends ContentKind>(kind: K, id: string): Promise<ContentKinds[K]>;
+    /** Creates (administrators) or changes (its editors) one item. */
+    save<K extends ContentKind>(
+      kind: K,
+      id: string,
+      body: Omit<ContentKinds[K], "id" | "updatedAt" | "updatedById">,
+    ): Promise<ContentKinds[K]>;
+    remove(kind: ContentKind, id: string): Promise<void>;
   };
 
   /** Free sessions and missed-lesson help: students ask, administrators decide. */

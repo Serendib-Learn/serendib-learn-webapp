@@ -2,10 +2,11 @@
 
 import { ArrowUpRight, ChevronDown, FileText, FolderOpen, Volume2 } from "lucide-react";
 import Link from "next/link";
-import { getChapter } from "@/data/vocabulary";
 import { MaterialCard } from "./material-card";
+import { api } from "@/lib/api";
 import { cn } from "@/lib/cn";
-import type { CourseChapter, LanguageCode, Material } from "@/lib/types";
+import { useQuery } from "@/lib/hooks";
+import type { AlphabetSheet, CourseChapter, LanguageCode, Material, PhraseList } from "@/lib/types";
 
 /** Chapters grouped under their stage, stages in the order of their first chapter. */
 export function groupByStage(chapters: CourseChapter[]) {
@@ -17,13 +18,6 @@ export function groupByStage(chapters: CourseChapter[]) {
   }
   return Array.from(stages, ([stage, items]) => ({ stage, chapters: items }));
 }
-
-const STAGE_DESCRIPTIONS: Record<string, string> = {
-  Foundation: "Say Hello, Who's Who, Calling Grandma, and the rest of the Foundation units.",
-  "Survival Sri Lanka": "From the airport gate to your grandmother's front room — every phrase in script and romanised.",
-  "Building & fluency": "Materials for holding a conversation and telling your own story.",
-  "Worksheets & printables": "General printables, homework templates, and offline practice sheets.",
-};
 
 /** One of the original learning hub's folders: a white card that opens. */
 function Folder({
@@ -61,8 +55,8 @@ function Folder({
   );
 }
 
-/** The original hub's Alphabet folder, now pointing at the site's own alphabet sheet. */
-function AlphabetFolder() {
+/** The original hub's Alphabet folder, pointing at the alphabet sheets (from the database). */
+function AlphabetFolder({ sheets }: { sheets: AlphabetSheet[] }) {
   return (
     <Folder
       icon={<Volume2 className="h-4 w-4" strokeWidth={1.75} />}
@@ -71,10 +65,11 @@ function AlphabetFolder() {
       defaultOpen
     >
       <div className="grid gap-3 sm:grid-cols-2">
-        {[
-          { href: "/alphabet?script=sinhala", title: "Sinhala alphabet · සිංහල", note: "Every letter, its sound, and an example word" },
-          { href: "/alphabet?script=tamil", title: "Tamil alphabet · தமிழ்", note: "Vowels and consonants, with how to say them" },
-        ].map((item) => (
+        {sheets.map((sheet) => ({
+          href: `/alphabet?script=${sheet.id}`,
+          title: `${sheet.name} alphabet${sheet.native ? ` · ${sheet.native}` : ""}`,
+          note: `${sheet.groups.reduce((sum, group) => sum + group.letters.length, 0)} letters, each with its sound`,
+        })).map((item) => (
           <Link
             key={item.href}
             href={item.href}
@@ -109,13 +104,20 @@ export function ChapterBrowser({
   languages: LanguageCode[];
   footerFor?: (material: Material) => React.ReactNode;
 }) {
+  // Teaching content, all from the database.
+  const lists = useQuery(() => api.content.list("phrase-lists"), []);
+  const stages = useQuery(() => api.content.list("stages"), []);
+  const sheets = useQuery(() => api.content.list("alphabet"), []);
+  const listById = new Map((lists.data ?? []).map((list) => [list.id, list]));
+  const stageByName = new Map((stages.data ?? []).map((stage) => [stage.name, stage]));
+
   const known = new Set(chapters.map((chapter) => chapter.id));
   const unfiled = materials.filter((material) => !material.chapterId || !known.has(material.chapterId));
   const shown: LanguageCode[] = languages.length > 0 ? languages : ["sinhala", "tamil"];
 
   return (
     <div className="space-y-3">
-      <AlphabetFolder />
+      <AlphabetFolder sheets={sheets.data ?? []} />
 
       {groupByStage(chapters).map(({ stage, chapters: items }) => {
         const inStage = materials.filter((material) => items.some((chapter) => chapter.id === material.chapterId));
@@ -124,12 +126,12 @@ export function ChapterBrowser({
             key={stage}
             icon={<FolderOpen className="h-4 w-4" strokeWidth={1.75} />}
             title={stage}
-            description={STAGE_DESCRIPTIONS[stage] ?? items.map((chapter) => chapter.title).join(", ")}
+            description={stageByName.get(stage)?.description || items.map((chapter) => chapter.title).join(", ")}
             count={inStage.length}
           >
             {items.map((chapter) => {
               const filed = materials.filter((material) => material.chapterId === chapter.id);
-              const vocab = chapter.vocabChapterId ? getChapter(chapter.vocabChapterId) : undefined;
+              const vocab = chapter.vocabChapterId ? listById.get(chapter.vocabChapterId) : undefined;
               const isAlphabet = chapter.id === "ch_alphabet";
               return (
                 <details key={chapter.id} className="group/chapter rounded-lg border border-forest/10">
@@ -165,7 +167,7 @@ export function ChapterBrowser({
                       <p className="text-xs text-earth/50">Nothing in this chapter yet.</p>
                     ) : null}
 
-                    {vocab ? <PhraseList chapterId={vocab.id} languages={shown} /> : null}
+                    {vocab ? <PhraseTable list={vocab} languages={shown} /> : null}
                   </div>
                 </details>
               );
@@ -192,9 +194,7 @@ export function ChapterBrowser({
   );
 }
 
-function PhraseList({ chapterId, languages }: { chapterId: string; languages: LanguageCode[] }) {
-  const chapter = getChapter(chapterId);
-  if (!chapter) return null;
+function PhraseTable({ list: chapter, languages }: { list: PhraseList; languages: LanguageCode[] }) {
   return (
     <div className="overflow-x-auto">
       <p className="mb-2 text-xs text-ink-400">{chapter.scene}</p>

@@ -491,5 +491,9 @@ The site is installable like the prototype was ("Add to Home Screen" /
 - [x] Payments.lk sandbox profile created, `PAYMENTS_LK_SECRET_KEY` + `PAYMENTS_LK_WEBHOOK_SECRET` in Secret Manager and referenced in `deploy-backend.yml`, webhook registered (step 7) — sandbox card payment and signed webhook verified. Still to do: swap in the `sk_live_…` key (and the live webhook's secret) once Payments.lk approves the account
 - [ ] (recommended) Serendib Google account connected under Administration → Google, so every booking gets a Meet link
 - [x] `CRON_SECRET` + the Cloud Scheduler job for lesson and feedback reminders (step 8) — set up
-- [ ] Real tutors invited or approved, with their profiles filled in
+- [ ] Gmail sender connected under Administration → Google and its test button pressed — without it no verification code, receipt or reminder is delivered
+- [ ] Google OAuth consent screen **published** and submitted for verification (sensitive scopes: `calendar.events`, `gmail.send`)
+- [ ] Terms of service and a refund/cancellation policy written and linked (payment providers expect them), privacy policy wording confirmed
+- [ ] Real tutors invited or approved, with their profiles, rates and weekly hours filled in
+- [ ] Alphabet sheets checked by tutors (Portal → Content) and next year's holidays added before January
 - [ ] Push to `main` → CI runs → deploy workflow runs → visit your domain
