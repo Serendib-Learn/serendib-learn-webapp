@@ -283,6 +283,10 @@ none of the tutor rows. Unverified students cannot log in at all.
    - **Moderation:** approve or reject community posts.
    - **Tutor applications:** approve or decline.
 2. **People:**
+   - Search by name or email, filter (Needs attention, Students, Tutors,
+     Admins) and sort (needs attention first, newest, oldest, name, role).
+     *Needs attention* is anyone without an email, with an unconfirmed
+     email, or a tutor awaiting approval.
    - Invite a tutor or admin.
    - List a tutor without an email, then **Add email & invite**.
    - **Mark verified** when a code never arrived.
@@ -988,8 +992,9 @@ and 1 hour ahead, with the Meet link and a link to the calendar.
 
 | Tab | Purpose |
 | --- | --- |
-| People | Every account: change roles and membership, delete accounts (not super admins), invite someone, edit profiles, **Mark verified** for a code that never arrived |
+| People | Every account, with search, filters and sorting (needs attention first by default): change roles and membership, delete accounts (not super admins), invite someone, edit profiles, **Mark verified** for a code that never arrived |
 | Requests | Free-session requests and missed-lesson reports: approve (grants a free lesson) or decline with a note |
+| Tutor hours | Month by month, each tutor's lessons taught, **verified** hours (taught, written up, not reported missed — what pay is worked out from), lessons to come, card payments and free lessons, with a CSV download. Admins only |
 | Tutor applications | Approve or reject pending tutors |
 | Feedback | All lesson ratings and write-ups |
 | Moderation | Approve or reject community posts |
@@ -1286,8 +1291,9 @@ signing up, paying or getting lesson links.
 1. ~~**Email.**~~ **Done 28 Oct 2026:** the Gmail sender
    (serendib.learn@gmail.com) is connected and the test email arrived.
    The test button appears once a connection exists.
-2. **Google consent screen (blocking).** In Google Cloud → APIs &
-   Services → OAuth consent screen, **publish** the app and submit it for
+2. **Google consent screen (blocking).** **Published 29 Oct 2026**; the
+   Serendib calendar and Gmail still need reconnecting so they get
+   long-lasting access. Then submit the app for
    verification (`calendar.events` and `gmail.send` are sensitive
    scopes). Until it is verified, people see an "unverified app" warning
    and Google caps it at 100 users.
@@ -1301,11 +1307,19 @@ signing up, paying or getting lesson links.
      versions (DEPLOYMENT §7), then redeploy.
    - Do one real low-value payment end to end.
    - Confirm the rupee rate (`USD_TO_LKR`, now 300).
+   - Ask Payments.lk to accept **overseas phone numbers and postcodes**.
+     Their hosted checkout page takes only Sri Lankan ones; the API sends
+     just the name and email, and their SDK has no country option, so it
+     cannot be fixed on our side.
 5. **Terms and refunds.** Payment providers usually require Terms of
    service and a refund and cancellation policy on the site. Write them
    (they should match the rules in 2.2: free reschedules up to 24 hours,
    no refund when a student cancels, a free lesson when the tutor
-   cancels), and confirm the privacy policy wording.
+   cancels), and confirm the privacy policy wording. **A sample is
+   drafted** (the owners' local `TERMS-SAMPLE.md`), for a lawyer to review.
+   **Pricing is agreed** (LKR 5,000 a lesson; LKR 8,000 for two people
+   together; the owners' local `PRICING-MODEL.md`) but not built: the site
+   still prices from each tutor's US$ rate, and has no pair lessons.
 6. **Tutors.**
    - Send the four listed tutors' emails, so you can **Add email &
      invite**.
