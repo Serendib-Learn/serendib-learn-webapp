@@ -3,6 +3,7 @@
 import { useParams, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { api } from "@/lib/api";
+import { photoUrlFor } from "@/lib/api/public";
 import { useAuth } from "@/lib/auth";
 import { errorMessage, useAction, useQuery } from "@/lib/hooks";
 import { formatLongDate, formatTime, money, rupees } from "@/lib/format";
@@ -150,7 +151,7 @@ function Summary({
   return (
     <Card className="h-fit p-6">
       <div className="flex items-center gap-3">
-        <Avatar name={tutor?.name ?? "Tutor"} avatarId={tutor?.avatarId} />
+        <Avatar name={tutor?.name ?? "Tutor"} avatarId={tutor?.avatarId} photoUrl={photoUrlFor(tutor)} />
         <div className="min-w-0">
           <p className="font-medium text-ink-800">{tutor?.name ?? "Your tutor"}</p>
           <p className="text-xs text-ink-400">

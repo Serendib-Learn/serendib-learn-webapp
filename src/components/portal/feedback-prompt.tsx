@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
+import { photoUrlFor } from "@/lib/api/public";
 import { useAction, useQuery } from "@/lib/hooks";
 import { formatDateTime } from "@/lib/format";
 import { cn } from "@/lib/cn";
@@ -85,7 +86,7 @@ export function FeedbackPrompt({ user }: { user: User }) {
   return (
     <>
       <div className="mb-6 flex flex-wrap items-center gap-4 rounded-2xl bg-jade-700 p-5 text-sand-50 shadow-card">
-        <Avatar name={next.other.name} avatarId={next.other.avatarId} />
+        <Avatar name={next.other.name} avatarId={next.other.avatarId} photoUrl={photoUrlFor(next.other)} />
         <div className="min-w-0 flex-1">
           <p className="font-display text-lg leading-snug">
             {isStudent

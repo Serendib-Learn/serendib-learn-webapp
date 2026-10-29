@@ -68,7 +68,7 @@ feedbackRouter.get(
       if (!other) continue;
       pending.push({
         booking,
-        other: { id: other.id, name: other.name, role: other.role, avatarId: other.avatarId },
+        other: { id: other.id, name: other.name, role: other.role, avatarId: other.avatarId, photoId: other.photoId },
         kind: isStudent ? "feedback" : "write-up",
       });
     }

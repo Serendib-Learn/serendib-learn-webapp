@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { api } from "@/lib/api";
+import { photoUrlFor } from "@/lib/api/public";
 import { useAction, useQuery } from "@/lib/hooks";
 import { formatDateTime, relativeTime } from "@/lib/format";
 import { Button } from "@/components/ui/button";
@@ -90,7 +91,7 @@ function PendingRequest({ item, people }: { item: StudentRequest; people: Map<st
   return (
     <Card className="space-y-4 p-5">
       <div className="flex flex-wrap items-start gap-3">
-        <Avatar name={student?.name ?? "Student"} avatarId={student?.avatarId} />
+        <Avatar name={student?.name ?? "Student"} avatarId={student?.avatarId} photoUrl={photoUrlFor(student)} />
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <p className="font-medium text-ink-800">{student?.name ?? "Former student"}</p>

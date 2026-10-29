@@ -3,7 +3,7 @@
 import { useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { api } from "@/lib/api";
-import { profilePhotoUrl } from "@/lib/api/public";
+import { profilePhotoUrl, photoUrlFor } from "@/lib/api/public";
 import { useAuth } from "@/lib/auth";
 import { useAction, useQuery } from "@/lib/hooks";
 import { cn } from "@/lib/cn";
@@ -553,7 +553,7 @@ function TutorApplicationRow({ tutor }: { tutor: User }) {
   return (
     <Card className="p-6">
       <div className="flex flex-wrap items-center gap-3">
-        <Avatar name={tutor.name} avatarId={tutor.avatarId} />
+        <Avatar name={tutor.name} avatarId={tutor.avatarId} photoUrl={photoUrlFor(tutor)} />
         <div className="min-w-0 flex-1">
           <p className="font-medium text-ink-800">{tutor.name}</p>
           <p className="truncate text-xs text-ink-400">

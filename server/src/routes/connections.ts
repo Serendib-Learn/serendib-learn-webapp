@@ -20,6 +20,7 @@ function member(user: User, viewerId: string, connection: Connection | null): Co
     name: user.name,
     role: user.role,
     avatarId: user.avatarId,
+    photoId: user.photoId,
     languages: user.languages,
     headline: user.headline,
     homeTown: user.homeTown,

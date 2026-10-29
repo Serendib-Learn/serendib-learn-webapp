@@ -85,6 +85,7 @@ usersRouter.get(
         role: user.role,
         headline: user.headline,
         avatarId: user.avatarId,
+        photoId: user.photoId,
       })),
     );
   }),

@@ -102,8 +102,9 @@ export function Avatar({
         alt={`Photo of ${name}`}
         width={avatarPixels[size]}
         height={avatarPixels[size]}
-        // Served already sized from the API, which is on another host.
-        unoptimized
+        // Resized, re-encoded and edge-cached by the image optimiser (see
+        // next.config.ts) — except from a local API, which it can't reach.
+        unoptimized={/^https?:\/\/(localhost|127\.0\.0\.1)[:/]/.test(photoUrl)}
         className={cn(
           "shrink-0 rounded-full border border-forest/15 object-cover object-top",
           dimensions,

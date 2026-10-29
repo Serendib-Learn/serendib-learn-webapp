@@ -109,7 +109,8 @@ use. ✓ = yes, — = no, *own* = only their own.
 | **Public site** | Home, How it works, Tutors, Alphabet sheet, Privacy, waitlist | ✓ | ✓ | ✓ | ✓ |
 | **Account** | Sign up with any email, verify, log in, Google sign-in, reset password | ✓ | ✓ | ✓ | ✓ |
 | | Edit own profile and character | — | ✓ | ✓ | ✓ |
-| | Rate, years teaching, specialties, photo | — | — | ✓ *own* | ✓ any tutor |
+| | Rate, years teaching, specialties | — | — | ✓ *own* | ✓ any tutor |
+| | Upload a profile photo (shown instead of the character) | — | ✓ *own* | ✓ *own* | ✓ anyone's |
 | | Read someone's full account (email) | — | *own* | *own* + own students | ✓ |
 | **Lessons** | Publish weekly teaching hours | — | — | ✓ *own* | ✓ any tutor |
 | | Book and pay for a lesson | — | ✓ | — | ✓ for a student |
@@ -1273,8 +1274,9 @@ Before pushing, run the four commands in `DEPLOYMENT.md` → "Local testing".
 - The seeded tutors (Nimali, Arjun and Dilani) are placeholders that exist
   only in demo mode.
 
-**Before launch: the owners' checklist (October 2026).** The code is
-ready; these need the owners. The *blocking* items stop real users from
+**Before launch: the owners' checklist (October 2026).** The step-by-step,
+tick-box version is **`OWNER-CHECKLIST.md`**. The code is ready; these need
+the owners. The *blocking* items stop real users from
 signing up, paying or getting lesson links.
 
 1. ~~**Email.**~~ **Done 28 Oct 2026:** the Gmail sender

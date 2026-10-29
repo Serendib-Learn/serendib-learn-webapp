@@ -231,41 +231,56 @@ test("tutor listed without an email: on the tutors page, not bookable, until the
   assert.equal(relisted.find((item) => item.id === tutor.id)?.bookable, true);
 });
 
-test("profile photos: tutors only, public on the tutors page, replaced and removed", async () => {
+test("profile photos: anyone's own; tutors' public, everyone else's only by current version", async () => {
   const admin = await adminClient(harness);
   const tutor = await signedUpUser(harness, "tutor", "photogenic@example.com");
   const student = await signedUpUser(harness, "student", "camera-shy@example.com");
   // A 1×1 transparent PNG.
   const png =
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
+  const put = (who: { client: { put: (p: string, b: unknown) => Promise<{ status: number; body: { photoId?: string } }> } }, id: string, mimeType = "image/png") =>
+    who.client.put(`/profile-photos/${id}`, { mimeType, data: png });
+  const serve = (id: string, version?: string) =>
+    fetch(`${harness.baseUrl}/profile-photos/${id}${version ? `?v=${version}` : ""}`);
 
   assert.equal((await harness.client().put(`/profile-photos/${tutor.user.id}`, { mimeType: "image/png", data: png })).status, 401);
-  assert.equal((await student.client.put(`/profile-photos/${tutor.user.id}`, { mimeType: "image/png", data: png })).status, 403);
-  assert.equal((await student.client.put(`/profile-photos/${student.user.id}`, { mimeType: "image/png", data: png })).status, 400);
-  assert.equal((await tutor.client.put(`/profile-photos/${tutor.user.id}`, { mimeType: "image/gif", data: png })).status, 400);
+  assert.equal((await put(student, tutor.user.id)).status, 403);
+  assert.equal((await put(tutor, tutor.user.id, "image/gif")).status, 400);
 
-  const uploaded = await tutor.client.put(`/profile-photos/${tutor.user.id}`, { mimeType: "image/png", data: png });
+  // Tutors: public, versioned or not; the versioned URL is cached for a year.
+  const uploaded = await put(tutor, tutor.user.id);
   assert.equal(uploaded.status, 200);
-  const firstVersion = uploaded.body.photoId as string;
-  assert.ok(firstVersion);
-
-  const served = await fetch(`${harness.baseUrl}/profile-photos/${tutor.user.id}`);
-  assert.equal(served.status, 200);
-  assert.equal(served.headers.get("content-type"), "image/png");
-  assert.equal(served.headers.get("cross-origin-resource-policy"), "cross-origin");
-
+  const version = uploaded.body.photoId!;
+  assert.ok(version.length >= 16, "the version is long enough to act as a private link");
+  assert.equal((await serve(tutor.user.id)).status, 200);
+  const versioned = await serve(tutor.user.id, version);
+  assert.equal(versioned.status, 200);
+  assert.equal(versioned.headers.get("content-type"), "image/png");
+  assert.equal(versioned.headers.get("cache-control"), "public, max-age=31536000, immutable");
+  assert.equal(versioned.headers.get("cross-origin-resource-policy"), "cross-origin");
   const roster = (await harness.client().get("/users/tutors")).body as PublicTutor[];
-  assert.equal(roster.find((item) => item.id === tutor.user.id)?.photoId, firstVersion);
+  assert.equal(roster.find((item) => item.id === tutor.user.id)?.photoId, version);
 
-  // An administrator can replace it; the version changes so caches refetch.
-  const replaced = await admin.client.put(`/profile-photos/${tutor.user.id}`, { mimeType: "image/png", data: png });
+  // Students can have one too — served only with the current version.
+  const mine = await put(student, student.user.id);
+  assert.equal(mine.status, 200);
+  assert.equal((await serve(student.user.id)).status, 404);
+  assert.equal((await serve(student.user.id, "ph_guess")).status, 404);
+  assert.equal((await serve(student.user.id, mine.body.photoId)).status, 200);
+  // Members see the version wherever they see the person.
+  const directory = (await tutor.client.get("/users/directory")).body as { id: string; photoId?: string }[];
+  assert.equal(directory.find((item) => item.id === student.user.id)?.photoId, mine.body.photoId);
+
+  // A replacement is a new version; the old link stops working for a student.
+  const replaced = await put(admin, student.user.id);
   assert.equal(replaced.status, 200);
-  assert.notEqual(replaced.body.photoId, firstVersion);
+  assert.notEqual(replaced.body.photoId, mine.body.photoId);
+  assert.equal((await serve(student.user.id, mine.body.photoId)).status, 404);
 
   const removed = await tutor.client.delete(`/profile-photos/${tutor.user.id}`);
   assert.equal(removed.status, 200);
   assert.equal(removed.body.photoId, undefined);
-  assert.equal((await fetch(`${harness.baseUrl}/profile-photos/${tutor.user.id}`)).status, 404);
+  assert.equal((await serve(tutor.user.id)).status, 404);
 });
 
 test("any email domain signs up; unverified login says so; an admin can confirm the address", async () => {

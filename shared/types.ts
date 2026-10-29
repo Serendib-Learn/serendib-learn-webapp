@@ -53,8 +53,10 @@ export interface User {
   avatarId?: string;
   /**
    * Set when they have uploaded a photo, served from
-   * /api/profile-photos/:userId. Changes with every upload, so it doubles as
-   * a cache-busting version.
+   * /api/profile-photos/:userId?v=<photoId>. Changes with every upload, so it
+   * versions the URL (and caches can keep each version for a year). A tutor's
+   * photo is public; anyone else's is served only with the current version,
+   * which only signed-in members are ever sent.
    */
   photoId?: string;
   /**
@@ -75,6 +77,8 @@ export interface PublicProfile {
   role: Role;
   headline?: string;
   avatarId?: string;
+  /** Their uploaded photo's version, when they have one (see `User.photoId`). */
+  photoId?: string;
   /** Only sent where it helps — in a conversation, to know when to expect a reply. */
   timezone?: string;
 }
@@ -653,6 +657,7 @@ export interface CommunityMember {
   name: string;
   role: Role;
   avatarId?: string;
+  photoId?: string;
   languages: LanguageCode[];
   headline?: string;
   homeTown?: string;

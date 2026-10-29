@@ -4,6 +4,7 @@ import { ImageIcon, MessageCircle } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
+import { photoUrlFor } from "@/lib/api/public";
 import { useAuth } from "@/lib/auth";
 import { useAction, useQuery } from "@/lib/hooks";
 import { relativeTime } from "@/lib/format";
@@ -190,7 +191,7 @@ function ConnectButton({ person }: { person: CommunityMember }) {
 function MemberCard({ person, children }: { person: CommunityMember; children?: React.ReactNode }) {
   return (
     <Card className="flex flex-wrap items-center gap-4 p-5">
-      <Avatar name={person.name} avatarId={person.avatarId} size="lg" />
+      <Avatar name={person.name} avatarId={person.avatarId} photoUrl={photoUrlFor(person)} size="lg" />
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
           <p className="font-medium text-ink-800">{person.name}</p>
@@ -473,7 +474,7 @@ function PostCard({
         </div>
       ) : null}
       <p className="mt-4 flex items-center gap-2 text-[13px] text-earth/50">
-        <Avatar name={author?.name ?? "Member"} avatarId={author?.avatarId} size="sm" />- {author?.name ?? "Former member"}
+        <Avatar name={author?.name ?? "Member"} avatarId={author?.avatarId} photoUrl={photoUrlFor(author)} size="sm" />- {author?.name ?? "Former member"}
       </p>
 
       <div className="mt-4 flex items-center gap-4 border-t border-forest/8 pt-3 text-[13px]">
@@ -500,7 +501,7 @@ function PostCard({
             <ul className="space-y-3">
               {(replies.data ?? []).map((item) => (
                 <li key={item.id} className="flex gap-3">
-                  <Avatar name={people.get(item.authorId)?.name ?? "Member"} avatarId={people.get(item.authorId)?.avatarId} size="sm" />
+                  <Avatar name={people.get(item.authorId)?.name ?? "Member"} avatarId={people.get(item.authorId)?.avatarId} photoUrl={photoUrlFor(people.get(item.authorId))} size="sm" />
                   <div className="min-w-0 flex-1 rounded-xl bg-cream px-4 py-2.5">
                     <p className="text-xs font-medium text-forest">
                       {people.get(item.authorId)?.name ?? "Member"}

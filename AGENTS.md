@@ -19,6 +19,7 @@ reason to skip it.
 | The question is about... | Read this first |
 | --- | --- |
 | The whole product in one place — design, architecture, data model, every feature, infra, runbook | `HANDBOOK.md` |
+| What the owners still have to do before launch (Google, domain, payments, tutors…) | `OWNER-CHECKLIST.md` |
 | Running the app locally, seeded demo accounts, overall layout | `README.md` |
 | Running tests locally, what's covered / not covered | `server/README.md` → "Tests", or `DEPLOYMENT.md` → "Local testing" |
 | Deploying to production (Vercel / Cloud Run / MongoDB Atlas), CI/CD, GitHub secrets | `DEPLOYMENT.md` |

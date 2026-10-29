@@ -68,15 +68,15 @@ export function ProfileEditor({ user, onSaved }: { user: User; onSaved?: (user: 
         }
       }}
     >
-      {isTutor ? (
-        <fieldset>
-          <legend className="mb-3 text-sm font-medium text-ink-700">Photo</legend>
-          <PhotoField user={user} />
-        </fieldset>
-      ) : null}
+      <fieldset>
+        <legend className="mb-3 text-sm font-medium text-ink-700">Your photo</legend>
+        <PhotoField user={user} />
+      </fieldset>
 
       <fieldset>
-        <legend className="mb-3 text-sm font-medium text-ink-700">Your character</legend>
+        <legend className="mb-3 text-sm font-medium text-ink-700">
+          Your character <span className="font-normal text-ink-400">— shown when you have no photo</span>
+        </legend>
         <CharacterPicker value={avatarId} onChange={setAvatarId} languages={languages} />
       </fieldset>
 

@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { useEffect } from "react";
 import { api } from "@/lib/api";
+import { photoUrlFor } from "@/lib/api/public";
 import { roleLabels, useAuth } from "@/lib/auth";
 import { useQuery } from "@/lib/hooks";
 import { cn } from "@/lib/cn";
@@ -147,7 +148,7 @@ export function PortalShell({ children }: { children: React.ReactNode }) {
 
           <div className="flex shrink-0 items-center gap-3 text-sm sm:text-[15px]">
             <Link href="/portal/profile" className="flex items-center gap-2 text-sage hover:text-cream">
-              <Avatar name={user.name} avatarId={user.avatarId} size="sm" className="ring-1 ring-white/25" />
+              <Avatar name={user.name} avatarId={user.avatarId} photoUrl={photoUrlFor(user)} size="sm" className="ring-1 ring-white/25" />
               <span className="hidden sm:inline">{roleLabels[user.role]}</span>
             </Link>
             <button type="button" onClick={() => void logOut()} className="text-sage transition-colors hover:text-cream">

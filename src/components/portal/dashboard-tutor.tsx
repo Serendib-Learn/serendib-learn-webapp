@@ -5,6 +5,7 @@ import { GlanceHeader } from "./glance-header";
 import { BookingRow } from "./booking-row";
 import { FeedbackList } from "./feedback-list";
 import { api } from "@/lib/api";
+import { photoUrlFor } from "@/lib/api/public";
 import { useQuery } from "@/lib/hooks";
 import { formatDate, formatDateTime, isPast, money, relativeTime } from "@/lib/format";
 import { ButtonLink } from "@/components/ui/button";
@@ -212,7 +213,7 @@ export function TutorDashboard({ user }: { user: User }) {
               <ul className="mt-4 space-y-4">
                 {(progress.data ?? []).map((entry) => (
                   <li key={entry.student.id} className="flex items-start gap-3">
-                    <Avatar name={entry.student.name} avatarId={entry.student.avatarId} size="sm" />
+                    <Avatar name={entry.student.name} avatarId={entry.student.avatarId} photoUrl={photoUrlFor(entry.student)} size="sm" />
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium text-ink-800">
                         {entry.student.name}

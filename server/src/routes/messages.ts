@@ -16,6 +16,7 @@ function profileOf(user: User): PublicProfile {
     role: user.role,
     headline: user.headline,
     avatarId: user.avatarId,
+    photoId: user.photoId,
     timezone: user.timezone,
   };
 }

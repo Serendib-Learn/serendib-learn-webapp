@@ -9,8 +9,12 @@ import { useConfirm } from "@/components/ui/confirm";
 import { Alert, Avatar } from "@/components/ui/primitives";
 import type { User } from "@/lib/types";
 
-/** Longest side of the uploaded photo; the tutors page shows it at 112px. */
-const MAX_SIDE = 800;
+/**
+ * Longest side of the uploaded photo. The largest place a photo appears is
+ * the tutors page at 112px, so 640px stays sharp on any screen while keeping
+ * the original small (~40 KB); the image optimiser makes the smaller sizes.
+ */
+const MAX_SIDE = 640;
 
 /** Shrinks a picked photo to a JPEG the API will take, and returns it as base64. */
 async function resizedJpeg(file: File): Promise<{ mimeType: string; data: string }> {
@@ -27,13 +31,14 @@ async function resizedJpeg(file: File): Promise<{ mimeType: string; data: string
   context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
   bitmap.close();
 
-  const dataUrl = canvas.toDataURL("image/jpeg", 0.85);
+  const dataUrl = canvas.toDataURL("image/jpeg", 0.82);
   return { mimeType: "image/jpeg", data: dataUrl.slice(dataUrl.indexOf(",") + 1) };
 }
 
 /**
- * A tutor's photo for the public tutors page. Saves on its own, straight
- * away — separate from the rest of the profile form.
+ * Anyone's profile photo, shown instead of their character across the
+ * portal — and, for a tutor, on the public tutors page. Saves on its own,
+ * straight away — separate from the rest of the profile form.
  */
 export function PhotoField({ user }: { user: User }) {
   const input = useRef<HTMLInputElement>(null);
@@ -81,7 +86,7 @@ export function PhotoField({ user }: { user: User }) {
               onClick={async () => {
                 const yes = await confirm({
                   title: "Remove this photo?",
-                  message: "The tutors page shows their character instead, until a new photo is uploaded.",
+                  message: "Your character is shown instead, until a new photo is uploaded.",
                   confirmLabel: "Remove photo",
                 });
                 if (!yes) return;
@@ -96,8 +101,9 @@ export function PhotoField({ user }: { user: User }) {
         </div>
       </div>
       <p className="text-[11px] leading-relaxed text-earth/50">
-        Shown on the public tutors page instead of the character. A clear, friendly head and
-        shoulders photo works best.
+        {user.role === "tutor"
+          ? "Shown on the public tutors page and across the portal, instead of your character. A clear, friendly head-and-shoulders photo works best."
+          : "Shown across the portal instead of your character — to your tutors, and in the community and messages. Optional."}
       </p>
       {upload.error || remove.error ? <Alert>{upload.error ?? remove.error}</Alert> : null}
     </div>

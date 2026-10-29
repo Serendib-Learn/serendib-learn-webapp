@@ -1,6 +1,25 @@
 import type { NextConfig } from "next";
 
+// Profile photos are served by the API; the image optimiser fetches them from
+// there once, resizes them to the size shown, re-encodes them (WebP/AVIF) and
+// caches the result at the edge. Only the photos path is allowed. On a local
+// API (localhost) the optimiser can't reach it, so <Avatar> skips it there.
+const api = new URL(process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000");
+
 const nextConfig: NextConfig = {
+  images: {
+    remotePatterns: [
+      {
+        protocol: api.protocol === "https:" ? "https" : "http",
+        hostname: api.hostname,
+        port: api.port,
+        pathname: "/api/profile-photos/**",
+      },
+    ],
+    // A photo's URL carries its version, so a cached copy never goes stale.
+    minimumCacheTTL: 31 * 24 * 60 * 60,
+  },
+
   // Lets the Docker image (see the root Dockerfile) ship only the traced
   // runtime files instead of the full node_modules tree. Vercel does its
   // own file tracing/bundling and the two collide (its builder goes

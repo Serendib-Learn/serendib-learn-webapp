@@ -8,6 +8,11 @@ import type { ContentKind, ContentKinds, PublicTutor } from "@/lib/types";
 
 const BASE = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000").replace(/\/$/, "");
 
+/** Someone's photo, if they have one: from anything carrying `id` and `photoId` (a user, a profile, a tutor). */
+export function photoUrlFor(person?: { id: string; photoId?: string } | null): string | undefined {
+  return person?.photoId ? profilePhotoUrl(person.id, person.photoId) : undefined;
+}
+
 /** Where a tutor's photo is served from; `photoId` versions it, so a new upload is never cached stale. */
 export function profilePhotoUrl(userId: string, photoId: string): string {
   return `${BASE}/api/profile-photos/${userId}?v=${encodeURIComponent(photoId)}`;

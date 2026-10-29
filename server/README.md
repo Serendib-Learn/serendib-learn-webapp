@@ -75,7 +75,7 @@ form, the tutor list and the demo inbox needs a session cookie.
 | Community | `GET /posts`, `GET /posts/pending` (admin), `POST /posts`, `POST /posts/:id/like`, `GET\|POST /posts/:id/replies`, `POST /posts/:id/moderate` (admin), `GET /community/members?language`, `GET\|POST /community/connections`, `POST /community/connections/:id/accept\|decline`, `DELETE /community/connections/:id` |
 | Messages | `GET /threads`, `POST /threads` (student-to-student needs a friend connection), `GET\|POST /threads/:id/messages`, `POST /threads/:id/read` |
 | Jobs | `POST /jobs/reminders` (header `X-Cron-Secret`; off unless `CRON_SECRET` is set) |
-| Profile photos | `GET /profile-photos/:userId` (public, listed tutors only, `?v=<photoId>`), `PUT\|DELETE /profile-photos/:userId` (the tutor, or an admin) |
+| Profile photos | `GET /profile-photos/:userId?v=<photoId>` (a listed tutor's is public; anyone else's only with their current version; versioned responses cached a year), `PUT\|DELETE /profile-photos/:userId` (your own, or anyone's for an admin) |
 | Content | `GET /content/:kind`, `GET /content/:kind/:id` (public), `PUT /content/:kind/:id` (create: admin; change: its editors), `DELETE /content/:kind/:id` (admin) — kinds `phrase-lists`, `alphabet`, `holidays`, `stages`, `heritage` |
 | Alphabet audio | `GET /alphabet-audio` (public list), `GET /alphabet-audio/:language/:key` (public audio), `PUT\|DELETE /alphabet-audio/:language/:key` (approved tutors and admins) |
 | Waitlist | `POST /waitlist`, `GET /waitlist` (admin) |
@@ -98,9 +98,14 @@ form, the tutor list and the demo inbox needs a session cookie.
   created with `email: ""`, appears on the public tutors page with its
   profile and photo, and is `bookable: false` (no booking, no messages, no
   mail) until an admin adds the address with `POST /users/:id/email`, which
-  sends the invite. Tutor photos live in the `profilePhotos` collection
-  (`routes/profile-photos.ts`), keyed by user id; `User.photoId` versions
-  the image URL.
+  sends the invite.
+- **Profile photos** (anyone's) live in `profilePhotos`
+  (`routes/profile-photos.ts`), keyed by user id. `User.photoId` — a random
+  16-character version — is in the URL, so a versioned photo is cached for a
+  year and a student's photo can only be fetched by someone who was sent its
+  current version (signed-in members). The site's image optimiser
+  (`next.config.ts` → `images.remotePatterns`, only `/api/profile-photos/**`)
+  resizes, re-encodes and edge-caches them; the portal uploads at most 640px.
 - **The super admin** is the owners' account: `SUPER_ADMIN_EMAIL` (+
   `SUPER_ADMIN_NAME`, `SUPER_ADMIN_PASSWORD`) makes sure it exists on every
   boot, and `npm run create-admin -- --email … --name "…"` does the same from

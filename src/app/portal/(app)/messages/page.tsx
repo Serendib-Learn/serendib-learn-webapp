@@ -3,6 +3,7 @@
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api";
+import { photoUrlFor } from "@/lib/api/public";
 import { useAuth } from "@/lib/auth";
 import { useAction, useQuery } from "@/lib/hooks";
 import { cn } from "@/lib/cn";
@@ -105,7 +106,7 @@ function Messages() {
                           selected ? "bg-sand-100" : "hover:bg-sand-50",
                         )}
                       >
-                        <Avatar name={summary.other.name} avatarId={summary.other.avatarId} size="sm" />
+                        <Avatar name={summary.other.name} avatarId={summary.other.avatarId} photoUrl={photoUrlFor(summary.other)} size="sm" />
                         <span className="min-w-0 flex-1">
                           <span className="flex items-center justify-between gap-2">
                             <span className="truncate text-sm font-medium text-ink-800">
@@ -199,7 +200,7 @@ function Conversation({
   return (
     <Card className="flex min-h-[26rem] flex-col p-0">
       <div className="flex items-center gap-3 border-b border-ink-900/8 px-5 py-4">
-        <Avatar name={other.name} avatarId={other.avatarId} size="sm" />
+        <Avatar name={other.name} avatarId={other.avatarId} photoUrl={photoUrlFor(other)} size="sm" />
         <div className="min-w-0">
           <p className="truncate font-display text-base text-ink-900">{other.name}</p>
           <p className="text-xs text-ink-400">
