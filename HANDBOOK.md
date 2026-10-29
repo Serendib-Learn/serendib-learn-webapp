@@ -1275,8 +1275,8 @@ Before pushing, run the four commands in `DEPLOYMENT.md` → "Local testing".
   only in demo mode.
 
 **Before launch: the owners' checklist (October 2026).** The step-by-step,
-tick-box version is **`OWNER-CHECKLIST.md`**. The code is ready; these need
-the owners. The *blocking* items stop real users from
+tick-box version is the owners' local `OWNER-CHECKLIST.md` (not in git).
+The code is ready; these need the owners. The *blocking* items stop real users from
 signing up, paying or getting lesson links.
 
 1. ~~**Email.**~~ **Done 28 Oct 2026:** the Gmail sender
