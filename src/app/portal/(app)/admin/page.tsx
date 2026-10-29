@@ -157,6 +157,39 @@ function AdminArea() {
   );
 }
 
+type PeopleSort = "attention" | "newest" | "oldest" | "name" | "name-desc" | "role";
+type PeopleFilter = "all" | "attention" | Role;
+
+/** Why an account is waiting on an administrator, if it is. */
+function attentionFor(person: User): string | null {
+  if (!person.email) return "No email yet";
+  if (!person.verified) return "Email not confirmed";
+  if (person.role === "tutor" && person.tutorStatus === "pending") return "Awaiting approval";
+  return null;
+}
+
+const roleRank: Record<Role, number> = { admin: 0, tutor: 1, student: 2 };
+
+const byName = (a: User, b: User) => a.name.localeCompare(b.name, "en", { sensitivity: "base" });
+const byNewest = (a: User, b: User) => b.createdAt.localeCompare(a.createdAt);
+
+/** Each sort falls back to the name, then the newest, so the order is always stable. */
+const peopleSorts: Record<PeopleSort, { label: string; compare: (a: User, b: User) => number }> = {
+  attention: {
+    label: "Needs attention first",
+    compare: (a, b) =>
+      Number(!attentionFor(a)) - Number(!attentionFor(b)) || byNewest(a, b) || byName(a, b),
+  },
+  newest: { label: "Newest first", compare: (a, b) => byNewest(a, b) || byName(a, b) },
+  oldest: { label: "Oldest first", compare: (a, b) => -byNewest(a, b) || byName(a, b) },
+  name: { label: "Name, A–Z", compare: (a, b) => byName(a, b) || byNewest(a, b) },
+  "name-desc": { label: "Name, Z–A", compare: (a, b) => -byName(a, b) || byNewest(a, b) },
+  role: {
+    label: "Role (admins, tutors, students)",
+    compare: (a, b) => roleRank[a.role] - roleRank[b.role] || byName(a, b) || byNewest(a, b),
+  },
+};
+
 function People({ me }: { me: User }) {
   const users = useQuery(() => api.users.list(), []);
   const setRole = useAction((id: string, role: Role) => api.users.setRole(id, role));
@@ -170,12 +203,27 @@ function People({ me }: { me: User }) {
   const [inviting, setInviting] = useState(false);
   const [editing, setEditing] = useState<User | null>(null);
   const [addingEmail, setAddingEmail] = useState<User | null>(null);
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState<PeopleFilter>("all");
+  const [sort, setSort] = useState<PeopleSort>("attention");
 
   if (users.loading) return <Loading label="Loading accounts" />;
 
-  const everyone = (users.data ?? [])
-    .slice()
-    .sort((a, b) => a.role.localeCompare(b.role) || a.name.localeCompare(b.name));
+  const all = users.data ?? [];
+  const query = search.trim().toLowerCase();
+  const matchesFilter = (person: User) =>
+    filter === "all" ? true : filter === "attention" ? Boolean(attentionFor(person)) : person.role === filter;
+  const everyone = all
+    .filter(matchesFilter)
+    .filter((person) => !query || `${person.name} ${person.email}`.toLowerCase().includes(query))
+    .sort(peopleSorts[sort].compare);
+  const filters: { id: PeopleFilter; label: string; count: number }[] = [
+    { id: "all", label: "All", count: all.length },
+    { id: "attention", label: "Needs attention", count: all.filter((person) => attentionFor(person)).length },
+    { id: "student", label: "Students", count: all.filter((person) => person.role === "student").length },
+    { id: "tutor", label: "Tutors", count: all.filter((person) => person.role === "tutor").length },
+    { id: "admin", label: "Admins", count: all.filter((person) => person.role === "admin").length },
+  ];
 
   return (
     <div className="space-y-3">
@@ -192,6 +240,64 @@ function People({ me }: { me: User }) {
           Invite someone
         </Button>
       </Card>
+
+      <Card className="space-y-3 p-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="min-w-[14rem] flex-1">
+            <Input
+              aria-label="Search people"
+              type="search"
+              placeholder="Search by name or email"
+              className="h-9 text-sm"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+            />
+          </div>
+          <div className="w-60 shrink-0">
+            <Select
+              aria-label="Sort people"
+              className="h-9 py-0 text-sm"
+              value={sort}
+              onChange={(event) => setSort(event.target.value as PeopleSort)}
+            >
+              {(Object.keys(peopleSorts) as PeopleSort[]).map((key) => (
+                <option key={key} value={key}>
+                  Sort: {peopleSorts[key].label}
+                </option>
+              ))}
+            </Select>
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-1.5">
+          {filters.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => setFilter(item.id)}
+              aria-pressed={filter === item.id}
+              className={cn(
+                "rounded-full px-3.5 py-1.5 text-xs font-medium ring-1 ring-inset transition",
+                filter === item.id
+                  ? "bg-forest text-cream ring-forest"
+                  : item.id === "attention" && item.count > 0
+                    ? "bg-saffron-50 text-saffron-600 ring-saffron-300 hover:bg-saffron-100"
+                    : "bg-white text-ink-600 ring-ink-900/10 hover:text-ink-900",
+              )}
+            >
+              {item.label} <span className="opacity-70">{item.count}</span>
+            </button>
+          ))}
+          <span className="ml-auto text-xs text-ink-400">
+            Showing {everyone.length} of {all.length}
+          </span>
+        </div>
+      </Card>
+
+      {everyone.length === 0 ? (
+        <EmptyState icon="🔎" title="Nobody matches">
+          Try another search, or show everyone.
+        </EmptyState>
+      ) : null}
 
       {inviting ? <InviteDialog onClose={() => setInviting(false)} /> : null}
       {editing ? <EditProfileDialog user={editing} onClose={() => setEditing(null)} /> : null}
