@@ -9,6 +9,7 @@ import { useAction, useQuery } from "@/lib/hooks";
 import { cn } from "@/lib/cn";
 import { formatDate, formatDateTime, relativeTime } from "@/lib/format";
 import { AdminRequests } from "@/components/portal/admin-requests";
+import { AdminTutorHours } from "@/components/portal/admin-tutor-hours";
 import { FeedbackList } from "@/components/portal/feedback-list";
 import { GoogleMailConnect } from "@/components/portal/google-mail-connect";
 import { GoogleSystemCalendarConnect } from "@/components/portal/google-system-calendar-connect";
@@ -28,11 +29,12 @@ import {
 } from "@/components/ui/primitives";
 import type { CommunityPost, LanguageCode, Role, User } from "@/lib/types";
 
-type Tab = "people" | "requests" | "tutors" | "feedback" | "moderation" | "waitlist" | "mail" | "audit";
+type Tab = "people" | "requests" | "hours" | "tutors" | "feedback" | "moderation" | "waitlist" | "mail" | "audit";
 
 const tabs: { id: Tab; label: string }[] = [
   { id: "people", label: "People" },
   { id: "requests", label: "Requests" },
+  { id: "hours", label: "Tutor hours" },
   { id: "tutors", label: "Tutor applications" },
   { id: "feedback", label: "Feedback" },
   { id: "moderation", label: "Moderation" },
@@ -142,6 +144,7 @@ function AdminArea() {
 
       {tab === "people" ? <People me={user} /> : null}
       {tab === "requests" ? <AdminRequests /> : null}
+      {tab === "hours" ? <AdminTutorHours /> : null}
       {tab === "tutors" ? <TutorApplications /> : null}
       {tab === "feedback" ? <AllFeedback /> : null}
       {tab === "moderation" ? <Moderation /> : null}

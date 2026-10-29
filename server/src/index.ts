@@ -26,6 +26,7 @@ import { demoRouter, gamesRouter, mailRouter, waitlistRouter } from "./routes/mi
 import { profilePhotosRouter } from "./routes/profile-photos.ts";
 import { contentRouter } from "./routes/content.ts";
 import { progressRouter } from "./routes/progress.ts";
+import { reportsRouter } from "./routes/reports.ts";
 import { requestsRouter } from "./routes/requests.ts";
 import { usersRouter } from "./routes/users.ts";
 
@@ -88,6 +89,7 @@ app.use("/api/jobs", jobsRouter);
 app.use("/api/materials", materialsRouter);
 app.use("/api/chapters", chaptersRouter);
 app.use("/api/requests", requestsRouter);
+app.use("/api/reports", reportsRouter);
 app.use("/api/content", contentRouter);
 app.use("/api/homework", homeworkRouter);
 app.use("/api/integrations", integrationsRouter);

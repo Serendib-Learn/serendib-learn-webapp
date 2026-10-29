@@ -1,4 +1,5 @@
 import type {
+  TutorHoursReport,
   AuditLogEntry,
   AvailabilityRule,
   Booking,
@@ -182,6 +183,12 @@ export interface Backend {
     decline(id: string, note: string): Promise<StudentRequest>;
     /** A student's free lessons: how many are left, and every one granted. */
     credits(studentId?: string): Promise<{ available: number; credits: LessonCredit[] }>;
+  };
+
+  /** Reports for administrators only. */
+  reports: {
+    /** Every tutor's lessons between two instants: hours taught, verified, paid. */
+    tutorHours(from: string, to: string): Promise<TutorHoursReport>;
   };
 
   materials: {

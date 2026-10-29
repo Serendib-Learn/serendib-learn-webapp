@@ -243,6 +243,72 @@ export interface StudentRequestInput {
 }
 
 /**
+ * How a lesson was paid for: by card through Payments.lk, with a free
+ * lesson, recorded as paid by an administrator (or the demo checkout), or
+ * not at all.
+ */
+export type LessonPaidWith = "card" | "free_lesson" | "recorded" | "unpaid";
+
+/** One lesson in the tutor hours report — administrators only. */
+export interface TutorHoursLesson {
+  bookingId: string;
+  studentId: string;
+  startsAt: string;
+  durationMins: number;
+  language: LanguageCode;
+  focus: string;
+  /** Taught (its end has passed), still to come, or cancelled after it was paid for. */
+  state: "taught" | "upcoming" | "cancelled";
+  paidWith: LessonPaidWith;
+  /** What the card was charged, in LKR cents. */
+  amountCents?: number;
+  /** A Payments.lk sandbox payment: no real money moved. */
+  testPayment?: boolean;
+  /** The tutor has written the lesson up. */
+  writtenUp: boolean;
+  /** The student's rating, 1 to 5, once they have given feedback. */
+  rating?: number;
+  /**
+   * A missed-lesson report against it that is waiting or was approved —
+   * except "I could not make it", which says nothing about the tutor.
+   */
+  dispute?: { status: StudentRequestStatus; cause?: MissedCause };
+  /** Taught, written up and not reported missed: counts towards the tutor's pay. */
+  verified: boolean;
+  cancelReason?: string;
+}
+
+/** One tutor's lessons over the report's period. Minutes are lesson lengths. */
+export interface TutorHoursSummary {
+  tutorId: string;
+  tutorName: string;
+  taughtLessons: number;
+  taughtMinutes: number;
+  verifiedMinutes: number;
+  /** Taught, but the tutor has not written them up yet. */
+  awaitingWriteUp: number;
+  disputed: number;
+  upcomingLessons: number;
+  upcomingMinutes: number;
+  cancelledLessons: number;
+  /** Card payments for the lessons taught or to come, in LKR cents. */
+  cardCents: number;
+  /** Lessons taught or to come that were booked with a free lesson. */
+  freeLessons: number;
+  averageRating?: number;
+  ratings: number;
+  lessons: TutorHoursLesson[];
+}
+
+/** GET /api/reports/tutor-hours: every tutor's lessons between two instants. */
+export interface TutorHoursReport {
+  from: string;
+  to: string;
+  generatedAt: string;
+  tutors: TutorHoursSummary[];
+}
+
+/**
  * A booking's hosted checkout on Payments.lk. Amounts are in LKR cents:
  * Payments.lk only takes rupees, so the USD price is converted when the
  * checkout is made, at the rate in the API's USD_TO_LKR setting.

@@ -66,6 +66,7 @@ form, the tutor list and the demo inbox needs a session cookie.
 | Availability | `GET /availability?tutorId`, `GET /availability/slots?tutorId&days`, `POST /availability`, `DELETE /availability/:id` |
 | Bookings | `GET /bookings?userId`, `GET /bookings/:id`, `POST /bookings`, `POST /bookings/:id/checkout`, `GET /bookings/:id/payment`, `POST /bookings/:id/pay` (demo, or admin), `/cancel`, `/complete`, `/meeting-link`, `/reschedule` (free), `/use-credit` (book with a free lesson) |
 | Requests | `GET /requests` (yours; all for an admin), `POST /requests` (students: `free_session` or `missed_session`), `POST /requests/:id/approve\|decline` (admin), `GET /requests/credits` (free lessons left) |
+| Reports | `GET /reports/tutor-hours?from&to` (admin: each tutor's lessons between two instants, with taught, verified, upcoming and cancelled lessons, card payments, free lessons and ratings; a period of up to 370 days) |
 | Payments | `GET /payments/config`, `POST /payments/webhook` (Payments.lk, signature-verified) |
 | Feedback | `GET /feedback/pending`, `POST /feedback`, `GET /feedback?tutorId\|studentId` (or all, admin), `POST /feedback/lesson-notes`, `POST /voice-notes`, `GET /voice-notes/:id` |
 | Chapters | `GET /chapters`, `POST /chapters` (admin), `PATCH /chapters/:id` (admin), `DELETE /chapters/:id` (admin) |
@@ -185,6 +186,12 @@ an assigned material or homework from that tutor.
   what happened, up to 30 days after). Admins are emailed and decide under
   Administration → Requests: approving grants a free lesson, declining
   needs a note, and the student is emailed either way.
+- **Tutor hours** (`routes/reports.ts`, Administration → Tutor hours) is
+  what tutors' pay is worked out from. A lesson is *verified* once its time
+  has passed, the tutor has written it up (`lessonNotes`, or the booking is
+  `completed`) and no missed-lesson report on it is pending or approved —
+  except "I could not make it", which says nothing about the tutor.
+  Unpaid checkouts are left out. Admins only.
 
 ## Lesson feedback, voice notes and reminders
 

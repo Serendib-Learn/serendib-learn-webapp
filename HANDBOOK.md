@@ -139,7 +139,7 @@ use. ✓ = yes, — = no, *own* = only their own.
 | | Message | — | own tutors + friends | own students | anyone |
 | | Moderate posts | — | — | — | ✓ |
 | **Admin** | People: roles, membership, invite, list tutor without email, Mark verified, delete | — | — | — | ✓ (not super admins) |
-| | Tutor applications, Requests, Feedback, Waitlist, Google, Audit log | — | — | — | ✓ |
+| | Tutor applications, Requests, Tutor hours, Feedback, Waitlist, Google, Audit log | — | — | — | ✓ |
 
 Applicant and not-approved tutors, and listed tutors without an email, get
 none of the tutor rows. Unverified students cannot log in at all.
@@ -298,6 +298,10 @@ none of the tutor rows. Unverified students cannot log in at all.
    and use the test buttons.
 6. **Feedback, Waitlist, Audit log:** read the lesson feedback, follow up
    the waitlist, and review the record of every admin action.
+7. **Tutor hours:** pick a month to see each tutor's lessons taught,
+   *verified* hours (taught, written up by the tutor, not reported missed),
+   lessons to come, card payments and free lessons, and download it as CSV
+   to work out tutors' pay. Tutors and students cannot see it.
 
 #### Super admin
 
@@ -531,7 +535,7 @@ flowchart LR
 | `/portal/messages` | Conversations |
 | `/portal/content` | **Course content** (tutors and admins): phrase lists, alphabet sheets, holidays, stage descriptions |
 | `/portal/profile` | Profile editor and character picker |
-| `/portal/admin` | Tabs: People, Tutor applications, Feedback, Moderation, Waitlist, Google, Audit log (`?tab=google` deep-links to Google) |
+| `/portal/admin` | Tabs: People, Requests, Tutor hours, Tutor applications, Feedback, Moderation, Waitlist, Google, Audit log (`?tab=google` deep-links to Google) |
 
 **Feedback prompt.** `feedback-prompt.tsx` sits at the top of every portal
 page whenever the signed-in person owes feedback or a write-up for a lesson

@@ -1,6 +1,7 @@
 import { ApiError, type Backend, type GoogleSignInResult } from "./backend";
 import { bumpRevision } from "./revision";
 import type {
+  TutorHoursReport,
   MaterialFeedback,
   MaterialFeedbackSummary,
   LessonCredit,
@@ -353,6 +354,12 @@ export const httpBackend: Backend = {
       return request<{ available: number; credits: LessonCredit[] }>("/requests/credits", {
         query: { studentId },
       });
+    },
+  },
+
+  reports: {
+    tutorHours(from, to) {
+      return request<TutorHoursReport>("/reports/tutor-hours", { query: { from, to } });
     },
   },
 
