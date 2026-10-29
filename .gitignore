@@ -51,5 +51,7 @@ DEPLOYMENT_NOTES.md
 
 # Local-only notes for the owners — not tracked.
 OWNER-CHECKLIST.md
+PRICING-MODEL.md
+TERMS-SAMPLE.md
 # No git worktrees in this project.
 .claude/worktrees/
