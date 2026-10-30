@@ -55,10 +55,10 @@ async function postWebhook(event: unknown, signature?: string) {
 
 test("config: reports test mode and the conversion rate", async () => {
   const { body } = await harness.client().get("/payments/config");
-  assert.deepEqual(body, { enabled: true, mode: "test", usdToLkr: 300 });
+  assert.deepEqual(body, { enabled: true, mode: "test", usdToLkr: 300, lessonPriceLkr: 5000 });
 });
 
-test("checkout: priced in LKR from the USD rate, referenced to the booking, reused while open", async () => {
+test("checkout: priced in LKR, referenced to the booking, reused while open", async () => {
   const { student, booking } = await awaitingBooking("checkout");
 
   const first = await student.client.post(`/bookings/${booking.id}/checkout`);
@@ -67,7 +67,7 @@ test("checkout: priced in LKR from the USD rate, referenced to the booking, reus
 
   const sent = payments.requests.find((item) => item.method === "POST" && item.path === "/v1/checkouts");
   const body = sent?.body as Record<string, unknown>;
-  assert.equal(body.amountCents, 25 * 300 * 100, "$25 at 300 LKR/USD = Rs. 7,500");
+  assert.equal(body.amountCents, 5000 * 100, "Rs. 5,000 for an hour, in cents");
   assert.equal(body.reference, booking.id);
   assert.match(String(body.successUrl), new RegExp(`/portal/checkout/${booking.id}\\?status=returned$`));
   assert.ok(sent?.idempotencyKey, "every write carries an idempotency key");
@@ -119,7 +119,7 @@ test("webhook: payment.succeeded confirms the booking once, with a meeting link 
   assert.equal(confirmed.body.payment.card, "VISA •••• 4242");
 
   const receipt = await latestMail(harness, "paid-student@example.com", "receipt");
-  assert.match(receipt?.subject ?? "", /Rs\. 7,500/);
+  assert.match(receipt?.subject ?? "", /Rs\. 5,000/);
 
   const repeat = await postWebhook(event);
   assert.equal(repeat.body.duplicate, true, "a redelivery of the same event is a no-op");

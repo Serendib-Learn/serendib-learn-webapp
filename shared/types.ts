@@ -33,6 +33,7 @@ export interface User {
   languages: LanguageCode[];
   headline?: string;
   bio?: string;
+  /** The tutor's own hourly rate. Not used for prices now: every lesson costs `LESSON_PRICE_LKR`. */
   hourlyRateUsd?: number;
   yearsTeaching?: number;
   homeTown?: string;
@@ -140,7 +141,10 @@ export interface Booking {
   language: LanguageCode;
   focus: string;
   status: BookingStatus;
-  priceUsd: number;
+  /** The price in whole rupees, fixed when it was booked; moving the lesson never changes it. */
+  priceLkr: number;
+  /** Bookings from before rupee pricing (October 2026) also kept their dollar price. */
+  priceUsd?: number;
   createdAt: string;
   paidAt?: string;
   meetingUrl?: string;
@@ -309,9 +313,8 @@ export interface TutorHoursReport {
 }
 
 /**
- * A booking's hosted checkout on Payments.lk. Amounts are in LKR cents:
- * Payments.lk only takes rupees, so the USD price is converted when the
- * checkout is made, at the rate in the API's USD_TO_LKR setting.
+ * A booking's hosted checkout on Payments.lk. Amounts are in LKR cents —
+ * the booking's `priceLkr` × 100.
  */
 export interface BookingPayment {
   provider: "payments.lk";
@@ -333,8 +336,10 @@ export interface PaymentsConfig {
   /** False when no Payments.lk key is set: the demo checkout is used instead. */
   enabled: boolean;
   mode: "test" | "live" | null;
-  /** Rupees per US dollar used to price checkouts. */
+  /** Rupees per US dollar: only to show visitors a rough dollar figure. */
   usdToLkr: number;
+  /** What an hour-long lesson costs, in whole rupees (every tutor, for now). */
+  lessonPriceLkr: number;
 }
 
 export type MaterialKind = "pdf" | "audio" | "video" | "link" | "deck";

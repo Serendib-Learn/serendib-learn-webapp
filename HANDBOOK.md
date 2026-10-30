@@ -170,7 +170,7 @@ none of the tutor rows. Unverified students cannot log in at all.
 2. On an open hour, **Book** → choose the language and what it should cover
    (suggestions come from the course chapters).
 3. **Continue to payment** holds the hour and opens checkout. They pay by
-   card on Payments.lk (rupees, converted from the tutor's USD rate). Or
+   card on Payments.lk (LKR 5,000 a lesson, the same for every tutor). Or
    **Book with a free lesson** if they have one: no payment.
 4. Back on Serendib, the booking confirms. They get a receipt, a Google
    Calendar invite with the **Meet** link (when Google is connected), and
@@ -244,8 +244,9 @@ none of the tutor rows. Unverified students cannot log in at all.
 
 #### Tutor: setting up
 
-1. **Profile:** headline, bio, home town, years teaching, hourly rate
-   (USD), specialties, languages, character and **photo**.
+1. **Profile:** headline, bio, home town, years teaching, specialties,
+   languages, **timezone** (their weekly hours are in it), character and
+   **photo**.
 2. **Calendar → My hours:** weekly blocks (for example Monday 09:00–12:00).
    Students see one-hour open slots inside them.
 3. **Connect Google Calendar** (optional): their bookings then get a Meet
@@ -664,7 +665,8 @@ The full endpoint table is in `server/README.md` → "Endpoints".
 | `sessions.ts` | `sl_session` cookie (30 days), `loadSession`, `requireAuth`, `requireAdmin`, `requireSelfOrAdmin` |
 | `passwords.ts` | scrypt hashes stored as `scrypt$salt$hash`, constant-time compare, random tokens, six-digit codes |
 | `accounts.ts` | Password links (reset 24h, invite 7 days), invites, `notifyAdmins`, `ensureSuperAdmin` |
-| `domain.ts` | 60-minute slots, 2-hour booking notice, price = hourly rate × duration (default $25/h), bookable tutors, public tutor shape, progress, tutees |
+| `domain.ts` | 60-minute slots in the tutor's timezone, 2-hour booking notice, price = `LESSON_PRICE_LKR` × duration (LKR 5,000 an hour, every tutor), bookable tutors, public tutor shape, progress, tutees |
+| `time.ts` | Wall-clock time in a named timezone (never the server's, which is UTC on Cloud Run); email times in the reader's zone |
 | `payments.ts` | Payments.lk client: config, LKR conversion, `checkoutFor` (reuses an open checkout), `refreshFromCheckout`, `verifyWebhook` |
 | `booking-confirmation.ts` | `scheduleMeeting` (tutor's calendar, then the system calendar, then none) and idempotent `confirmBooking` |
 | `feedback.ts` | Lesson end time, 14-day feedback window, who still owes what |
@@ -800,15 +802,20 @@ Both `awaiting_payment` and `confirmed` hold the tutor's slot.
 ### 8.2 Tutors, availability and booking
 
 - **Profiles.** Tutors fill in a headline, bio, home town, years teaching,
-  specialties, hourly rate (USD) and languages. The public tutors page
-  never shows emails.
-- **Hours.** Tutors publish weekly blocks, for example "Monday 09:00–12:00".
+  specialties and languages. The public tutors page shows the lesson price
+  (the same for everyone) and never shows emails. Tutors' own dollar rates
+  are no longer used.
+- **Hours.** Tutors publish weekly blocks, for example "Monday 09:00–12:00",
+  in **their profile's timezone** — the API works out the real times from
+  that, not from the server's clock (UTC) — and students see them in their
+  own timezone. The editor warns when the tutor's device and profile
+  timezones differ.
   Open slots are 60-minute hours inside those blocks. They start at least
   2 hours from now, and exclude any slot that overlaps an
   `awaiting_payment` or `confirmed` booking.
 - **Booking.** A student books from the calendar's day panel: they pick
   an open hour, then give the language and a focus. This creates an
-  `awaiting_payment` booking priced at rate × duration, and the student
+  `awaiting_payment` booking priced at `LESSON_PRICE_LKR` × duration, and the student
   goes to checkout.
 - **Meeting link.** On confirmation, the API creates a Google Calendar
   event with Meet on the tutor's calendar, or else on the shared Serendib
@@ -865,8 +872,10 @@ sequenceDiagram
 - **Mode.** The key decides it: `sk_test_…` takes sandbox payments on
   Payable's sandbox, and `sk_live_…` takes real ones. Without a key, a
   **demo checkout** confirms bookings without charging.
-- **Currency.** Tutors price in USD. Checkouts are in LKR at `USD_TO_LKR`
-  (default 300), so a $28 lesson is Rs. 8,400.
+- **Currency.** Every lesson costs `LESSON_PRICE_LKR` rupees an hour
+  (default 5,000), whoever the tutor, while the pricing model is decided.
+  The booking keeps its price (`priceLkr`); checkouts charge it. `USD_TO_LKR`
+  (default 300) only shows a rough dollar figure at checkout.
 - **Checkout reuse.** An open checkout with more than a minute left is
   reused rather than a new one being created.
 - **Webhook.** The webhook is verified against the raw body with
@@ -1172,7 +1181,8 @@ secrets):
 | `APP_URL` | localhost:3000 | Links in emails; the redirect after OAuth |
 | `TURNSTILE_SECRET_KEY` | empty | CAPTCHA |
 | `PAYMENTS_LK_SECRET_KEY` / `PAYMENTS_LK_WEBHOOK_SECRET` | empty | Payments (empty means the demo checkout) |
-| `USD_TO_LKR` | 300 | Rupees per dollar |
+| `LESSON_PRICE_LKR` | 5000 | What an hour-long lesson costs, in rupees (every tutor) |
+| `USD_TO_LKR` | 300 | Rupees per dollar: the rough dollar figure at checkout |
 | `REMINDER_INTERVAL_MS` | 60000 | In-process reminder timer (0 turns it off) |
 | `CRON_SECRET` | empty | Enables `POST /api/jobs/reminders` |
 | `SUPER_ADMIN_EMAIL` / `_NAME` / `_PASSWORD` | empty | Owners' account bootstrap |
@@ -1239,7 +1249,7 @@ Before pushing, run the four commands in `DEPLOYMENT.md` → "Local testing".
 | Check payments | `GET /api/payments/config` returns `{ enabled, mode, usdToLkr }` |
 | Go live with payments | After Payments.lk approval, add the `sk_live_…` key and the live webhook's `whsec_…` as new secret versions (`pbpaste` method), disable the old versions, and redeploy. No code changes. |
 | Rotate a secret | `gcloud secrets versions add <NAME> --data-file=-`, disable the old version, redeploy |
-| Change the exchange rate | Add `USD_TO_LKR=<rate>` to `deploy-backend.yml`'s `env_vars` |
+| Change the lesson price | Add `LESSON_PRICE_LKR=<rupees>` to `deploy-backend.yml`'s `env_vars` |
 | Create or restore the owners' admin | `SUPER_ADMIN_EMAIL` on deploy, or `npm --prefix server run create-admin -- --email … --name "…"` |
 | Bring on a tutor | They apply at `/portal/signup?role=tutor` and you approve them, or you invite them from Admin → People |
 | Connect Google | Publish the OAuth consent screen, then in Admin → Google connect the Serendib calendar and Gmail and press the test buttons |
@@ -1306,7 +1316,6 @@ signing up, paying or getting lesson links.
    - Store the `sk_live_…` key and the `whsec_…` secret as new secret
      versions (DEPLOYMENT §7), then redeploy.
    - Do one real low-value payment end to end.
-   - Confirm the rupee rate (`USD_TO_LKR`, now 300).
    - Ask Payments.lk to accept **overseas phone numbers and postcodes**.
      Their hosted checkout page takes only Sri Lankan ones; the API sends
      just the name and email, and their SDK has no country option, so it
@@ -1318,14 +1327,15 @@ signing up, paying or getting lesson links.
    cancels), and confirm the privacy policy wording. **A sample is
    drafted** (the owners' local `TERMS-SAMPLE.md`), for a lawyer to review.
    **Pricing is agreed** (LKR 5,000 a lesson; LKR 8,000 for two people
-   together; the owners' local `PRICING-MODEL.md`) but not built: the site
-   still prices from each tutor's US$ rate, and has no pair lessons.
+   together; the owners' local `PRICING-MODEL.md`). The site charges LKR
+   5,000 a lesson for every tutor (`LESSON_PRICE_LKR`); pair lessons are not
+   built yet.
 6. **Tutors.**
    - Send the four listed tutors' emails, so you can **Add email &
      invite**.
    - Send Zeynab's and Amani's details.
-   - Each tutor sets a rate, weekly hours and (optionally) Google
-     Calendar.
+   - Each tutor checks their timezone, sets weekly hours and (optionally)
+     connects Google Calendar.
 7. **Content.**
    - Tutors check both alphabet sheets and mark them *checked*.
    - Tutors record the Sinhala alphabet.

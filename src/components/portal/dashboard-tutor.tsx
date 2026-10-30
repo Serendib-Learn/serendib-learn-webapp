@@ -7,7 +7,7 @@ import { FeedbackList } from "./feedback-list";
 import { api } from "@/lib/api";
 import { photoUrlFor } from "@/lib/api/public";
 import { useQuery } from "@/lib/hooks";
-import { formatDate, formatDateTime, isPast, money, relativeTime } from "@/lib/format";
+import { formatDate, formatDateTime, isPast, relativeTime } from "@/lib/format";
 import { ButtonLink } from "@/components/ui/button";
 import { Alert, Avatar, Badge, Card, EmptyState, Loading, Stat } from "@/components/ui/primitives";
 import type { User } from "@/lib/types";
@@ -34,7 +34,8 @@ export function TutorDashboard({ user }: { user: User }) {
   const toReview = (homework.data ?? []).filter((item) => item.status === "submitted");
   const studentsById = new Map((tutees.data ?? []).map((student) => [student.id, student]));
 
-  const earned = completed.reduce((sum, booking) => sum + booking.priceUsd, 0);
+  // Hours, not money: what a tutor is paid is still being decided.
+  const taughtMinutes = completed.reduce((sum, booking) => sum + booking.durationMins, 0);
   const next = upcoming[0];
   const firstName = user.name.split(" ")[0];
 
@@ -90,8 +91,8 @@ export function TutorDashboard({ user }: { user: User }) {
           hint={toReview.length > 0 ? "Students are waiting" : "Nothing pending"}
         />
         <Stat
-          label="Earned"
-          value={money(earned)}
+          label="Taught"
+          value={`${Math.round((taughtMinutes / 60) * 10) / 10} h`}
           hint={`${completed.length} lessons taught`}
         />
       </div>

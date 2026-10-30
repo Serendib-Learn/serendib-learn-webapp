@@ -1,7 +1,7 @@
 "use client";
 
 import { Badge, type Tone } from "@/components/ui/primitives";
-import { formatDateTime, isPast, money } from "@/lib/format";
+import { formatDateTime, isPast, lkr } from "@/lib/format";
 import type { Booking, BookingStatus } from "@/lib/types";
 
 const statusTone: Record<BookingStatus, Tone> = {
@@ -57,7 +57,7 @@ export function BookingRow({
 
       <div className="flex shrink-0 flex-col items-end gap-2">
         <span className="text-sm font-medium text-ink-700">
-          {booking.creditId ? "Free" : money(booking.priceUsd)}
+          {booking.creditId ? "Free" : lkr(booking.priceLkr)}
         </span>
         {actions}
       </div>

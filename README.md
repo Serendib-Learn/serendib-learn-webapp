@@ -146,7 +146,7 @@ Bookings are paid on [Payments.lk](https://payments.lk/developers)' hosted
 checkout (card details never touch this app). Set `PAYMENTS_LK_SECRET_KEY`
 (an `sk_test_` key from the sandbox profile) and `PAYMENTS_LK_WEBHOOK_SECRET`
 on the API and it is live; without them the demo checkout confirms bookings
-without charging. Tutors price in USD and checkouts are in LKR at `USD_TO_LKR`.
+without charging. Every lesson costs `LESSON_PRICE_LKR` (LKR 5,000 an hour), whoever the tutor.
 Details in `server/README.md` → "Payments", setup in `DEPLOYMENT.md`.
 
 ## Docker and deployment

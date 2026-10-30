@@ -8,6 +8,7 @@ import {
   tutorWroteUp,
 } from "./feedback.ts";
 import { deliver } from "./mail.ts";
+import { formatInZone } from "./time.ts";
 import type { Booking } from "../../../shared/types.ts";
 
 /**
@@ -87,16 +88,8 @@ export function calendarLink(): string {
   return `${config.appUrl}/portal/calendar`;
 }
 
-function when(booking: Booking, timezone: string): string {
-  return new Date(booking.startsAt).toLocaleString("en-GB", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    hour: "numeric",
-    minute: "2-digit",
-    timeZone: timezone,
-    timeZoneName: "short",
-  });
+function when(booking: Booking, timezone: string | undefined): string {
+  return formatInZone(booking.startsAt, timezone);
 }
 
 /**
@@ -135,7 +128,7 @@ export async function runLessonReminders(now = Date.now()): Promise<number> {
           which === "hour"
             ? `Your lesson with ${other?.name ?? "Serendib"} starts within the hour`
             : `Tomorrow: your lesson with ${other?.name ?? "Serendib"}`,
-        body: `${when(booking, person.timezone || "UTC")}\n${booking.durationMins} minutes · ${booking.focus}\n\n${join}\n\nYour calendar: ${calendarLink()}`,
+        body: `${when(booking, person.timezone)}\n${booking.durationMins} minutes · ${booking.focus}\n\n${join}\n\nYour calendar: ${calendarLink()}`,
         kind: "notification",
       });
       sent += 1;

@@ -1,5 +1,7 @@
+import { config } from "../config.ts";
 import { db } from "../db/database.ts";
 import { notFound } from "./errors.ts";
+import { validTimezone, wallClock, weekdayOf, zonedInstant } from "./time.ts";
 import type {
   Booking,
   HomeworkItem,
@@ -62,9 +64,13 @@ export function publicTutor(user: User): PublicTutor {
   };
 }
 
-export function priceFor(tutor: User, durationMins: number): number {
-  const rate = tutor.hourlyRateUsd ?? 25;
-  return Math.round((rate * durationMins) / 60);
+/**
+ * A lesson's price in whole rupees: the same hourly price for every tutor
+ * (`LESSON_PRICE_LKR`) while the pricing model is decided. Tutors' own
+ * dollar rates are no longer used.
+ */
+export function lessonPriceLkr(durationMins: number): number {
+  return Math.round((config.payments.lessonPriceLkr * durationMins) / 60);
 }
 
 export async function requireUserRecord(userId: string): Promise<User> {
@@ -73,28 +79,37 @@ export async function requireUserRecord(userId: string): Promise<User> {
   return user;
 }
 
-/** One-hour slots inside a tutor's published blocks, minus what is taken. */
+/**
+ * One-hour slots inside a tutor's published blocks, minus what is taken.
+ *
+ * A block ("Monday 18:00–21:00") is wall-clock time where the *tutor* is —
+ * their profile's timezone — never the server's (UTC on Cloud Run). The
+ * slots are real instants, which every visitor's browser shows in their own
+ * timezone.
+ */
 export async function openSlotsFor(tutorId: string, days: number): Promise<Slot[]> {
+  const tutor = await db().users.findById(tutorId);
+  const timezone = validTimezone(tutor?.timezone);
   const rules = await db().availability.find({ tutorId });
   const bookings = await db().bookings.find({ tutorId });
   const taken = bookings.filter(blocksSlot);
 
   const earliest = Date.now() + BOOKING_NOTICE_HOURS * 60 * 60 * 1000;
   const slots: Slot[] = [];
-  const midnight = new Date();
-  midnight.setHours(0, 0, 0, 0);
+  const today = wallClock(new Date(), timezone);
 
   for (let offset = 0; offset < days; offset += 1) {
-    const day = new Date(midnight);
-    day.setDate(day.getDate() + offset);
+    // Calendar arithmetic on the tutor's date; Date.UTC rolls the month over.
+    const date = new Date(Date.UTC(today.year, today.month - 1, today.day + offset));
+    const [year, month, day] = [date.getUTCFullYear(), date.getUTCMonth() + 1, date.getUTCDate()];
+    const weekday = weekdayOf(year, month, day);
 
-    for (const rule of rules.filter((candidate) => candidate.weekday === day.getDay())) {
+    for (const rule of rules.filter((candidate) => candidate.weekday === weekday)) {
       const from = minutesFromMidnight(rule.start);
       const to = minutesFromMidnight(rule.end);
 
       for (let minute = from; minute + SLOT_MINUTES <= to; minute += SLOT_MINUTES) {
-        const start = new Date(day);
-        start.setMinutes(minute);
+        const start = zonedInstant(year, month, day, minute, timezone);
         if (start.getTime() < earliest) continue;
 
         const startMs = start.getTime();

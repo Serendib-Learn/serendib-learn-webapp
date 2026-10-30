@@ -3,7 +3,7 @@ import { config } from "../config.ts";
 import { db, SYSTEM_CALENDAR_ID } from "../db/database.ts";
 import { ApiError, forbidden, notFound, wrap } from "../lib/errors.ts";
 import { pathParam } from "../lib/http.ts";
-import { blocksSlot, isBookableTutor, openSlotsFor, overlaps, priceFor, requireUserRecord } from "../lib/domain.ts";
+import { blocksSlot, isBookableTutor, lessonPriceLkr, openSlotsFor, overlaps, requireUserRecord } from "../lib/domain.ts";
 import { confirmBooking } from "../lib/booking-confirmation.ts";
 import { availableCredits, grantCredit, releaseCredit, spendCredit } from "../lib/credits.ts";
 import { deleteGoogleMeeting, moveGoogleMeeting } from "../lib/google.ts";
@@ -11,6 +11,7 @@ import { newId, nowIso } from "../lib/ids.ts";
 import { deliver } from "../lib/mail.ts";
 import { checkoutFor, paymentsEnabled } from "../lib/payments.ts";
 import { requireAuth, requireSelfOrAdmin, requireUser } from "../lib/sessions.ts";
+import { formatInZone, validTimezone } from "../lib/time.ts";
 import { syncBookingPayment } from "./payments.ts";
 import type { Booking, LanguageCode, User } from "../../../shared/types.ts";
 
@@ -25,8 +26,8 @@ const byStart = (a: Booking, b: Booking) => a.startsAt.localeCompare(b.startsAt)
  */
 export const STUDENT_RESCHEDULE_NOTICE_HOURS = 24;
 
-const when = (iso: string) =>
-  new Date(iso).toLocaleString("en-GB", { dateStyle: "full", timeStyle: "short", timeZone: "UTC" }) + " (UTC)";
+/** A lesson time in an email, in the reader's own timezone. */
+const when = (iso: string, reader: User) => formatInZone(iso, reader.timezone);
 
 /** Both sides of a booking, plus any administrator, may act on it. */
 function assertParty(booking: Booking, actor: User) {
@@ -126,7 +127,7 @@ bookingsRouter.post(
       language: language as LanguageCode,
       focus,
       status: "awaiting_payment",
-      priceUsd: priceFor(tutor, durationMins),
+      priceLkr: lessonPriceLkr(durationMins),
       createdAt: nowIso(),
     };
 
@@ -315,7 +316,7 @@ bookingsRouter.post(
         await moveGoogleMeeting(linked.refreshToken, booking.googleEventId, {
           startIso: newStartIso,
           endIso: new Date(endMs).toISOString(),
-          timezone: tutor.timezone,
+          timezone: validTimezone(tutor.timezone),
         });
       }
     }
@@ -324,8 +325,8 @@ bookingsRouter.post(
     for (const person of [student, tutor]) {
       await deliver({
         to: person.email,
-        subject: `Lesson moved to ${when(newStartIso)}`,
-        body: `${mover} moved the lesson between ${student.name} and ${tutor.name}.\n\nWas: ${when(booking.startsAt)}\nNow: ${when(newStartIso)}\n\nNothing changes about the price${updated.meetingUrl ? ` or the meeting link: ${updated.meetingUrl}` : "."}\n\nYour calendar: ${config.appUrl}/portal/calendar`,
+        subject: `Lesson moved to ${when(newStartIso, person)}`,
+        body: `${mover} moved the lesson between ${student.name} and ${tutor.name}.\n\nWas: ${when(booking.startsAt, person)}\nNow: ${when(newStartIso, person)}\n\nNothing changes about the price${updated.meetingUrl ? ` or the meeting link: ${updated.meetingUrl}` : "."}\n\nYour calendar: ${config.appUrl}/portal/calendar`,
         kind: "notification",
       });
     }
@@ -378,8 +379,8 @@ bookingsRouter.post(
     if (other && booking.status === "confirmed") {
       await deliver({
         to: other.email,
-        subject: `Lesson cancelled: ${when(booking.startsAt)}`,
-        body: `${actor.name} cancelled the lesson on ${when(booking.startsAt)}.\n\nYour calendar: ${config.appUrl}/portal/calendar`,
+        subject: `Lesson cancelled: ${when(booking.startsAt, other)}`,
+        body: `${actor.name} cancelled the lesson on ${when(booking.startsAt, other)}.\n\nYour calendar: ${config.appUrl}/portal/calendar`,
         kind: "notification",
       });
     }
@@ -420,7 +421,7 @@ bookingsRouter.post(
       await deliver({
         to: student.email,
         subject: "Your meeting link is ready",
-        body: `The link for your lesson on ${new Date(booking.startsAt).toLocaleString()}:\n\n${url.toString()}\n\nIt is also on the booking in your calendar: ${config.appUrl}/portal/calendar`,
+        body: `The link for your lesson on ${when(booking.startsAt, student)}:\n\n${url.toString()}\n\nIt is also on the booking in your calendar: ${config.appUrl}/portal/calendar`,
         kind: "notification",
       });
     }

@@ -389,9 +389,10 @@ webhook. Until then the site keeps its demo checkout, which charges nothing.*
    To replace a value later use `gcloud secrets versions add <NAME> --data-file=-`
    the same way, and disable the old version. `deploy-backend.yml`'s
    `secrets:` block already references both (`:latest`), so a deploy fails
-   until they exist. If the default 300 rupees per dollar is wrong, add
-   `USD_TO_LKR=<rate>` to its `env_vars:` block. Tutors keep pricing in USD;
-   checkouts are in LKR.
+   until they exist. Every lesson costs `LESSON_PRICE_LKR` (default 5000
+   rupees an hour); to change it, add `LESSON_PRICE_LKR=<rupees>` to its
+   `env_vars:` block. `USD_TO_LKR` (default 300) only shows a rough dollar
+   figure at checkout.
 4. **Locally**, put the same two values in `server/.env`. Webhooks cannot
    reach localhost, so the checkout page confirms a payment by asking the API
    to read the checkout back when you return from Payments.lk — the flow still

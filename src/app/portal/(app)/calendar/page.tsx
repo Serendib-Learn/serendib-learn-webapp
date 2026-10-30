@@ -7,7 +7,7 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { useAction, useQuery } from "@/lib/hooks";
 import { cn } from "@/lib/cn";
-import { formatTime, isPast, money } from "@/lib/format";
+import { formatTime, isPast, lkr } from "@/lib/format";
 import { HOLIDAY_CATEGORY_LABEL as CATEGORY_LABEL } from "@/lib/content";
 import { AvailabilityEditor } from "@/components/portal/availability-editor";
 import { HolidaysPanel } from "@/components/portal/holidays-panel";
@@ -90,7 +90,7 @@ function Calendar() {
         <section id="hours" className="mt-12 scroll-mt-24 space-y-6">
           <h2 className="font-display text-xl text-forest">My hours</h2>
           <GoogleCalendarConnect />
-          <AvailabilityEditor tutorId={user.id} />
+          <AvailabilityEditor tutorId={user.id} timezone={user.timezone} />
         </section>
       ) : null}
     </>
@@ -128,6 +128,7 @@ function CalendarWorkspace({ user }: { user: User }) {
     [isStudent],
   );
   const tutorIds = (tutors.data ?? []).map((tutor) => tutor.id).join(",");
+  const payments = useQuery(() => api.payments.config(), []);
   const credits = useQuery(
     async () => (isStudent ? (await api.requests.credits()).available : 0),
     [isStudent],
@@ -247,6 +248,7 @@ function CalendarWorkspace({ user }: { user: User }) {
                   student={user}
                   freeLessons={credits.data ?? 0}
                   focusIdeas={focusIdeas}
+                  priceLkr={payments.data ? (payments.data.lessonPriceLkr * slot.durationMins) / 60 : undefined}
                 />
               ))}
             </ul>
@@ -278,6 +280,7 @@ function OpenSlot({
   student,
   freeLessons,
   focusIdeas,
+  priceLkr,
 }: {
   slot: Slot;
   tutor?: PublicTutor;
@@ -286,6 +289,8 @@ function OpenSlot({
   freeLessons: number;
   /** Suggestions for what the lesson should cover: the course's chapter titles. */
   focusIdeas: string[];
+  /** What this hour costs, in rupees — the same for every tutor for now. */
+  priceLkr?: number;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -324,7 +329,7 @@ function OpenSlot({
           <p className="text-sm font-medium text-forest">{timeRange(slot.startsAt, slot.durationMins)}</p>
           <p className="text-xs text-earth/55">
             with {tutor?.name ?? "a tutor"}
-            {tutor?.hourlyRateUsd ? ` · ${money(tutor.hourlyRateUsd)}/hour` : ""}
+            {priceLkr ? ` · ${lkr(priceLkr)}` : ""}
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-2">

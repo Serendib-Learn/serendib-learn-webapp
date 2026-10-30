@@ -321,7 +321,24 @@ export async function connect(): Promise<Database> {
   }
 
   await seedTeachingContent(database);
+  await priceOldBookingsInRupees(database);
   return database;
+}
+
+/**
+ * Bookings made before prices were in rupees (October 2026) had only a
+ * dollar price: give each its rupee price once, at `USD_TO_LKR` — what its
+ * checkout charged, or would have.
+ */
+async function priceOldBookingsInRupees(target: Database): Promise<void> {
+  const old = await target.bookings.find({ priceLkr: { $exists: false } });
+  for (const booking of old) {
+    await target.bookings.updateOne(
+      { id: booking.id },
+      { priceLkr: Math.round((booking.priceUsd ?? 0) * config.payments.usdToLkr) },
+    );
+  }
+  if (old.length) console.log(`Priced ${old.length} older bookings in rupees.`);
 }
 
 /**

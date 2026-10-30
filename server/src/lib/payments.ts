@@ -32,12 +32,8 @@ export function paymentsConfig(): PaymentsConfig {
     enabled: paymentsEnabled(),
     mode: key.startsWith("sk_live_") ? "live" : key ? "test" : null,
     usdToLkr: config.payments.usdToLkr,
+    lessonPriceLkr: config.payments.lessonPriceLkr,
   };
-}
-
-/** USD price to whole rupees, as LKR cents — the unit Payments.lk takes. */
-export function lkrCentsFor(priceUsd: number): number {
-  return Math.round(priceUsd * config.payments.usdToLkr) * 100;
 }
 
 function cardLabel(payment: Payment): string | undefined {
@@ -80,7 +76,7 @@ export async function checkoutFor(
 
   const checkout = await lk().checkouts.create(
     {
-      amountCents: lkrCentsFor(booking.priceUsd),
+      amountCents: booking.priceLkr * 100,
       description,
       reference: booking.id,
       customer: { name: student.name.slice(0, 80).padEnd(2, "."), email: student.email },

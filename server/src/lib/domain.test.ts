@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { blocksSlot, minutesFromMidnight, overlaps, priceFor } from "./domain.ts";
+import { blocksSlot, lessonPriceLkr, minutesFromMidnight, overlaps } from "./domain.ts";
 import type { Booking } from "../../../shared/types.ts";
 
 test("overlaps: detects genuine overlap, touching edges are not overlap", () => {
@@ -16,16 +16,15 @@ test("minutesFromMidnight: parses HH:mm", () => {
   assert.equal(minutesFromMidnight("23:45"), 1425);
 });
 
-test("priceFor: rounds rate*duration/60, defaults to $25/hr", () => {
-  assert.equal(priceFor({ hourlyRateUsd: 30 } as never, 60), 30);
-  assert.equal(priceFor({ hourlyRateUsd: 30 } as never, 90), 45);
-  assert.equal(priceFor({ hourlyRateUsd: 28 } as never, 30), 14);
-  assert.equal(priceFor({} as never, 60), 25, "no rate set on the tutor falls back to $25/hr");
+test("lessonPriceLkr: LKR 5,000 an hour for every tutor, by length", () => {
+  assert.equal(lessonPriceLkr(60), 5000);
+  assert.equal(lessonPriceLkr(90), 7500);
+  assert.equal(lessonPriceLkr(30), 2500);
 });
 
 test("blocksSlot: only awaiting_payment and confirmed occupy a slot", () => {
   const base = { id: "b", tutorId: "t", studentId: "s", startsAt: "", durationMins: 60,
-    language: "sinhala", focus: "", priceUsd: 0, createdAt: "" } as const;
+    language: "sinhala", focus: "", priceLkr: 0, createdAt: "" } as const;
 
   assert.equal(blocksSlot({ ...base, status: "awaiting_payment" } as Booking), true);
   assert.equal(blocksSlot({ ...base, status: "confirmed" } as Booking), true);

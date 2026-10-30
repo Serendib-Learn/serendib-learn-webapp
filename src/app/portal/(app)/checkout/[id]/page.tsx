@@ -132,10 +132,9 @@ function Checkout() {
   );
 }
 
-function amountFor(booking: Booking, config?: PaymentsConfig) {
-  if (booking.payment) return booking.payment.amountCents;
-  if (config?.enabled) return Math.round(booking.priceUsd * config.usdToLkr) * 100;
-  return null;
+/** What is (or was) charged, in LKR cents: the checkout's amount, or the booking's price. */
+function amountFor(booking: Booking) {
+  return booking.payment ? booking.payment.amountCents : booking.priceLkr * 100;
 }
 
 function Summary({
@@ -147,7 +146,7 @@ function Summary({
   tutor?: PublicProfile;
   config?: PaymentsConfig;
 }) {
-  const lkr = amountFor(booking, config);
+  const cents = amountFor(booking);
   return (
     <Card className="h-fit p-6">
       <div className="flex items-center gap-3">
@@ -173,10 +172,10 @@ function Summary({
         <div className="flex justify-between gap-4 border-t border-ink-900/10 pt-2 font-medium">
           <dt className="text-ink-700">Total</dt>
           <dd className="text-right text-ink-900">
-            {booking.creditId ? "Free lesson" : lkr !== null ? rupees(lkr) : money(booking.priceUsd)}
-            {lkr !== null && !booking.creditId ? (
+            {booking.creditId ? "Free lesson" : rupees(cents)}
+            {config?.usdToLkr && !booking.creditId ? (
               <span className="block text-xs font-normal text-ink-400">
-                ≈ {money(booking.priceUsd)}
+                about {money(cents / 100 / config.usdToLkr)}; your bank converts it
               </span>
             ) : null}
           </dd>
@@ -195,7 +194,7 @@ function PayPanel({ booking, config }: { booking: Booking; config?: PaymentsConf
   const demoPay = useAction(() => api.bookings.pay(booking.id));
   const cancel = useAction(() => api.bookings.cancel(booking.id));
   const { confirm, dialog } = useConfirm();
-  const lkr = amountFor(booking, config);
+  const cents = amountFor(booking);
   const credits = useQuery(() => api.requests.credits(booking.studentId), [booking.studentId]);
   const bookWithCredit = useAction(() => api.bookings.useCredit(booking.id));
   const freeLessons = credits.data?.available ?? 0;
@@ -248,7 +247,7 @@ function PayPanel({ booking, config }: { booking: Booking; config?: PaymentsConf
               }
             }}
           >
-            {redirecting ? "Opening secure checkout…" : `Pay ${lkr !== null ? rupees(lkr) : ""} by card`}
+            {redirecting ? "Opening secure checkout…" : `Pay ${rupees(cents)} by card`}
           </Button>
         </>
       ) : (
@@ -263,7 +262,7 @@ function PayPanel({ booking, config }: { booking: Booking; config?: PaymentsConf
             disabled={demoPay.pending}
             onClick={() => void demoPay.run()}
           >
-            {demoPay.pending ? "Processing…" : `Pay ${money(booking.priceUsd)} (demo)`}
+            {demoPay.pending ? "Processing…" : `Pay ${rupees(cents)} (demo)`}
           </Button>
         </>
       )}

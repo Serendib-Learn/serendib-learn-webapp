@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { ButtonLink } from "@/components/ui/button";
 import { Avatar, Badge, Card, EmptyState, SectionHeading } from "@/components/ui/primitives";
-import { fetchPublicTutors, profilePhotoUrl } from "@/lib/api/public";
+import { fetchLessonPriceLkr, fetchPublicTutors, profilePhotoUrl } from "@/lib/api/public";
+import { lkr } from "@/lib/format";
 
 export const metadata: Metadata = {
   title: "Tutors",
@@ -14,7 +15,7 @@ export const metadata: Metadata = {
 export const revalidate = 60;
 
 export default async function TutorsPage() {
-  const tutors = await fetchPublicTutors();
+  const [tutors, lessonPrice] = await Promise.all([fetchPublicTutors(), fetchLessonPriceLkr()]);
 
   return (
     <>
@@ -58,10 +59,10 @@ export default async function TutorsPage() {
                     {tutor.homeTown ? (
                       <p className="mt-1 text-sm text-ink-400">{tutor.homeTown}</p>
                     ) : null}
-                    {tutor.hourlyRateUsd ? (
+                    {lessonPrice ? (
                       <p className="mt-4 text-sm font-medium text-ink-700">
-                        ${tutor.hourlyRateUsd}
-                        <span className="font-normal text-ink-400"> / hour</span>
+                        {lkr(lessonPrice)}
+                        <span className="font-normal text-ink-400"> / lesson</span>
                       </p>
                     ) : null}
                     {tutor.yearsTeaching ? (

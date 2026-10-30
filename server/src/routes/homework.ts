@@ -6,6 +6,7 @@ import { requireUserRecord, teaches } from "../lib/domain.ts";
 import { newId, nowIso } from "../lib/ids.ts";
 import { deliver } from "../lib/mail.ts";
 import { requireAuth, requireSelfOrAdmin, requireUser } from "../lib/sessions.ts";
+import { formatInZone } from "../lib/time.ts";
 import type { HomeworkItem } from "../../../shared/types.ts";
 
 export const homeworkRouter = Router();
@@ -81,7 +82,7 @@ homeworkRouter.post(
     await deliver({
       to: student.email,
       subject: `New homework from ${tutor.name}`,
-      body: `${created.title}\n\n${created.brief}\n\nDue ${dueAt.toLocaleString()}`,
+      body: `${created.title}\n\n${created.brief}\n\nDue ${formatInZone(dueAt.toISOString(), student.timezone)}`,
       kind: "notification",
     });
 

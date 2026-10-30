@@ -84,8 +84,16 @@ export const config = {
     webhookSecret: process.env.PAYMENTS_LK_WEBHOOK_SECRET ?? "",
     /** Only for pointing at a stand-in API in tests. */
     apiBase: process.env.PAYMENTS_LK_API_BASE || undefined,
-    /** Rupees per US dollar. Tutors price in USD; Payments.lk takes LKR only. */
+    /**
+     * Rupees per US dollar. Prices are in rupees now; this only shows
+     * visitors a rough dollar figure, and converts bookings made before.
+     */
     usdToLkr: Number(process.env.USD_TO_LKR ?? 300),
+    /**
+     * What one hour-long lesson costs, in whole rupees — the same for every
+     * tutor while the pricing model is being decided.
+     */
+    lessonPriceLkr: Number(process.env.LESSON_PRICE_LKR ?? 5000),
   },
 
   /**

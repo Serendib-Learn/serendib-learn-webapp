@@ -71,6 +71,11 @@ export function money(amountUsd: number): string {
   }).format(amountUsd);
 }
 
+/** A price in whole rupees, as lessons are priced: "Rs. 5,000". */
+export function lkr(amount: number): string {
+  return rupees(amount * 100);
+}
+
 /** Payments.lk amounts are LKR cents. */
 export function rupees(cents: number): string {
   return `Rs. ${(cents / 100).toLocaleString("en-LK", { maximumFractionDigits: 2 })}`;

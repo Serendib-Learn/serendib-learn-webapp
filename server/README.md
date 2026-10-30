@@ -124,8 +124,10 @@ real ones — the key decides, the API address is the same.
 
 1. `POST /bookings/:id/checkout` (the student, or an admin) creates a hosted
    checkout referenced to the booking — or returns the current one while it is
-   still open — priced in LKR cents from the booking's USD price at
-   `USD_TO_LKR`, and the browser is sent to its `url`.
+   still open — for the booking's `priceLkr` (set when it was booked from
+   `LESSON_PRICE_LKR`, 5,000 an hour, the same for every tutor), and the
+   browser is sent to its `url`. Bookings from before rupee prices are given
+   theirs once, on startup, at `USD_TO_LKR`.
 2. **The webhook confirms.** `POST /api/payments/webhook` is mounted with a
    raw body parser *before* `express.json()` (the signature covers the exact
    bytes), verified against `PAYMENTS_LK_WEBHOOK_SECRET` with a five-minute
@@ -142,6 +144,18 @@ real ones — the key decides, the API address is the same.
 
 Once a key is set, `POST /bookings/:id/pay` (the instant demo confirm) is
 refused for students; admins keep it to record a payment taken some other way.
+
+## Times and timezones
+
+The API never uses the server's own timezone — Cloud Run runs in UTC
+(`lib/time.ts`). A tutor's weekly hours ("Monday 18:00–21:00") are wall-clock
+times in the **tutor's profile timezone** (`Asia/Colombo` if missing or
+unknown); `openSlotsFor` turns them into real instants from that, and the
+browser shows them in the visitor's own zone. Emails show lesson times in
+the **reader's** profile timezone, labelled ("18:00 (GMT+5:30)"). Signup and
+Google sign-in record the browser's zone; invited accounts get Asia/Colombo.
+`routes/availability.test.ts` checks a tutor in three zones — run the tests
+with `TZ=UTC` to see them as production does.
 
 ## Who can do what: students, tutors, admins
 

@@ -1,4 +1,4 @@
-import type { ContentKind, ContentKinds, PublicTutor } from "@/lib/types";
+import type { ContentKind, ContentKinds, PaymentsConfig, PublicTutor } from "@/lib/types";
 
 /**
  * Server-side reads for the public marketing pages, which render on the
@@ -66,5 +66,18 @@ export async function fetchPublicTutors(): Promise<PublicTutor[]> {
     return (await response.json()) as PublicTutor[];
   } catch {
     return [];
+  }
+}
+
+/** What an hour-long lesson costs, in rupees — the same for every tutor for now. Null when the API is unreachable. */
+export async function fetchLessonPriceLkr(): Promise<number | null> {
+  try {
+    const response = await fetch(`${BASE}/api/payments/config`, {
+      next: { revalidate: TUTOR_REVALIDATE_SECONDS },
+    });
+    if (!response.ok) return null;
+    return ((await response.json()) as PaymentsConfig).lessonPriceLkr ?? null;
+  } catch {
+    return null;
   }
 }

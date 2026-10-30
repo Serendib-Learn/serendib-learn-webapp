@@ -37,7 +37,7 @@ test("booking lifecycle: create -> slot clash -> pay -> complete, with authoriza
   });
   assert.equal(created.status, 201);
   assert.equal(created.body.status, "awaiting_payment");
-  assert.equal(created.body.priceUsd, 25, "default $25/hr rate, 60 minutes");
+  assert.equal(created.body.priceLkr, 5000, "LKR 5,000 for an hour, whoever the tutor");
   const bookingId = created.body.id as string;
 
   // Same tutor, overlapping time, different student — must clash regardless of who asks.

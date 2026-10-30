@@ -4,7 +4,7 @@ import Link from "next/link";
 import { GlanceHeader } from "./glance-header";
 import { api } from "@/lib/api";
 import { useQuery } from "@/lib/hooks";
-import { formatDate, money, relativeTime } from "@/lib/format";
+import { formatDate, lkr, relativeTime } from "@/lib/format";
 import { ButtonLink } from "@/components/ui/button";
 import { Badge, Card, EmptyState, Loading, Stat } from "@/components/ui/primitives";
 import type { User } from "@/lib/types";
@@ -34,7 +34,7 @@ export function AdminDashboard({ user }: { user: User }) {
   const allBookings = Array.from(uniqueBookings.values());
   const revenue = allBookings
     .filter((booking) => booking.paidAt)
-    .reduce((sum, booking) => sum + booking.priceUsd, 0);
+    .reduce((sum, booking) => sum + booking.priceLkr, 0);
 
   return (
     <>
@@ -76,7 +76,7 @@ export function AdminDashboard({ user }: { user: User }) {
         />
         <Stat
           label="Paid bookings"
-          value={money(revenue)}
+          value={lkr(revenue)}
           hint={`${allBookings.filter((booking) => booking.paidAt).length} sessions`}
         />
       </div>

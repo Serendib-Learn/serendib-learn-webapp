@@ -2,14 +2,20 @@
 
 import { useState } from "react";
 import { api } from "@/lib/api";
-import { useAction, useQuery } from "@/lib/hooks";
+import { useAction, useQuery, useTimezone } from "@/lib/hooks";
 import { formatClock, weekdayNames } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { useConfirm } from "@/components/ui/confirm";
 import { Field, Input, Select } from "@/components/ui/field";
 import { Alert, Card, Loading } from "@/components/ui/primitives";
 
-export function AvailabilityEditor({ tutorId }: { tutorId: string }) {
+/**
+ * A tutor's weekly hours. They are wall-clock times in the tutor's profile
+ * timezone — the API turns them into real times from that, never from the
+ * server's clock — and students see them converted to their own.
+ */
+export function AvailabilityEditor({ tutorId, timezone }: { tutorId: string; timezone: string }) {
+  const browserTimezone = useTimezone();
   const rules = useQuery(() => api.availability.forTutor(tutorId), [tutorId]);
   const [weekday, setWeekday] = useState(1);
   const [start, setStart] = useState("18:00");
@@ -26,9 +32,16 @@ export function AvailabilityEditor({ tutorId }: { tutorId: string }) {
       {dialog}
       <h2 className="text-xl">Weekly availability</h2>
       <p className="mt-1.5 text-sm leading-relaxed text-ink-500">
-        Students can only book inside these blocks, split into one-hour slots. Times are in
-        your own timezone.
+        Students can only book inside these blocks, split into one-hour slots. Times are{" "}
+        <span className="font-medium text-ink-700">{timezone || "Asia/Colombo"}</span> time (your
+        profile&apos;s timezone); students see them converted to their own.
       </p>
+      {browserTimezone && timezone && browserTimezone !== timezone ? (
+        <Alert tone="saffron" className="mt-3">
+          This device is set to {browserTimezone}, but your profile says {timezone}. The hours
+          below are {timezone} time. If that is wrong, change the timezone under Profile.
+        </Alert>
+      ) : null}
 
       {rules.loading ? (
         <Loading label="Loading your hours" />

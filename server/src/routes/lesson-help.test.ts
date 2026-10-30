@@ -71,7 +71,7 @@ test("rescheduling: free, to an open hour, with 24 hours' notice for students", 
   const moved = await student.client.post(`/bookings/${booking.id}/reschedule`, { startsAt: second.startsAt });
   assert.equal(moved.status, 200, JSON.stringify(moved.body));
   assert.equal(moved.body.startsAt, second.startsAt);
-  assert.equal(moved.body.priceUsd, booking.priceUsd);
+  assert.equal(moved.body.priceLkr, booking.priceLkr);
   assert.equal(moved.body.status, "confirmed");
   assert.equal(moved.body.reschedules.length, 1);
   assert.equal(moved.body.reschedules[0].from, booking.startsAt);

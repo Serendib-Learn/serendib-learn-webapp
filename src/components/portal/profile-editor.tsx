@@ -26,7 +26,6 @@ export function ProfileEditor({ user, onSaved }: { user: User; onSaved?: (user: 
   const [yearsTeaching, setYearsTeaching] = useState(
     user.yearsTeaching !== undefined ? String(user.yearsTeaching) : "",
   );
-  const [rate, setRate] = useState(user.hourlyRateUsd !== undefined ? String(user.hourlyRateUsd) : "");
   const [specialties, setSpecialties] = useState((user.specialties ?? []).join(", "));
   const [avatarId, setAvatarId] = useState<string | undefined>(user.avatarId);
   const [openToPractice, setOpenToPractice] = useState(user.openToPractice !== false);
@@ -45,7 +44,6 @@ export function ProfileEditor({ user, onSaved }: { user: User; onSaved?: (user: 
       ...(isTutor
         ? {
             yearsTeaching: yearsTeaching ? Number(yearsTeaching) : undefined,
-            hourlyRateUsd: rate ? Number(rate) : undefined,
             specialties: specialties
               .split(",")
               .map((item) => item.trim())
@@ -84,7 +82,15 @@ export function ProfileEditor({ user, onSaved }: { user: User; onSaved?: (user: 
         <Field label="Name" htmlFor="profile-name">
           <Input id="profile-name" value={name} onChange={(event) => setName(event.target.value)} />
         </Field>
-        <Field label="Timezone" htmlFor="profile-timezone" hint="Lesson times are shown in this zone.">
+        <Field
+          label="Timezone"
+          htmlFor="profile-timezone"
+          hint={
+            isTutor
+              ? "Your weekly hours are in this zone, e.g. Asia/Colombo for Sri Lanka. Emails show lesson times in it."
+              : "Emails show lesson times in this zone, e.g. Europe/London."
+          }
+        >
           <Input
             id="profile-timezone"
             value={timezone}
@@ -158,16 +164,6 @@ export function ProfileEditor({ user, onSaved }: { user: User; onSaved?: (user: 
                 max={70}
                 value={yearsTeaching}
                 onChange={(event) => setYearsTeaching(event.target.value)}
-              />
-            </Field>
-            <Field label="Hourly rate (USD)" htmlFor="profile-rate">
-              <Input
-                id="profile-rate"
-                type="number"
-                min={5}
-                max={500}
-                value={rate}
-                onChange={(event) => setRate(event.target.value)}
               />
             </Field>
           </>
