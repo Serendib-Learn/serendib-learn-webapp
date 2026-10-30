@@ -111,14 +111,14 @@ function AdminArea() {
         <GoogleConnectBanner />
       </Suspense>
 
-      <div className="mb-6 flex gap-1 overflow-x-auto rounded-full bg-white p-1 border border-forest/10 sm:w-fit">
+      <div className="mb-6 flex max-w-full gap-1 overflow-x-auto rounded-full border border-forest/10 bg-white p-1 [scrollbar-width:none] sm:w-fit [&::-webkit-scrollbar]:hidden">
         {tabs.map((item) => (
           <button
             key={item.id}
             type="button"
             onClick={() => setTab(item.id)}
             className={cn(
-              "flex-1 shrink-0 rounded-full px-5 py-2 text-sm font-medium whitespace-nowrap transition sm:flex-none",
+              "flex-1 shrink-0 rounded-full px-4 py-2 text-sm font-medium whitespace-nowrap transition sm:flex-none",
               tab === item.id ? "bg-ink-900 text-sand-50" : "text-ink-500 hover:text-ink-900",
             )}
           >
@@ -231,7 +231,7 @@ function People({ me }: { me: User }) {
   return (
     <div className="space-y-3">
       <Card className="flex flex-wrap items-center justify-between gap-4 p-5">
-        <div className="min-w-0">
+        <div className="min-w-[16rem] flex-1">
           <p className="font-medium text-ink-800">Add someone yourself</p>
           <p className="text-xs leading-relaxed text-ink-500">
             Bring an existing tutor onto the site, or add another administrator. They get an
@@ -239,7 +239,7 @@ function People({ me }: { me: User }) {
             tutors page before you have their email; invite them once you do.
           </p>
         </div>
-        <Button size="sm" onClick={() => setInviting(true)}>
+        <Button size="sm" className="shrink-0" onClick={() => setInviting(true)}>
           Invite someone
         </Button>
       </Card>
@@ -309,38 +309,43 @@ function People({ me }: { me: User }) {
       ) : null}
 
       {everyone.map((person) => (
-        <Card key={person.id} className="flex flex-wrap items-center gap-4 p-5">
-          <Avatar
-            name={person.name}
-            avatarId={person.avatarId}
-            photoUrl={person.photoId ? profilePhotoUrl(person.id, person.photoId) : undefined}
-          />
+        // Two rows on every card — who they are, then what you can do — so the
+        // actions line up the same whichever buttons a person has.
+        <Card key={person.id} className="space-y-4 p-5">
+          <div className="flex items-center gap-4">
+            <Avatar
+              name={person.name}
+              avatarId={person.avatarId}
+              photoUrl={person.photoId ? profilePhotoUrl(person.id, person.photoId) : undefined}
+            />
 
-          <div className="min-w-[14rem] flex-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <p className="font-medium text-ink-800">{person.name}</p>
-              {!person.email ? (
-                <Badge tone="saffron">No email yet</Badge>
-              ) : !person.verified ? (
-                <Badge tone="saffron">Unverified</Badge>
-              ) : null}
-              {person.superAdmin ? <Badge tone="ocean">Super admin</Badge> : null}
-              {person.role === "tutor" && person.tutorStatus === "pending" ? (
-                <Badge tone="saffron">Awaiting approval</Badge>
-              ) : null}
-              {person.role === "tutor" && person.tutorStatus === "rejected" ? (
-                <Badge tone="clay">Not approved</Badge>
-              ) : null}
-              {person.membership === "active" ? <Badge tone="jade">Member</Badge> : null}
-              {person.id === me.id ? <Badge tone="ocean">You</Badge> : null}
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="font-medium text-ink-800">{person.name}</p>
+                {!person.email ? (
+                  <Badge tone="saffron">No email yet</Badge>
+                ) : !person.verified ? (
+                  <Badge tone="saffron">Unverified</Badge>
+                ) : null}
+                {person.superAdmin ? <Badge tone="ocean">Super admin</Badge> : null}
+                {person.role === "tutor" && person.tutorStatus === "pending" ? (
+                  <Badge tone="saffron">Awaiting approval</Badge>
+                ) : null}
+                {person.role === "tutor" && person.tutorStatus === "rejected" ? (
+                  <Badge tone="clay">Not approved</Badge>
+                ) : null}
+                {person.membership === "active" ? <Badge tone="jade">Member</Badge> : null}
+                {person.id === me.id ? <Badge tone="ocean">You</Badge> : null}
+              </div>
+              <p className="truncate text-xs text-ink-400">
+                {person.email || "Listed on the tutors page, not invited yet"} · added{" "}
+                {formatDate(person.createdAt)}
+              </p>
             </div>
-            <p className="truncate text-xs text-ink-400">
-              {person.email || "Listed on the tutors page, not invited yet"} · added{" "}
-              {formatDate(person.createdAt)}
-            </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+          {/* Indented to start under the name, past the avatar. */}
+          <div className="flex flex-wrap items-center gap-2 border-t border-forest/8 pt-4 sm:pl-14">
             {/* A fixed width, so every row's role picker lines up. */}
             <div className="w-32 shrink-0">
               <Select
@@ -405,6 +410,7 @@ function People({ me }: { me: User }) {
             <Button
               variant="danger-ghost"
               size="sm"
+              className="ml-auto"
               disabled={person.id === me.id || person.superAdmin || remove.pending}
               onClick={async () => {
                 const yes = await confirm({
