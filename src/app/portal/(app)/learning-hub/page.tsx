@@ -7,20 +7,14 @@ import { useAction, useQuery } from "@/lib/hooks";
 import { ChapterBrowser, groupByStage } from "@/components/portal/chapter-browser";
 import { MaterialCard } from "@/components/portal/material-card";
 import { MaterialRatings, RateMaterialButton } from "@/components/portal/material-feedback";
-import { VoiceNotePlayer } from "@/components/portal/voice-note-player";
 import { PageHeader } from "@/components/portal/page-header";
 import { Button } from "@/components/ui/button";
 import { useConfirm } from "@/components/ui/confirm";
 import { Checkbox, Field, Input, Select, Textarea } from "@/components/ui/field";
 import { Modal } from "@/components/ui/modal";
-import { Alert, Badge, Card, Loading } from "@/components/ui/primitives";
-import type { CourseChapter, LanguageCode, Material, MaterialKind, PhraseList, ProgressMark, User } from "@/lib/types";
-
-const progressText: Record<ProgressMark, { label: string; tone: "saffron" | "jade" | "ocean" }> = {
-  needs_support: { label: "Needs a little more support", tone: "saffron" },
-  on_track: { label: "On track", tone: "jade" },
-  ahead: { label: "Ahead of plan", tone: "ocean" },
-};
+import { Alert, Card, Loading } from "@/components/ui/primitives";
+import type { CourseChapter, LanguageCode, Material, MaterialKind, PhraseList, User } from "@/lib/types";
+import { features } from "@/lib/features";
 
 export default function LearningHubPage() {
   const { user } = useAuth();
@@ -35,15 +29,17 @@ export default function LearningHubPage() {
 function StudentHub({ student }: { student: User }) {
   const mine = useQuery(() => api.materials.forStudent(student.id), [student.id]);
   const library = useQuery(() => api.materials.library(), []);
-  const notes = useQuery(() => api.lessonNotes.forStudent(student.id), [student.id]);
   const chapters = useQuery(() => api.chapters.list(), []);
-  const myFeedback = useQuery(() => api.materials.myFeedback(), []);
+  // FEEDBACK-HIDDEN: rating materials in place is off; feedback goes through the calendar's form.
+  const myFeedback = useQuery(
+    () => (features.lessonFeedback ? api.materials.myFeedback() : Promise.resolve([])),
+    [],
+  );
 
   if (mine.loading || chapters.loading) return <Loading label="Opening your hub" />;
 
   const rated = new Map((myFeedback.data ?? []).map((entry) => [entry.materialId, entry]));
   const allMaterials = [...(mine.data ?? []), ...(library.data ?? [])];
-  const titleOf = new Map(allMaterials.map((material) => [material.id, material.title]));
 
   return (
     <>
@@ -56,67 +52,14 @@ function StudentHub({ student }: { student: User }) {
           chapters={chapters.data ?? []}
           materials={allMaterials}
           languages={student.languages}
-          footerFor={(material) => (
-            <RateMaterialButton material={material} viewer={student} mine={rated.get(material.id)} />
-          )}
+          footerFor={(material) =>
+            features.lessonFeedback ? (
+              <RateMaterialButton material={material} viewer={student} mine={rated.get(material.id)} />
+            ) : null
+          }
         />
       </section>
 
-      {(notes.data ?? []).length > 0 ? (
-        <section className="mt-12">
-          <h2 className="text-xl">Lesson notes</h2>
-          <div className="mt-4 space-y-4">
-            {(notes.data ?? []).map((note) => (
-              <div key={note.id} className="rounded-2xl bg-white p-5 border border-forest/10">
-                <p className="text-xs font-medium uppercase tracking-wider text-ink-400">
-                  {new Date(note.date).toLocaleDateString(undefined, {
-                    day: "numeric",
-                    month: "long",
-                  })}
-                </p>
-                {note.progress ? (
-                  <div className="mt-2">
-                    <Badge tone={progressText[note.progress].tone}>{progressText[note.progress].label}</Badge>
-                  </div>
-                ) : null}
-                <p className="mt-2 text-sm leading-relaxed text-ink-700">{note.summary}</p>
-
-                <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                  <div className="rounded-xl bg-jade-50 px-4 py-3">
-                    <p className="text-xs font-semibold text-jade-700">Went well</p>
-                    <p className="mt-1 text-sm leading-relaxed text-ink-600">{note.wentWell}</p>
-                  </div>
-                  <div className="rounded-xl bg-saffron-50 px-4 py-3">
-                    <p className="text-xs font-semibold text-saffron-600">Work on</p>
-                    <p className="mt-1 text-sm leading-relaxed text-ink-600">{note.workOn}</p>
-                  </div>
-                </div>
-
-                {note.voiceNoteId ? (
-                  <div className="mt-4">
-                    <VoiceNotePlayer id={note.voiceNoteId} label="From your tutor" />
-                  </div>
-                ) : null}
-
-                {note.vocabIntroduced.length > 0 ? (
-                  <div className="mt-4 flex flex-wrap gap-1.5">
-                    {note.vocabIntroduced.map((word) => (
-                      <Badge key={word}>{word}</Badge>
-                    ))}
-                  </div>
-                ) : null}
-
-                {note.materialIds?.length ? (
-                  <p className="mt-4 text-xs text-ink-500">
-                    From the lesson:{" "}
-                    {note.materialIds.map((id) => titleOf.get(id) ?? "a material").join(", ")}, in your folders above.
-                  </p>
-                ) : null}
-              </div>
-            ))}
-          </div>
-        </section>
-      ) : null}
 
     </>
   );
@@ -125,13 +68,18 @@ function StudentHub({ student }: { student: User }) {
 function TeachingHub({ owner }: { owner: User }) {
   const materials = useQuery(() => api.materials.forOwner(owner.id), [owner.id]);
   const tutees = useQuery(() => api.users.tuteesOf(owner.id), [owner.id]);
-  const summaries = useQuery(() => api.materials.feedbackSummary(), []);
+  // Ratings of materials are for the team only (the owners' rule): an admin sees them, a tutor doesn't.
+  const isAdmin = owner.role === "admin";
+  const summaries = useQuery(() => (isAdmin ? api.materials.feedbackSummary() : Promise.resolve([])), [isAdmin]);
   // Tutors can review what others have shared in the open library.
   const library = useQuery(
     async () => (owner.role === "tutor" ? (await api.materials.library()).filter((item) => item.ownerId !== owner.id) : []),
     [owner.id, owner.role],
   );
-  const myFeedback = useQuery(() => api.materials.myFeedback(), []);
+  const myFeedback = useQuery(
+    () => (features.lessonFeedback ? api.materials.myFeedback() : Promise.resolve([])),
+    [],
+  );
   const [composing, setComposing] = useState(false);
   const [assigning, setAssigning] = useState<Material | null>(null);
   const [managing, setManaging] = useState(false);
@@ -225,7 +173,7 @@ function TeachingHub({ owner }: { owner: User }) {
             >
               Delete
             </Button>
-            <MaterialRatings material={material} summary={summaryFor.get(material.id)} />
+            {isAdmin ? <MaterialRatings material={material} summary={summaryFor.get(material.id)} /> : null}
           </div>
         )}
       />
@@ -234,14 +182,18 @@ function TeachingHub({ owner }: { owner: User }) {
         <section className="mt-12">
           <h2 className="text-xl">Shared library</h2>
           <p className="mt-1 text-sm text-ink-500">
-            What other tutors and the Serendib team have shared. Rate what you use; it helps them improve it.
+            What other tutors and the Serendib team have shared.
           </p>
           <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {(library.data ?? []).map((material) => (
               <MaterialCard
                 key={material.id}
                 material={material}
-                footer={<RateMaterialButton material={material} viewer={owner} mine={rated.get(material.id)} />}
+                footer={
+                  features.lessonFeedback ? (
+                    <RateMaterialButton material={material} viewer={owner} mine={rated.get(material.id)} />
+                  ) : undefined
+                }
               />
             ))}
           </div>

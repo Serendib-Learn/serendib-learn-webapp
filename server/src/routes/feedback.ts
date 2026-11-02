@@ -11,7 +11,8 @@ import {
 import { pathParam } from "../lib/http.ts";
 import { newId, nowIso } from "../lib/ids.ts";
 import { deliver } from "../lib/mail.ts";
-import { requireAuth, requireSelfOrAdmin, requireUser } from "../lib/sessions.ts";
+import { requireAdmin, requireAuth, requireUser } from "../lib/sessions.ts";
+import { notifyAdmins } from "../lib/accounts.ts";
 import { parseBody } from "../lib/validate.ts";
 import type {
   Booking,
@@ -21,6 +22,12 @@ import type {
   User,
   VoiceNoteInfo,
 } from "../../../shared/types.ts";
+
+/**
+ * Students and tutors never see each other's feedback: ratings and tutor
+ * write-ups are for the Serendib team (Administration → Lesson ratings).
+ */
+const SHOW_WRITE_UPS_TO_STUDENTS = false;
 
 export const feedbackRouter = Router();
 export const voiceNotesRouter = Router();
@@ -129,39 +136,30 @@ feedbackRouter.post(
       input.nextFocus ? `Next time: ${input.nextFocus}` : "",
     ].filter(Boolean);
 
+    // Feedback is for the Serendib team only, never the tutor (the owners' rule).
     const tutor = await db().users.findById(booking.tutorId);
-    if (tutor) {
-      await deliver({
-        to: tutor.email,
-        subject: `${actor.name} rated your lesson ${"★".repeat(input.rating)}${"☆".repeat(5 - input.rating)}`,
-        body: `${input.comment || "(No written comment.)"}${extras.length ? `\n\n${extras.join("\n")}` : ""}${input.voiceNoteId ? "\n\nThey also left a voice note. Listen in your portal." : ""}`,
-        kind: "notification",
-      });
-    }
+    await notifyAdmins(
+      `${actor.name} rated a lesson with ${tutor?.name ?? "their tutor"} ${"★".repeat(input.rating)}${"☆".repeat(5 - input.rating)}`,
+      `${input.comment || "(No written comment.)"}${extras.length ? `\n\n${extras.join("\n")}` : ""}${input.voiceNoteId ? "\n\nThey also left a voice note: Administration → Lesson ratings." : ""}`,
+    );
 
     response.status(201).json(created);
   }),
 );
 
-/** Feedback for a tutor (their own, or any tutor's for an admin), or all of it for an admin. */
+/**
+ * Lesson feedback: one tutor's, one student's, or all of it. Administrators
+ * only: students and tutors never see each other's feedback (the owners'
+ * rule), so not even a tutor's own ratings.
+ */
 feedbackRouter.get(
   "/",
-  requireAuth,
+  requireAdmin,
   wrap(async (request, response) => {
-    const actor = requireUser(request);
     const tutorId = request.query.tutorId ? String(request.query.tutorId) : "";
     const studentId = request.query.studentId ? String(request.query.studentId) : "";
-
-    if (tutorId) {
-      requireSelfOrAdmin(request, tutorId);
-      response.json(await db().feedback.find({ tutorId }, { sort: newestFirst }));
-    } else if (studentId) {
-      requireSelfOrAdmin(request, studentId);
-      response.json(await db().feedback.find({ studentId }, { sort: newestFirst }));
-    } else {
-      if (actor.role !== "admin") throw forbidden("Administrators only.");
-      response.json(await db().feedback.find({}, { sort: newestFirst, limit: 200 }));
-    }
+    const filter = tutorId ? { tutorId } : studentId ? { studentId } : {};
+    response.json(await db().feedback.find(filter, { sort: newestFirst, limit: 200 }));
   }),
 );
 
@@ -233,7 +231,9 @@ feedbackRouter.post(
       await db().bookings.updateOne({ id: booking.id }, { status: "completed" });
     }
 
-    const student = await db().users.findById(booking.studentId);
+    // A write-up is the tutor's feedback on the student: for the team only,
+    // never emailed or shown to the student (the owners' rule).
+    const student = SHOW_WRITE_UPS_TO_STUDENTS ? await db().users.findById(booking.studentId) : null;
     if (student) {
       await deliver({
         to: student.email,

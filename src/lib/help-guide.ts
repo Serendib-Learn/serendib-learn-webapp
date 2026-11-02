@@ -380,7 +380,6 @@ export const helpCategories: HelpCategory[] = [
         steps: [
           "Open Learning hub. Materials are filed in folders by chapter.",
           "From your tutor shows what was given to you personally. Each chapter has its phrase list too.",
-          "Press Rate this on any material to tell us if it helped and was the right level.",
         ],
         link: { href: "/portal/learning-hub", label: "Learning hub" },
         keywords: "materials worksheets vocab vocabulary audio files phrases chapter",
@@ -526,7 +525,7 @@ export const helpCategories: HelpCategory[] = [
         steps: [
           "In Learning hub, press Add material and file it under a chapter.",
           "Use Assign material to give it to one of your students.",
-          "See each material's ratings, and rate other tutors' materials in Shared library.",
+          "Other tutors' materials are in Shared library.",
         ],
         link: { href: "/portal/learning-hub", label: "Learning hub" },
         keywords: "upload materials worksheet assign share library",
@@ -639,7 +638,7 @@ export const helpCategories: HelpCategory[] = [
         title: "Feedback, waitlist and audit log",
         steps: [
           "Inbox: questions from the Help button, feedback from the calendar and free intro call requests. Reply by email from there.",
-          "Feedback: lesson ratings and write-ups from before after-lesson feedback was switched off.",
+          "Lesson ratings: lesson ratings and write-ups from before after-lesson feedback was switched off. Feedback is only ever seen by admins.",
           "Waitlist: people who registered interest on the home page.",
           "Audit log: a record of every admin action.",
         ],

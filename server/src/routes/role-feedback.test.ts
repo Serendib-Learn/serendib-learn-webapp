@@ -53,9 +53,9 @@ test("after a lesson: the student rates pace and materials, the tutor marks prog
   assert.equal(feedback.status, 201);
   assert.equal(feedback.body.pace, "too_fast");
   assert.equal(feedback.body.materialsRating, 4);
+  // The team is told; the tutor is not (feedback is for the team only).
   const toTutor = await latestMail(harness, "fb-tutor@example.com", "notification");
-  assert.match(toTutor?.body ?? "", /Pace: too fast/);
-  assert.match(toTutor?.body ?? "", /Next time: Numbers and money/);
+  assert.doesNotMatch(toTutor?.body ?? "", /Pace: too fast/);
   assert.equal(
     (await student.client.post("/feedback", { bookingId: booking.id, rating: 3, pace: "sideways" })).status,
     400,
@@ -93,21 +93,19 @@ test("after a lesson: the student rates pace and materials, the tutor marks prog
   assert.equal(note.status, 201, JSON.stringify(note.body));
   assert.equal(note.body.progress, "on_track");
   assert.deepEqual(note.body.materialIds, [own.body.id, library.body.id]);
-  assert.match((await latestMail(harness, "fb-student@example.com", "notification"))?.body ?? "", /Where you are: on track/);
+  assert.doesNotMatch((await latestMail(harness, "fb-student@example.com", "notification"))?.body ?? "", /Where you are/, "the student is not sent the write-up");
 
   // The worksheet is now in the student's hub too.
   const hub = await student.client.get(`/materials?studentId=${student.user.id}`);
   assert.ok((hub.body as { id: string }[]).some((material) => material.id === own.body.id));
 
-  // The student sees their progress, not the engagement score; the team sees both.
-  const mine = (await student.client.get(`/lesson-notes?studentId=${student.user.id}`)).body as LessonNote[];
-  assert.equal(mine[0].progress, "on_track");
-  assert.equal(mine[0].engagement, undefined);
+  // The write-up is for the team (and the tutor who wrote it), never the student.
+  assert.equal((await student.client.get(`/lesson-notes?studentId=${student.user.id}`)).status, 403);
   const theirs = (await admin.client.get(`/lesson-notes?studentId=${student.user.id}`)).body as LessonNote[];
   assert.equal(theirs[0].engagement, 4);
 });
 
-test("material feedback: students on what they can see, tutors on the library, owners read it all", async () => {
+test("material feedback: students on what they can see, tutors on the library, only the team reads it", async () => {
   const owner = await signedUpUser(harness, "tutor", "mat-owner@example.com");
   const student = await signedUpUser(harness, "student", "mat-student@example.com");
   const outsider = await signedUpUser(harness, "student", "mat-outsider@example.com");
@@ -157,12 +155,15 @@ test("material feedback: students on what they can see, tutors on the library, o
   assert.equal(tutorSays.body.suggestion, "Add a slower recording");
   assert.equal(tutorSays.body.level, undefined);
 
-  // The owner reads everything; others only their own.
-  assert.equal((await owner.client.get(`/materials/${open.body.id}/feedback`)).body.length, 1);
+  // Only the team reads it: not even the material's owner. Everyone sees their own.
+  assert.equal((await owner.client.get(`/materials/${open.body.id}/feedback`)).status, 403);
+  assert.equal((await owner.client.get("/materials/feedback/summary")).status, 403);
   assert.equal((await student.client.get(`/materials/${assigned.body.id}/feedback`)).status, 403);
   assert.equal((await student.client.get("/materials/feedback/mine")).body.length, 1);
+  const admin = await adminClient(harness);
+  assert.equal((await admin.client.get(`/materials/${open.body.id}/feedback`)).body.length, 1);
 
-  const summary = (await owner.client.get("/materials/feedback/summary")).body as MaterialFeedbackSummary[];
+  const summary = (await admin.client.get("/materials/feedback/summary")).body as MaterialFeedbackSummary[];
   assert.deepEqual(
     summary.map(({ materialId, count, average }) => ({ materialId, count, average })).sort((a, b) => a.materialId.localeCompare(b.materialId)),
     [

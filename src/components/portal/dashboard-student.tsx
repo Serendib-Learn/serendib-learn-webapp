@@ -22,7 +22,6 @@ export function StudentDashboard({ user }: { user: User }) {
   const homework = useQuery(() => api.homework.forStudent(user.id), [user.id]);
   const materials = useQuery(() => api.materials.forStudent(user.id), [user.id]);
   const tutors = useQuery(() => api.users.tutorsOf(user.id), [user.id]);
-  const notes = useQuery(() => api.lessonNotes.forStudent(user.id), [user.id]);
   // GAMES-HIDDEN: games progress is parked with the games — see src/lib/features.ts.
   // const results = useQuery(() => api.games.resultsFor(user.id), [user.id]);
 
@@ -266,27 +265,6 @@ export function StudentDashboard({ user }: { user: User }) {
           </Card>
           */}
 
-          {(notes.data ?? []).length > 0 ? (
-            <Card className="p-6">
-              <h2 className="text-lg">Last lesson write-up</h2>
-              {(notes.data ?? []).slice(0, 1).map((note) => (
-                <div key={note.id} className="mt-3">
-                  <p className="text-xs text-ink-400">{formatDate(note.date)}</p>
-                  <p className="mt-2 text-sm leading-relaxed text-ink-600">{note.summary}</p>
-                  <p className="mt-3 text-xs font-semibold tracking-wide text-jade-700 uppercase">
-                    Work on
-                  </p>
-                  <p className="mt-1 text-sm leading-relaxed text-ink-600">{note.workOn}</p>
-                </div>
-              ))}
-              <Link
-                href="/portal/homework"
-                className="mt-4 block text-sm text-jade-700 hover:text-jade-600"
-              >
-                All write-ups →
-              </Link>
-            </Card>
-          ) : null}
         </aside>
       </div>
     </>

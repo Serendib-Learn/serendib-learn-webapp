@@ -984,6 +984,14 @@ every lesson: the after-lesson banner (`features.lessonFeedback`, search
 calendar has a small **Questions or concerns?** form for students and
 tutors; it lands in Administration → **Inbox** as feedback, and the team
 replies by email. Tutor hours no longer need a write-up to count (8.8).
+
+**Feedback is for the team only.** Students never see what their tutor
+wrote about them, and tutors never see students' ratings (of lessons or of
+their materials): `GET /feedback`, the materials ratings endpoints and
+students' `GET /lesson-notes` are admin-only, the tutor and student
+dashboards and the learning hub no longer show them, and the emails that
+used to tell the other side go to the admins instead. Admins read it all
+under Lesson ratings.
 Everything below still works and is tested, for when it is switched back
 on.
 
@@ -1012,8 +1020,8 @@ on.
    students (how helpful it was, whether the level was right) and tutors
    (how well it works in a lesson, a suggested improvement — tutors rate
    the "Shared library" in their hub). One entry per person, editable.
-   The material's owner sees the average on each card and everyone's
-   feedback on click; admins see it all.
+   Only admins see the ratings (no longer the material's owner), and the
+   Rate this button is switched off with after-lesson feedback.
 
 Before the lesson, **lesson reminders** go to both people 24 hours ahead
 and 1 hour ahead, with the Meet link and a link to the calendar.

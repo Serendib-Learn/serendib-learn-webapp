@@ -190,8 +190,9 @@ The API enforces these itself; the portal only hides what a role cannot use.
 | Mark an unused lesson refunded | — | — | ✓ |
 | Ask for a free session / report a missed lesson | ✓ | — | — |
 | Approve or decline those requests | — | — | ✓ (super admin too) |
-| Feedback after a lesson | rating, pace, materials, what next | write-up, progress, engagement, materials used | reads all |
-| Feedback on a material | helpfulness, level | works-in-lessons, suggestion | reads all |
+| Feedback after a lesson (switched off) | rating, pace, materials, what next | write-up, progress, engagement, materials used | reads all |
+| Read feedback about them, or by the other side | never | only write-ups they wrote | reads all |
+| Feedback on a material | helpfulness, level (no longer asked) | works-in-lessons, suggestion (no longer asked); never sees ratings of their own | reads all |
 
 "Own students" are `lib/domain.ts`'s `tuteeIdsOf`: anyone with a booking,
 an assigned material or homework from that tutor.

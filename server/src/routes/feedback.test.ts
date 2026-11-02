@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { after, before, test } from "node:test";
-import { latestMail, signedUpUser } from "../test-support/accounts.ts";
+import { adminClient, latestMail, signedUpUser } from "../test-support/accounts.ts";
 import { startTestServer } from "../test-support/harness.ts";
 import type { Booking, MailMessage, PendingFeedback } from "../../../shared/types.ts";
 
@@ -69,7 +69,7 @@ test("pending: a lesson asks each side for their own part once it has ended", as
   assert.equal(forTutor[0].kind, "write-up");
 });
 
-test("feedback: the student rates once, the tutor hears about it", async () => {
+test("feedback: the student rates once; only the team sees it, never the tutor", async () => {
   const { tutor, student, booking } = await finishedLesson("rated");
 
   const badRating = await student.client.post("/feedback", { bookingId: booking.id, rating: 6 });
@@ -89,18 +89,21 @@ test("feedback: the student rates once, the tutor hears about it", async () => {
   assert.equal(again.status, 409);
 
   const notice = await latestMail(harness, "rated-tutor@example.com", "notification");
-  assert.match(notice?.subject ?? "", /★★★★★/);
+  assert.doesNotMatch(notice?.subject ?? "", /★/, "the tutor is not told the rating");
 
   const pending = await student.client.get("/feedback/pending");
   assert.deepEqual(pending.body, []);
 
-  const mine = await tutor.client.get(`/feedback?tutorId=${tutor.user.id}`);
-  assert.equal(mine.body.length, 1);
-  const theirs = await student.client.get(`/feedback?tutorId=${tutor.user.id}`);
-  assert.equal(theirs.status, 403);
+  // Administrators only: not the tutor it is about, not the student who gave it.
+  assert.equal((await tutor.client.get(`/feedback?tutorId=${tutor.user.id}`)).status, 403);
+  assert.equal((await student.client.get(`/feedback?studentId=${student.user.id}`)).status, 403);
+  const admin = await adminClient(harness);
+  const all = await admin.client.get(`/feedback?tutorId=${tutor.user.id}`);
+  assert.equal(all.status, 200);
+  assert.equal(all.body.length, 1);
 });
 
-test("write-up: the tutor's note completes the lesson and reaches the student", async () => {
+test("write-up: the tutor's note completes the lesson; the team and the tutor see it, never the student", async () => {
   const { tutor, student, booking } = await finishedLesson("written");
 
   const written = await tutor.client.post("/feedback/lesson-notes", {
@@ -115,11 +118,14 @@ test("write-up: the tutor's note completes the lesson and reaches the student", 
   const lesson = await student.client.get(`/bookings/${booking.id}`);
   assert.equal(lesson.body.status, "completed");
 
-  const notes = await student.client.get(`/lesson-notes?studentId=${student.user.id}`);
-  assert.equal(notes.body[0].summary, "Greetings and family words.");
+  assert.equal((await student.client.get(`/lesson-notes?studentId=${student.user.id}`)).status, 403);
+  const theirs = await tutor.client.get(`/lesson-notes?studentId=${student.user.id}`);
+  assert.equal(theirs.body[0].summary, "Greetings and family words.", "the tutor sees what they wrote");
+  const admin = await adminClient(harness);
+  assert.equal((await admin.client.get(`/lesson-notes?studentId=${student.user.id}`)).body.length, 1);
 
   const mail = await latestMail(harness, "written-student@example.com", "notification");
-  assert.match(mail?.subject ?? "", /wrote up your lesson/);
+  assert.doesNotMatch(mail?.subject ?? "", /wrote up your lesson/, "the student is not emailed the write-up");
 });
 
 test("voice notes: only the two people on the lesson can hear them, or attach them", async () => {

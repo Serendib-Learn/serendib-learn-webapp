@@ -5,7 +5,7 @@ import { pathParam } from "../lib/http.ts";
 import { requireUserRecord, teaches } from "../lib/domain.ts";
 import { newId, nowIso } from "../lib/ids.ts";
 import { deliver } from "../lib/mail.ts";
-import { requireAuth, requireSelfOrAdmin, requireUser } from "../lib/sessions.ts";
+import { requireAdmin, requireAuth, requireSelfOrAdmin, requireUser } from "../lib/sessions.ts";
 import { parseBody } from "../lib/validate.ts";
 import { z } from "zod";
 import type {
@@ -226,16 +226,16 @@ materialsRouter.get(
   }),
 );
 
-/** Count and average rating for each material you own (every material, for an administrator). */
+/**
+ * Count and average rating for every material. Administrators only: tutors
+ * don't see what students (or other tutors) thought of their materials
+ * (the owners' rule: feedback is for the team).
+ */
 materialsRouter.get(
   "/feedback/summary",
-  requireAuth,
-  wrap(async (request, response) => {
-    const actor = requireUser(request);
-    const owned =
-      actor.role === "admin"
-        ? await db().materials.find({})
-        : await db().materials.find({ ownerId: actor.id });
+  requireAdmin,
+  wrap(async (_request, response) => {
+    const owned = await db().materials.find({});
     const ids = owned.map((material) => material.id);
     const all = ids.length ? await db().materialFeedback.find({ materialId: { $in: ids } }) : [];
 
@@ -250,17 +250,13 @@ materialsRouter.get(
   }),
 );
 
-/** All the feedback on one material: for its owner and administrators. */
+/** All the feedback on one material: administrators only. */
 materialsRouter.get(
   "/:id/feedback",
-  requireAuth,
+  requireAdmin,
   wrap(async (request, response) => {
-    const actor = requireUser(request);
     const material = await db().materials.findById(pathParam(request, "id"));
     if (!material) throw notFound("That material has gone.");
-    if (material.ownerId !== actor.id && actor.role !== "admin") {
-      throw forbidden("Only the material's owner sees everyone's feedback.");
-    }
     const entries = await db().materialFeedback.find(
       { materialId: material.id },
       { sort: (a: MaterialFeedback, b: MaterialFeedback) => b.updatedAt.localeCompare(a.updatedAt) },

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db } from "../db/database.ts";
-import { notFound, wrap } from "../lib/errors.ts";
+import { forbidden, notFound, wrap } from "../lib/errors.ts";
 import { pathParam } from "../lib/http.ts";
 import { progressFor, tuteeIdsOf } from "../lib/domain.ts";
 import { requireAuth, requireSelfOrAdmin } from "../lib/sessions.ts";
@@ -10,18 +10,22 @@ export const progressRouter = Router();
 
 const newestFirst = (a: LessonNote, b: LessonNote) => b.date.localeCompare(a.date);
 
+/**
+ * A student's lesson write-ups: the tutor's feedback on them, so for the team
+ * only (and each tutor sees the ones they wrote). Students never see them:
+ * feedback between students and tutors goes to administrators (the owners'
+ * rule).
+ */
 progressRouter.get(
   "/lesson-notes",
   requireAuth,
   wrap(async (request, response) => {
     const studentId = String(request.query.studentId ?? "");
-    const actor = requireSelfOrAdmin(request, studentId);
+    const actor = request.user!;
+    if (actor.role === "student") throw forbidden("Lesson write-ups are for the Serendib team.");
 
     const notes = await db().lessonNotes.find({ studentId }, { sort: newestFirst });
-    // The tutor's engagement score is for the tutor and the team, not the student.
-    response.json(
-      actor.role === "admin" ? notes : notes.map((note) => ({ ...note, engagement: undefined })),
-    );
+    response.json(actor.role === "admin" ? notes : notes.filter((note) => note.tutorId === actor.id));
   }),
 );
 
