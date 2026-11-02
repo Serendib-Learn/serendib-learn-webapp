@@ -7,7 +7,7 @@ import type { MetadataRoute } from "next";
  */
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Serendib Learn — Sinhala & Tamil, taught by Sri Lankans",
+    name: "Serendib Learn - Sinhala & Tamil, taught by Sri Lankans",
     short_name: "Serendib",
     description:
       "Personally vetted Sri Lankan tutors for Sinhala and Tamil, with your lessons, materials and practice partners in one place.",

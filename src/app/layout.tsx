@@ -31,7 +31,7 @@ export const metadata: Metadata = {
   // NEXT_PUBLIC_SITE_URL wherever the site is served from somewhere else.
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.serendiblearn.com"),
   title: {
-    default: "Serendib Learn — Sinhala & Tamil, taught by Sri Lankans",
+    default: "Serendib Learn - Sinhala & Tamil, taught by Sri Lankans",
     template: "%s · Serendib Learn",
   },
   description:
