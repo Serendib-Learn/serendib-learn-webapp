@@ -1,7 +1,7 @@
 import { PaymentsLk } from "@payments-lk/node";
 import type { Checkout, Payment } from "@payments-lk/node";
 import { config } from "../config.ts";
-import type { Booking, BookingPayment, PaymentsConfig, User } from "../../../shared/types.ts";
+import type { Booking, BookingPayment, LessonBundle, PaymentsConfig, User } from "../../../shared/types.ts";
 
 /**
  * Card payments through Payments.lk's hosted checkout. The browser is sent to
@@ -33,6 +33,7 @@ export function paymentsConfig(): PaymentsConfig {
     mode: key.startsWith("sk_live_") ? "live" : key ? "test" : null,
     usdToLkr: config.payments.usdToLkr,
     lessonPriceLkr: config.payments.lessonPriceLkr,
+    bundleSizes: config.payments.bundleSizes,
   };
 }
 
@@ -56,41 +57,68 @@ function record(checkout: Checkout): BookingPayment {
 }
 
 /**
- * A checkout for this booking. Reuses the current one while it can still take
- * a payment, so a double click or a page refresh never makes two.
+ * A hosted checkout for something the student pays for (a booking, or a
+ * bundle of them). Reuses the current one while it can still take a payment,
+ * so a double click or a page refresh never makes two. `reference` comes back
+ * on the webhook's payment, which is how a payment finds what it was for.
  */
-export async function checkoutFor(
-  booking: Booking,
-  student: User,
-  tutor: User,
-): Promise<BookingPayment> {
-  const existing = booking.payment;
+async function hostedCheckout(input: {
+  existing?: BookingPayment;
+  amountCents: number;
+  description: string;
+  reference: string;
+  student: User;
+  /** Our page the customer returns to: `?status=returned|cancelled` is added. */
+  backUrl: string;
+}): Promise<BookingPayment> {
+  const existing = input.existing;
   if (existing && new Date(existing.expiresAt).getTime() - Date.now() > 60_000) {
     const current = await lk().checkouts.retrieve(existing.checkoutId);
     if (current.status === "open") return record(current);
   }
 
-  const language = booking.language === "tamil" ? "Tamil" : "Sinhala";
-  const description = `${booking.durationMins}-minute ${language} lesson with ${tutor.name}`.slice(0, 120);
-  const back = `${config.appUrl}/portal/checkout/${booking.id}`;
-
   const checkout = await lk().checkouts.create(
     {
-      amountCents: booking.priceLkr * 100,
-      description,
-      reference: booking.id,
-      customer: { name: student.name.slice(0, 80).padEnd(2, "."), email: student.email },
-      successUrl: `${back}?status=returned`,
-      cancelUrl: `${back}?status=cancelled`,
+      amountCents: input.amountCents,
+      description: input.description.slice(0, 120),
+      reference: input.reference,
+      customer: { name: input.student.name.slice(0, 80).padEnd(2, "."), email: input.student.email },
+      successUrl: `${input.backUrl}?status=returned`,
+      cancelUrl: `${input.backUrl}?status=cancelled`,
       // Expiry is the API's default, 30 minutes: long enough to pay, short
       // enough that an abandoned checkout does not hold the slot for long.
     },
-    // A fresh key per attempt: an earlier checkout for this booking may have
-    // expired, and the same key would hand that one back.
-    { idempotencyKey: `booking-${booking.id}-${Date.now()}` },
+    // A fresh key per attempt: an earlier checkout may have expired, and the
+    // same key would hand that one back.
+    { idempotencyKey: `${input.reference}-${Date.now()}` },
   );
 
   return record(checkout);
+}
+
+/** The checkout for one booking. */
+export async function checkoutFor(booking: Booking, student: User, tutor: User): Promise<BookingPayment> {
+  const language = booking.language === "tamil" ? "Tamil" : "Sinhala";
+  return hostedCheckout({
+    existing: booking.payment,
+    amountCents: booking.priceLkr * 100,
+    description: `${booking.durationMins}-minute ${language} lesson with ${tutor.name}`,
+    reference: booking.id,
+    student,
+    backUrl: `${config.appUrl}/portal/checkout/${booking.id}`,
+  });
+}
+
+/** The one checkout that pays for every lesson in a bundle. */
+export async function checkoutForBundle(bundle: LessonBundle, student: User): Promise<BookingPayment> {
+  return hostedCheckout({
+    existing: bundle.payment,
+    amountCents: bundle.priceLkr * 100,
+    description: `${bundle.size} lessons with Serendib Learn`,
+    reference: bundle.id,
+    student,
+    backUrl: `${config.appUrl}/portal/checkout/bundle/${bundle.id}`,
+  });
 }
 
 export type CheckoutOutcome =

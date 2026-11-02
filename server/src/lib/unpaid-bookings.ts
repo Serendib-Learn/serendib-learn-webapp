@@ -76,6 +76,8 @@ export async function releaseUnpaidBookings(now = Date.now()): Promise<number> {
   let released = 0;
 
   for (const booking of waiting) {
+    // A bundle's lessons are paid, and let go, together (lib/bundles.ts).
+    if (booking.bundleId) continue;
     const holdEnds = booking.payment
       ? new Date(booking.payment.expiresAt).getTime() + CHECKOUT_GRACE_MINUTES * 60_000
       : new Date(booking.createdAt).getTime() + UNPAID_HOLD_MINUTES * 60_000;

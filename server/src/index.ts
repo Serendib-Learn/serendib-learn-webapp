@@ -28,6 +28,7 @@ import { profilePhotosRouter } from "./routes/profile-photos.ts";
 import { contentRouter } from "./routes/content.ts";
 import { progressRouter } from "./routes/progress.ts";
 import { reportsRouter } from "./routes/reports.ts";
+import { bundlesRouter } from "./routes/bundles.ts";
 import { requestsRouter } from "./routes/requests.ts";
 import { usersRouter } from "./routes/users.ts";
 
@@ -80,6 +81,7 @@ app.use("/api/auth", authLimiter, authRouter);
 app.use("/api/users", usersRouter);
 app.use("/api/availability", availabilityRouter);
 app.use("/api/bookings", bookingsRouter);
+app.use("/api/bundles", bundlesRouter);
 app.use("/api/payments", paymentsRouter);
 app.use("/api/feedback", feedbackRouter);
 app.use("/api/voice-notes", express.json({ limit: "5mb" }), voiceNotesRouter);

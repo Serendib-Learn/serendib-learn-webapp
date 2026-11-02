@@ -12,6 +12,7 @@ import { deliver } from "./mail.ts";
 import { nowIso } from "./ids.ts";
 import { formatInZone } from "./time.ts";
 import { releaseUnpaidBookings } from "./unpaid-bookings.ts";
+import { releaseUnpaidBundles } from "./bundles.ts";
 import type { Booking } from "../../../shared/types.ts";
 
 /**
@@ -197,7 +198,7 @@ export async function runReminders(
   return {
     lesson: await runLessonReminders(now),
     feedback: FEEDBACK_REMINDERS_ON ? await runFeedbackReminders(now) : 0,
-    released: await releaseUnpaidBookings(now),
+    released: (await releaseUnpaidBookings(now)) + (await releaseUnpaidBundles(now)),
   };
 }
 

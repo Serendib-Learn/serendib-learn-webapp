@@ -160,6 +160,8 @@ export interface Booking {
   payment?: BookingPayment;
   /** The lesson credit it was booked with, instead of a payment. */
   creditId?: string;
+  /** The bundle it was booked in, paid for with the bundle's one checkout. */
+  bundleId?: string;
   /** Every move to a new time, oldest first. Rescheduling never changes the price. */
   reschedules?: BookingReschedule[];
   /** Why a booking was cancelled, when the system did it (an expired checkout, say). */
@@ -335,6 +337,39 @@ export interface BookingPayment {
   failureMessage?: string;
 }
 
+/**
+ * Several lessons booked together (5 or 10, with any tutors) and paid for with
+ * one checkout. Each lesson is an ordinary booking with `bundleId` set, so
+ * moving, cancelling, reminders and reports treat it like any other.
+ */
+export interface LessonBundle {
+  id: string;
+  studentId: string;
+  size: number;
+  bookingIds: string[];
+  /** The total, in whole rupees: each lesson's price added up. */
+  priceLkr: number;
+  status: "awaiting_payment" | "confirmed" | "cancelled";
+  payment?: BookingPayment;
+  paidAt?: string;
+  cancelReason?: string;
+  createdAt: string;
+}
+
+/** One lesson chosen for a bundle. */
+export interface BundleLessonInput {
+  tutorId: string;
+  startsAt: string;
+  language: LanguageCode;
+  focus: string;
+}
+
+/** A bundle with its lessons, as the checkout page shows it. */
+export interface BundleDetail {
+  bundle: LessonBundle;
+  bookings: Booking[];
+}
+
 /** What the frontend needs to know about taking payments. */
 export interface PaymentsConfig {
   /** False when no Payments.lk key is set: the demo checkout is used instead. */
@@ -344,6 +379,8 @@ export interface PaymentsConfig {
   usdToLkr: number;
   /** What an hour-long lesson costs, in whole rupees (every tutor, for now). */
   lessonPriceLkr: number;
+  /** How many lessons a bundle can hold, e.g. [5, 10]. */
+  bundleSizes: number[];
 }
 
 export type MaterialKind = "pdf" | "audio" | "video" | "link" | "deck";

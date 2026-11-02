@@ -20,9 +20,11 @@ import type {
   CourseChapter,
   CourseStage,
   GameResult,
+  HelpQuestion,
   HeritageSite,
   Holiday,
   HomeworkItem,
+  LessonBundle,
   LessonCredit,
   LessonNote,
   MailMessage,
@@ -36,7 +38,6 @@ import type {
   Thread,
   User,
   WaitlistEntry,
-  HelpQuestion,
 } from "../../../shared/types.ts";
 
 /** Password material for one account. Never leaves the server. */
@@ -204,6 +205,7 @@ export interface Database {
   paymentEvents: Collection<PaymentEvent>;
   reminderClaims: Collection<ReminderClaim>;
   dataFixes: Collection<DataFix>;
+  bundles: Collection<LessonBundle>;
   feedback: Collection<SessionFeedback>;
   chapters: Collection<CourseChapter>;
   connections: Collection<Connection>;
@@ -252,6 +254,7 @@ function build(from: Store): Database {
     paymentEvents: from.collection<PaymentEvent>("paymentEvents"),
     reminderClaims: from.collection<ReminderClaim>("reminderClaims"),
     dataFixes: from.collection<DataFix>("dataFixes"),
+    bundles: from.collection<LessonBundle>("bundles"),
     feedback: from.collection<SessionFeedback>("feedback"),
     chapters: from.collection<CourseChapter>("chapters"),
     connections: from.collection<Connection>("connections"),
@@ -305,6 +308,7 @@ async function seedContents(): Promise<Record<string, Doc[]>> {
     paymentEvents: [],
     reminderClaims: [],
     dataFixes: [],
+    bundles: [],
     feedback: [],
     connections: [],
     postImages: [],

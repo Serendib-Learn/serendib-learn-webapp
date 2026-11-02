@@ -63,11 +63,13 @@ function rupees(cents: number): string {
 /**
  * Marks a booking paid: meeting link, membership, receipt. Safe to call more
  * than once — a webhook retry and the browser's status check can both arrive
- * for the same payment, and only the first one does anything.
+ * for the same payment, and only the first one does anything. A bundle's
+ * lessons are confirmed `quiet`ly: the bundle sends one receipt for them all.
  */
 export async function confirmBooking(
   booking: Booking,
   changes: Partial<Booking> = {},
+  options: { quiet?: boolean } = {},
 ): Promise<Booking> {
   const current = (await db().bookings.findById(booking.id)) ?? booking;
   if (current.status === "confirmed" || current.status === "completed") return current;
@@ -89,6 +91,8 @@ export async function confirmBooking(
   if (student.membership === "none") {
     await db().users.updateOne({ id: student.id }, { membership: "active" });
   }
+
+  if (options.quiet) return paid ?? current;
 
   const payment = paid?.payment ?? changes.payment;
   const amount = rupees(payment ? payment.amountCents : current.priceLkr * 100);

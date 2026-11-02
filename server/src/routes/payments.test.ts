@@ -55,7 +55,7 @@ async function postWebhook(event: unknown, signature?: string) {
 
 test("config: reports test mode and the conversion rate", async () => {
   const { body } = await harness.client().get("/payments/config");
-  assert.deepEqual(body, { enabled: true, mode: "test", usdToLkr: 300, lessonPriceLkr: 5000 });
+  assert.deepEqual(body, { enabled: true, mode: "test", usdToLkr: 300, lessonPriceLkr: 5000, bundleSizes: [5, 10] });
 });
 
 test("checkout: priced in LKR, referenced to the booking, reused while open", async () => {

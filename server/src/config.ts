@@ -98,6 +98,11 @@ export const config = {
      * tutor while the pricing model is being decided.
      */
     lessonPriceLkr: Number(process.env.LESSON_PRICE_LKR ?? 5000),
+    /** How many lessons a bundle can hold: booked together, paid for once. */
+    bundleSizes: (process.env.BUNDLE_SIZES ?? "5,10")
+      .split(/[,\s]+/)
+      .map(Number)
+      .filter((size) => Number.isInteger(size) && size > 1),
   },
 
   /**

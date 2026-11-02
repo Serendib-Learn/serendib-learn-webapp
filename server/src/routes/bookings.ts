@@ -5,6 +5,7 @@ import { ApiError, forbidden, notFound, wrap } from "../lib/errors.ts";
 import { pathParam } from "../lib/http.ts";
 import { blocksSlot, isBookableTutor, lessonPriceLkr, openSlotsFor, overlaps, requireUserRecord } from "../lib/domain.ts";
 import { confirmBooking } from "../lib/booking-confirmation.ts";
+import { releaseBundle } from "../lib/bundles.ts";
 import { availableCredits, grantCredit, releaseCredit, spendCredit } from "../lib/credits.ts";
 import { deleteGoogleMeeting, moveGoogleMeeting } from "../lib/google.ts";
 import { newId, nowIso } from "../lib/ids.ts";
@@ -30,6 +31,13 @@ export const STUDENT_NOTICE_HOURS = 6;
 
 /** A lesson time in an email, in the reader's own timezone. */
 const when = (iso: string, reader: User) => formatInZone(iso, reader.timezone);
+
+/** A lesson in a bundle is paid for with the bundle's one checkout, never on its own. */
+function assertNotInBundle(booking: Booking) {
+  if (booking.bundleId && booking.status === "awaiting_payment") {
+    throw new ApiError("This lesson is part of a bundle. Pay for the bundle instead.", 409, "in_bundle");
+  }
+}
 
 /** Both sides of a booking, plus any administrator, may act on it. */
 function assertParty(booking: Booking, actor: User) {
@@ -147,6 +155,7 @@ bookingsRouter.post(
   wrap(async (request, response) => {
     const actor = requireUser(request);
     const booking = await load(pathParam(request, "id"));
+    assertNotInBundle(booking);
     if (booking.studentId !== actor.id && actor.role !== "admin") {
       throw forbidden("Only the student pays for a booking.");
     }
@@ -193,6 +202,7 @@ bookingsRouter.post(
   wrap(async (request, response) => {
     const actor = requireUser(request);
     const booking = await load(pathParam(request, "id"));
+    assertNotInBundle(booking);
     assertParty(booking, actor);
 
     if (paymentsEnabled() && actor.role !== "admin") {
@@ -221,6 +231,7 @@ bookingsRouter.post(
   wrap(async (request, response) => {
     const actor = requireUser(request);
     const booking = await load(pathParam(request, "id"));
+    assertNotInBundle(booking);
     if (booking.studentId !== actor.id && actor.role !== "admin") {
       throw forbidden("Only the student books with their free lessons.");
     }
@@ -350,6 +361,13 @@ bookingsRouter.post(
     }
     if (booking.status === "cancelled") {
       response.json(booking);
+      return;
+    }
+    // An unpaid bundle is one unit: letting one lesson go lets them all go.
+    if (booking.bundleId && booking.status === "awaiting_payment") {
+      const bundle = await db().bundles.findById(booking.bundleId);
+      if (bundle) await releaseBundle(bundle, "Cancelled before payment.");
+      response.json((await db().bookings.findById(booking.id)) ?? booking);
       return;
     }
 

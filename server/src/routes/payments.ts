@@ -13,6 +13,7 @@ import {
   verifyWebhook,
 } from "../lib/payments.ts";
 import { releaseSlot } from "../lib/unpaid-bookings.ts";
+import { confirmBundle, releaseBundle } from "../lib/bundles.ts";
 
 export const paymentsRouter = Router();
 
@@ -59,6 +60,20 @@ export const paymentsWebhook = wrap(async (request: Request, response: Response)
 
   if (event.type === "payment.succeeded" || event.type === "payment.failed") {
     const payment = event.data;
+    // A bundle's checkout carries the bundle's id as its reference.
+    const bundle = payment.reference ? await db().bundles.findById(payment.reference) : null;
+    if (bundle?.payment && bundle.payment.checkoutId === payment.checkoutId) {
+      const updated = paymentFromEvent(payment, bundle.payment);
+      if (event.type === "payment.failed") {
+        await db().bundles.updateOne({ id: bundle.id }, { payment: updated });
+      } else if (payment.amountCents !== bundle.payment.amountCents) {
+        console.error(
+          `Payments.lk: ${payment.id} paid ${payment.amountCents} for bundle ${bundle.id}, which expected ${bundle.payment.amountCents}. Not confirming.`,
+        );
+      } else {
+        await confirmBundle(bundle, updated);
+      }
+    }
     const booking = await bookingForCheckout(payment.reference, payment.checkoutId ?? "");
     if (booking?.payment) {
       const updated = paymentFromEvent(payment, booking.payment);
@@ -78,6 +93,20 @@ export const paymentsWebhook = wrap(async (request: Request, response: Response)
       }
     }
   } else if (event.type === "checkout.expired") {
+    const bundle = (await db().bundles.find({ status: "awaiting_payment" })).find(
+      (item) => item.payment?.checkoutId === event.data.id,
+    );
+    if (bundle && (await releaseBundle(bundle, "The checkout expired before payment."))) {
+      const student = await db().users.findById(bundle.studentId);
+      if (student) {
+        await deliver({
+          to: student.email,
+          subject: "Your lessons were released",
+          body: `The checkout for your ${bundle.size} lessons expired before it was paid, so the hours have been released for others. Nothing has been charged. You can book again from the portal calendar whenever you are ready.`,
+          kind: "notification",
+        });
+      }
+    }
     // The event names only the checkout; its payment carries our reference.
     const outcome = await db().bookings.find({ status: "awaiting_payment" });
     const booking = outcome.find((item) => item.payment?.checkoutId === event.data.id);
