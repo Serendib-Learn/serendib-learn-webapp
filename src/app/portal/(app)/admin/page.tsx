@@ -8,6 +8,7 @@ import { useAuth } from "@/lib/auth";
 import { useAction, useQuery } from "@/lib/hooks";
 import { cn } from "@/lib/cn";
 import { formatDate, formatDateTime, relativeTime } from "@/lib/format";
+import { AdminQuestions } from "@/components/portal/admin-questions";
 import { AdminRequests } from "@/components/portal/admin-requests";
 import { AdminTutorHours } from "@/components/portal/admin-tutor-hours";
 import { FeedbackList } from "@/components/portal/feedback-list";
@@ -29,11 +30,12 @@ import {
 } from "@/components/ui/primitives";
 import type { CommunityPost, LanguageCode, Role, User } from "@/lib/types";
 
-type Tab = "people" | "requests" | "hours" | "tutors" | "feedback" | "moderation" | "waitlist" | "mail" | "audit";
+type Tab = "people" | "requests" | "questions" | "hours" | "tutors" | "feedback" | "moderation" | "waitlist" | "mail" | "audit";
 
 const tabs: { id: Tab; label: string }[] = [
   { id: "people", label: "People" },
   { id: "requests", label: "Requests" },
+  { id: "questions", label: "Questions" },
   { id: "hours", label: "Tutor hours" },
   { id: "tutors", label: "Tutor applications" },
   { id: "feedback", label: "Feedback" },
@@ -80,11 +82,15 @@ function AdminArea() {
       ? "mail"
       : params.get("tab") === "requests"
         ? "requests"
-        : "people",
+        : params.get("tab") === "questions"
+          ? "questions"
+          : "people",
   );
   const pending = useQuery(() => api.community.pending(), []);
   const requests = useQuery(() => api.requests.list(), []);
   const waitingRequests = (requests.data ?? []).filter((item) => item.status === "pending");
+  const questions = useQuery(() => api.help.list(), []);
+  const openQuestions = (questions.data ?? []).filter((item) => item.status === "open");
   const accounts = useQuery(() => api.users.list(), []);
   const applications = (accounts.data ?? []).filter(
     (person) => person.role === "tutor" && person.tutorStatus === "pending",
@@ -133,6 +139,11 @@ function AdminArea() {
                 {waitingRequests.length}
               </span>
             ) : null}
+            {item.id === "questions" && openQuestions.length > 0 ? (
+              <span className="ml-2 rounded-full bg-saffron-400 px-1.5 text-[0.65rem] font-bold text-ink-900">
+                {openQuestions.length}
+              </span>
+            ) : null}
             {item.id === "moderation" && (pending.data ?? []).length > 0 ? (
               <span className="ml-2 rounded-full bg-saffron-400 px-1.5 text-[0.65rem] font-bold text-ink-900">
                 {(pending.data ?? []).length}
@@ -144,6 +155,7 @@ function AdminArea() {
 
       {tab === "people" ? <People me={user} /> : null}
       {tab === "requests" ? <AdminRequests /> : null}
+      {tab === "questions" ? <AdminQuestions /> : null}
       {tab === "hours" ? <AdminTutorHours /> : null}
       {tab === "tutors" ? <TutorApplications /> : null}
       {tab === "feedback" ? <AllFeedback /> : null}
@@ -972,6 +984,8 @@ const actionLabel: Record<string, string> = {
   account_deleted: "Deleted account",
   post_moderated: "Moderated post",
   account_invited: "Invited",
+  help_replied: "Replied to a help question",
+  help_deleted: "Deleted a help question",
   tutor_listed: "Listed tutor",
   email_verified: "Confirmed email",
   request_approved: "Approved request",

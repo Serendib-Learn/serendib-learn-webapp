@@ -35,3 +35,16 @@ export const authLimiter = rateLimit({
   legacyHeaders: false,
   message: { error: "Too many attempts. Wait a few minutes and try again." },
 });
+
+/**
+ * The help widget's "Ask us" form: open to anyone, and every question emails
+ * the admins, so a script could flood their inboxes. Ten an hour is far more
+ * than a real person who is stuck will send.
+ */
+export const helpQuestionLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  limit: 10 * scale,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "You've sent a lot of questions. Wait a little, or email serendib.learn@gmail.com." },
+});

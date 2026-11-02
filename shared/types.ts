@@ -584,6 +584,32 @@ export interface WaitlistEntry {
   createdAt: string;
 }
 
+/**
+ * A question from the help widget (anyone, signed in or not) that the
+ * guided topics did not answer. It goes to Admin → Questions; an
+ * administrator's reply is emailed to the address given.
+ */
+export interface HelpQuestion {
+  id: string;
+  name: string;
+  email: string;
+  question: string;
+  /** The page they were on when they asked, e.g. "/portal/calendar". */
+  page?: string;
+  /** Set when they asked while signed in. */
+  userId?: string;
+  status: "open" | "answered";
+  replies: HelpReply[];
+  createdAt: string;
+}
+
+export interface HelpReply {
+  body: string;
+  byId: string;
+  byName: string;
+  sentAt: string;
+}
+
 export type MailKind =
   | "verification"
   | "password_reset"

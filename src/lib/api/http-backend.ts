@@ -33,6 +33,7 @@ import type {
   ThreadSummary,
   User,
   WaitlistEntry,
+  HelpQuestion,
 } from "@/lib/types";
 
 const BASE = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000").replace(/\/$/, "");
@@ -681,6 +682,28 @@ export const httpBackend: Backend = {
 
     list() {
       return request<WaitlistEntry[]>("/waitlist");
+    },
+  },
+
+  help: {
+    ask(input) {
+      return request<HelpQuestion>("/help/questions", { method: "POST", body: input });
+    },
+
+    list() {
+      return request<HelpQuestion[]>("/help/questions");
+    },
+
+    reply(id, body) {
+      return request<HelpQuestion>(`/help/questions/${id}/reply`, { method: "POST", body: { body } });
+    },
+
+    close(id) {
+      return request<HelpQuestion>(`/help/questions/${id}/close`, { method: "POST" });
+    },
+
+    remove(id) {
+      return request<void>(`/help/questions/${id}`, { method: "DELETE" });
     },
   },
 

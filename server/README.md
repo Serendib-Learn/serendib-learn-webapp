@@ -44,7 +44,7 @@ src/
     google.ts           OAuth flows for sign-in, Calendar, and Gmail
     mail.ts             demo-inbox write, plus a real Gmail send when connected
     validate.ts         parseBody() — zod schema -> ApiError on failure
-    rate-limit.ts        the general and auth-specific limiters
+    rate-limit.ts        the general, auth-specific and help-question limiters
     turnstile.ts         Cloudflare Turnstile CAPTCHA verification
     audit.ts             logAudit() — the auditLog collection
     errors.ts           ApiError and the error handler
@@ -57,7 +57,7 @@ src/
 ## Endpoints
 
 All under `/api`. Everything except signup, login, password reset, the waitlist
-form, the tutor list and the demo inbox needs a session cookie.
+form, the help widget's questions, the tutor list and the demo inbox needs a session cookie.
 
 | Area | Routes |
 | --- | --- |
@@ -80,6 +80,7 @@ form, the tutor list and the demo inbox needs a session cookie.
 | Content | `GET /content/:kind`, `GET /content/:kind/:id` (public), `PUT /content/:kind/:id` (create: admin; change: its editors), `DELETE /content/:kind/:id` (admin) — kinds `phrase-lists`, `alphabet`, `holidays`, `stages`, `heritage` |
 | Alphabet audio | `GET /alphabet-audio` (public list), `GET /alphabet-audio/:language/:key` (public audio), `PUT\|DELETE /alphabet-audio/:language/:key` (approved tutors and admins) |
 | Waitlist | `POST /waitlist`, `GET /waitlist` (admin) |
+| Help questions | `POST /help/questions` (anyone; 10 an hour per IP; Turnstile when signed out), `GET /help/questions` (admin), `POST /help/questions/:id/reply` (admin, emails the asker), `POST /help/questions/:id/close` (admin), `DELETE /help/questions/:id` (admin) |
 | Demo | `GET /mail`, `POST /mail/:id/read`, `DELETE /mail`, `POST /demo/reset` |
 | Integrations | `GET /integrations/google/status`, `GET /integrations/google/connect`, `POST /integrations/google/disconnect`, `GET /integrations/google/mail/status\|connect` (admin), `POST /integrations/google/mail/disconnect` (admin), `GET /integrations/google/system-calendar/status\|connect` (admin), `POST /integrations/google/system-calendar/disconnect` (admin), `GET /integrations/google/callback` |
 
@@ -410,7 +411,7 @@ See `DEPLOYMENT.md` for creating a free MongoDB Atlas cluster.
   `lib/validate.ts`'s `parseBody`. Other routes still hand-validate — the
   same pattern extends cleanly to them if `zod` is worth adopting there too.
 - **CAPTCHA.** `lib/turnstile.ts` — Cloudflare Turnstile on signup and the
-  waitlist form, off by default. Set `TURNSTILE_SECRET_KEY` (and the
+  waitlist form (and the help widget's "Ask us" for signed-out visitors), off by default. Set `TURNSTILE_SECRET_KEY` (and the
   frontend's `NEXT_PUBLIC_TURNSTILE_SITE_KEY`) to turn it on; see
   `DEPLOYMENT.md`.
 - **Audit log.** `lib/audit.ts` records role/membership changes, account

@@ -5,6 +5,7 @@ import {
   Noto_Sans_Tamil,
 } from "next/font/google";
 import { DemoInbox } from "@/components/site/demo-inbox";
+import { HelpWidget } from "@/components/site/help-widget";
 import { AuthProvider } from "@/lib/auth";
 import "./globals.css";
 
@@ -53,6 +54,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="flex min-h-full flex-col bg-sand-50 text-ink-900">
         <AuthProvider>
           {children}
+          <HelpWidget />
           <DemoInbox />
         </AuthProvider>
       </body>

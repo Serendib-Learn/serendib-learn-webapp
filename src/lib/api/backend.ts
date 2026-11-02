@@ -48,6 +48,7 @@ import type {
   User,
   VoiceNoteInfo,
   WaitlistEntry,
+  HelpQuestion,
 } from "@/lib/types";
 
 export class ApiError extends Error {
@@ -301,6 +302,23 @@ export interface Backend {
       input: Omit<WaitlistEntry, "id" | "createdAt"> & { turnstileToken?: string },
     ): Promise<WaitlistEntry>;
     list(): Promise<WaitlistEntry[]>;
+  };
+
+  /** The help widget's "Ask us" questions (anyone asks; admins read and reply). */
+  help: {
+    ask(input: {
+      name: string;
+      email: string;
+      question: string;
+      page?: string;
+      turnstileToken?: string;
+    }): Promise<HelpQuestion>;
+    list(): Promise<HelpQuestion[]>;
+    /** Emails the reply to the person who asked. */
+    reply(id: string, body: string): Promise<HelpQuestion>;
+    /** Dealt with another way: marks it answered without sending anything. */
+    close(id: string): Promise<HelpQuestion>;
+    remove(id: string): Promise<void>;
   };
 
   mail: {

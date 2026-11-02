@@ -35,6 +35,7 @@ import type {
   Thread,
   User,
   WaitlistEntry,
+  HelpQuestion,
 } from "../../../shared/types.ts";
 
 /** Password material for one account. Never leaves the server. */
@@ -180,6 +181,7 @@ export interface Database {
   threads: Collection<Thread>;
   messages: Collection<Message>;
   waitlist: Collection<WaitlistEntry>;
+  helpQuestions: Collection<HelpQuestion>;
   mail: Collection<MailMessage>;
   gameResults: Collection<GameResult>;
   paymentEvents: Collection<PaymentEvent>;
@@ -225,6 +227,7 @@ function build(from: Store): Database {
     threads: from.collection<Thread>("threads"),
     messages: from.collection<Message>("messages"),
     waitlist: from.collection<WaitlistEntry>("waitlist"),
+    helpQuestions: from.collection<HelpQuestion>("helpQuestions"),
     mail: from.collection<MailMessage>("mail"),
     gameResults: from.collection<GameResult>("gameResults"),
     paymentEvents: from.collection<PaymentEvent>("paymentEvents"),
@@ -275,6 +278,7 @@ async function seedContents(): Promise<Record<string, Doc[]>> {
     threads: seed.threads,
     messages: seed.messages,
     waitlist: seed.waitlist,
+    helpQuestions: [],
     mail: seed.mail,
     gameResults: seed.gameResults,
     paymentEvents: [],

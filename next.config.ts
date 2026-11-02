@@ -7,6 +7,8 @@ import type { NextConfig } from "next";
 const api = new URL(process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000");
 
 const nextConfig: NextConfig = {
+  // Dev only. The default (bottom-left) sits on top of the Help button.
+  devIndicators: { position: "top-right" },
   images: {
     remotePatterns: [
       {

@@ -107,6 +107,7 @@ use. ✓ = yes, — = no, *own* = only their own.
 | Area | Action | Visitor | Student | Tutor (approved) | Admin |
 | --- | --- | --- | --- | --- | --- |
 | **Public site** | Home, How it works, Tutors, Alphabet sheet, Privacy, waitlist | ✓ | ✓ | ✓ | ✓ |
+| **Help** | The Help button's guide; **Ask us** a question (answered by email) | ✓ | ✓ | ✓ | ✓ |
 | **Account** | Sign up with any email, verify, log in, Google sign-in, reset password | ✓ | ✓ | ✓ | ✓ |
 | | Edit own profile and character | — | ✓ | ✓ | ✓ |
 | | Rate, years teaching, specialties | — | — | ✓ *own* | ✓ any tutor |
@@ -139,7 +140,7 @@ use. ✓ = yes, — = no, *own* = only their own.
 | | Message | — | own tutors + friends | own students | anyone |
 | | Moderate posts | — | — | — | ✓ |
 | **Admin** | People: roles, membership, invite, list tutor without email, Mark verified, delete | — | — | — | ✓ (not super admins) |
-| | Tutor applications, Requests, Tutor hours, Feedback, Waitlist, Google, Audit log | — | — | — | ✓ |
+| | Tutor applications, Requests, Questions, Tutor hours, Feedback, Waitlist, Google, Audit log | — | — | — | ✓ |
 
 Applicant and not-approved tutors, and listed tutors without an email, get
 none of the tutor rows. Unverified students cannot log in at all.
@@ -285,6 +286,9 @@ none of the tutor rows. Unverified students cannot log in at all.
    - **Requests:** approve (gives a free lesson) or decline (a note is
      required) free-session requests and missed-lesson reports.
    - **Moderation:** approve or reject community posts.
+   - **Questions:** what people asked through the Help button. **Send
+     reply** emails the answer; **Mark answered, no email** if it was sorted
+     another way; **Delete** for spam.
    - **Tutor applications:** approve or decline.
 2. **People:**
    - Search by name or email, filter (Needs attention, Students, Tutors,
@@ -545,7 +549,7 @@ flowchart LR
 | `/portal/messages` | Conversations |
 | `/portal/content` | **Course content** (tutors and admins): phrase lists, alphabet sheets, holidays, stage descriptions |
 | `/portal/profile` | Profile editor and character picker |
-| `/portal/admin` | Tabs: People, Requests, Tutor hours, Tutor applications, Feedback, Moderation, Waitlist, Google, Audit log (`?tab=google` deep-links to Google) |
+| `/portal/admin` | Tabs: People, Requests, Questions, Tutor hours, Tutor applications, Feedback, Moderation, Waitlist, Google, Audit log (`?tab=google` and `?tab=questions` deep-link) |
 
 **Feedback prompt.** `feedback-prompt.tsx` sits at the top of every portal
 page whenever the signed-in person owes feedback or a write-up for a lesson
@@ -590,6 +594,7 @@ writes ──useAction(...)──► http-backend ──► API ──► bumpRe
 | `voice-recorder.tsx`, `voice-note-player.tsx` | `MediaRecorder` capture, capped at **180 seconds**; playback of private notes |
 | `feedback-prompt.tsx`, `feedback-list.tsx` | The in-portal half of the feedback loop |
 | `google-*-connect.tsx`, `google-button.tsx` | Google sign-in button and the Calendar/Gmail connection cards |
+| `help-widget.tsx`, `src/lib/help-guide.ts` | The bottom-left **Help** button on every page: guided topics for whoever is looking (visitor, student, tutor; admins see all), a search, and **Ask us** (name, email, question → Admin → Questions). The guide is product help, not teaching content, so it lives in code. **When a flow in §2.3 changes, update its topic.** |
 | `demo-inbox.tsx` | The bottom-right panel that shows every "email" in demo mode, and resets the data |
 | `src/lib/features.ts` | `features = { games: false }`, the switch for parked features |
 
@@ -661,6 +666,7 @@ The full endpoint table is in `server/README.md` → "Endpoints".
 | `/api/integrations` | `routes/integrations.ts` | Google Calendar (per tutor and system), Gmail, OAuth callback, test buttons |
 | `/api/jobs` | `routes/jobs.ts` | `POST /reminders`, guarded by `X-Cron-Secret` |
 | `/api/waitlist`, `/api/mail`, `/api/demo`, `/api/games` | `routes/misc.ts` | Waitlist, demo inbox, demo reset, game results |
+| `/api/help` | `routes/help.ts` | Help-widget questions: anyone asks (rate-limited, Turnstile for visitors); admins list, reply (emailed), close, delete |
 | `/api/health` | `index.ts` | `{ ok, demoMode }` |
 
 ### 6.3 Libraries (`server/src/lib/`)
@@ -736,6 +742,7 @@ Timestamps are ISO strings.
 | `studentRequests` | Free-session requests and missed-lesson reports | pending → approved / declined, with the admin's note |
 | `materialFeedback` | Ratings and comments on materials, per person | Student and tutor questions differ |
 | `waitlist` | "Register your interest" entries | |
+| `helpQuestions` | Questions from the Help button's **Ask us**, with admins' replies | |
 | `mail` | Every outgoing message (the demo inbox) | |
 | `auditLog` | Admin actions | |
 | `googleAccounts` | Calendar refresh tokens per tutor, plus the `"system"` row | Never sent to the browser |
@@ -1016,6 +1023,7 @@ and 1 hour ahead, with the Meet link and a link to the calendar.
 | --- | --- |
 | People | Every account, with search, filters and sorting (needs attention first by default): change roles and membership, delete accounts (not super admins), invite someone, edit profiles, **Mark verified** for a code that never arrived |
 | Requests | Free-session requests and missed-lesson reports: approve (grants a free lesson) or decline with a note |
+| Questions | Questions from the Help button's **Ask us**: reply (emailed to the asker, with their question; follow-ups allowed), mark answered without email, or delete. Open ones count towards the Admin badge |
 | Tutor hours | Month by month, each tutor's lessons taught, **verified** hours (taught, written up, not reported missed — what pay is worked out from), lessons to come, card payments and free lessons, with a CSV download. Admins only |
 | Tutor applications | Approve or reject pending tutors |
 | Feedback | All lesson ratings and write-ups |

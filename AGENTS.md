@@ -38,6 +38,7 @@ reason to skip it.
 | Course chapters, practice partners / friend requests | `server/README.md` → "Course chapters", "Community: practice partners and friends" |
 | Teaching content (phrase lists, alphabet, holidays, stages) — where it lives, who edits it | `server/README.md` → "Teaching content" (it's in the DB, never in `src/`) |
 | User types, what each can do, step-by-step user flows | `HANDBOOK.md` → "2. Users, access and user flows" |
+| The Help button (guided topics, "Ask us" questions → Admin → Questions) | `HANDBOOK.md` → §5.3 (`help-widget.tsx`); the topics are in `src/lib/help-guide.ts`, keep them in step with §2.3 |
 | The parked games (how to bring them back) | `src/lib/features.ts` (and search `GAMES-HIDDEN`) |
 
 If none of these match, then explore — but check here first. A five-second
