@@ -14,6 +14,7 @@ import { Badge, Card, EmptyState, Loading, Stat } from "@/components/ui/primitiv
 //   const getChapter = (id: string) => lists.data?.find((list) => list.id === id);
 //   const phaseOne = { chapters: lists.data ?? [] };
 import type { User } from "@/lib/types";
+import { features } from "@/lib/features";
 
 export function StudentDashboard({ user }: { user: User }) {
   const bookings = useQuery(() => api.bookings.forUser(user.id), [user.id]);
@@ -169,9 +170,12 @@ export function StudentDashboard({ user }: { user: User }) {
           <Card className="p-6">
             <div className="flex items-center justify-between">
               <h2 className="text-lg">Your tutors</h2>
-              <Link href="/portal/messages" className="text-sm text-jade-700 hover:text-jade-600">
-                Message
-              </Link>
+              {/* MESSAGES-HIDDEN */}
+              {features.messages ? (
+                <Link href="/portal/messages" className="text-sm text-jade-700 hover:text-jade-600">
+                  Message
+                </Link>
+              ) : null}
             </div>
 
             {(tutors.data ?? []).length === 0 ? (

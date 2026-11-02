@@ -40,7 +40,6 @@ const stages = [
     detail: [
       "60 or 90 minute sessions",
       "Lesson summary written up after every class",
-      "Message your tutor between lessons",
     ],
   },
   {

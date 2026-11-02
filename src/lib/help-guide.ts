@@ -24,7 +24,6 @@ export interface HelpTopic {
 export interface HelpCategory {
   id: string;
   title: string;
-  icon: string;
   audiences: HelpAudience[];
   topics: HelpTopic[];
 }
@@ -36,7 +35,6 @@ export const helpCategories: HelpCategory[] = [
   {
     id: "about",
     title: "About Serendib Learn",
-    icon: "🌴",
     audiences: ["visitor"],
     topics: [
       {
@@ -109,7 +107,6 @@ export const helpCategories: HelpCategory[] = [
   {
     id: "account",
     title: "Your account",
-    icon: "🔑",
     audiences: ["visitor", ...signedIn],
     topics: [
       {
@@ -180,7 +177,6 @@ export const helpCategories: HelpCategory[] = [
   {
     id: "profile",
     title: "Profile and settings",
-    icon: "🙂",
     audiences: signedIn,
     topics: [
       {
@@ -227,7 +223,6 @@ export const helpCategories: HelpCategory[] = [
   {
     id: "booking",
     title: "Booking and paying",
-    icon: "📅",
     audiences: ["student", "admin"],
     topics: [
       {
@@ -282,7 +277,7 @@ export const helpCategories: HelpCategory[] = [
           "In Calendar, find the lesson under your sessions and press Reschedule.",
           "Pick another of the tutor's open hours. It's free, up to 6 hours before.",
           "Your tutor is emailed and the Meet link moves too.",
-          "Less than 6 hours to go? Message your tutor instead.",
+          "Less than 6 hours to go? It can't be moved from the portal. If you couldn't make it, use Report missed lesson once the time has passed.",
         ],
         link: { href: "/portal/calendar", label: "Calendar" },
         keywords: "reschedule move change time date postpone",
@@ -314,7 +309,6 @@ export const helpCategories: HelpCategory[] = [
   {
     id: "free-help",
     title: "Free lessons and missed lessons",
-    icon: "🎁",
     audiences: ["student", "admin"],
     topics: [
       {
@@ -354,7 +348,6 @@ export const helpCategories: HelpCategory[] = [
   {
     id: "learning",
     title: "Learning between lessons",
-    icon: "📚",
     audiences: ["student", "admin"],
     topics: [
       {
@@ -402,8 +395,7 @@ export const helpCategories: HelpCategory[] = [
   },
   {
     id: "community",
-    title: "Community and messages",
-    icon: "💬",
+    title: "Community",
     audiences: ["student", "admin"],
     topics: [
       {
@@ -431,21 +423,11 @@ export const helpCategories: HelpCategory[] = [
         title: "Find a practice partner",
         steps: [
           "In Community, practice partners lists other vetted learners of your language.",
-          "Send a friend request. Once it's accepted you can message each other.",
+          "Send a friend request to connect with someone learning the same language.",
           "Don't want to be listed? Untick Show me in practice partners in Profile.",
         ],
         link: { href: "/portal/community", label: "Community" },
         keywords: "practice partner friend request learner",
-      },
-      {
-        id: "message",
-        title: "Message my tutor",
-        steps: [
-          "Open Messages. You can always message your own tutors, and friends from the community.",
-          "Use it for quick questions between lessons.",
-        ],
-        link: { href: "/portal/messages", label: "Messages" },
-        keywords: "message chat contact tutor",
       },
     ],
   },
@@ -454,7 +436,6 @@ export const helpCategories: HelpCategory[] = [
   {
     id: "tutor-setup",
     title: "Tutors: getting set up",
-    icon: "🧑‍🏫",
     audiences: ["tutor", "admin"],
     topics: [
       {
@@ -495,7 +476,6 @@ export const helpCategories: HelpCategory[] = [
   {
     id: "tutor-teaching",
     title: "Tutors: teaching",
-    icon: "✏️",
     audiences: ["tutor", "admin"],
     topics: [
       {
@@ -567,13 +547,6 @@ export const helpCategories: HelpCategory[] = [
         link: { href: "/portal/content", label: "Content" },
         keywords: "content phrases phrase list alphabet record audio pronunciation",
       },
-      {
-        id: "tutor-messages",
-        title: "Message my students",
-        steps: ["Open Messages. You can message your own students."],
-        link: { href: "/portal/messages", label: "Messages" },
-        keywords: "message chat students",
-      },
     ],
   },
 
@@ -581,7 +554,6 @@ export const helpCategories: HelpCategory[] = [
   {
     id: "admin",
     title: "Admins: running the site",
-    icon: "🛡️",
     audiences: ["admin"],
     topics: [
       {

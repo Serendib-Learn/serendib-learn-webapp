@@ -11,6 +11,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import type { Role } from "@/lib/types";
+import { features } from "@/lib/features";
 
 /**
  * The portal's sections, in the order the original site's portal header
@@ -71,14 +72,19 @@ export const portalSections: PortalSection[] = [
     Icon: MessageCircle,
     roles: everyone,
   },
-  {
-    href: "/portal/messages",
-    label: "Messages",
-    description: "Your tutor and your practice partners",
-    tagline: "Quick questions between lessons - scheduling, a word you forgot, a link you promised.",
-    Icon: Mail,
-    roles: everyone,
-  },
+  // MESSAGES-HIDDEN: listed only while direct messages are switched on.
+  ...(features.messages
+    ? [
+        {
+          href: "/portal/messages",
+          label: "Messages",
+          description: "Your tutor and your practice partners",
+          tagline: "Quick questions between lessons - scheduling, a word you forgot, a link you promised.",
+          Icon: Mail,
+          roles: everyone,
+        },
+      ]
+    : []),
   {
     href: "/portal/content",
     label: "Content",

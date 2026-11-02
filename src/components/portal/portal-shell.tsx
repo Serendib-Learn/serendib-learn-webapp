@@ -13,6 +13,7 @@ import { AraliyaFlower } from "@/components/site/araliya-flower";
 import { Avatar, Loading } from "@/components/ui/primitives";
 import { FeedbackPrompt } from "./feedback-prompt";
 import { portalSections } from "./portal-nav";
+import { features } from "@/lib/features";
 
 /**
  * The portal frame, as on the original site: a forest-green bar with the
@@ -25,8 +26,9 @@ export function PortalShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
 
+  // MESSAGES-HIDDEN: no unread count to fetch while messages are off.
   const { data: threads } = useQuery(
-    () => (user ? api.messages.threadsFor(user.id) : Promise.resolve([])),
+    () => (user && features.messages ? api.messages.threadsFor(user.id) : Promise.resolve([])),
     [user?.id],
   );
   const { data: pendingPosts } = useQuery(

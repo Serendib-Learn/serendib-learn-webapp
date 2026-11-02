@@ -1310,6 +1310,11 @@ Before pushing, run the four commands in `DEPLOYMENT.md` → "Local testing".
   missions (`/games/languages`) and Explore Heritage (`/games/heritage`).
 - To bring them back, set `features.games = true` and uncomment every
   `GAMES-HIDDEN` block.
+- **Messages** (direct messages between students, tutors and practice
+  partners) are switched off: lessons are arranged on WhatsApp. The page,
+  API and data are intact; set `features.messages = true` and check every
+  `MESSAGES-HIDDEN` spot (nav, unread badge, dashboard link, community
+  friends' button) to bring them back.
 
 **Demo-shaped.**
 

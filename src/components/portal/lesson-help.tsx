@@ -17,6 +17,20 @@ import type { Booking, MissedCause, StudentRequest, User } from "@/lib/types";
  */
 export const STUDENT_NOTICE_HOURS = 6;
 
+/** Mirrors the reason's minimum length in server/src/routes/requests.ts. */
+const MIN_REASON_CHARS = 10;
+
+/** "At least 10 characters", counting up as they type, so a disabled Send button is never a mystery. */
+function ReasonLength({ reason }: { reason: string }) {
+  const count = reason.trim().length;
+  const enough = count >= MIN_REASON_CHARS;
+  return (
+    <span className={enough ? "text-jade-700" : undefined}>
+      {enough ? "Thanks, that's enough to send." : `At least ${MIN_REASON_CHARS} characters to send (${count}/${MIN_REASON_CHARS}).`}
+    </span>
+  );
+}
+
 /** Mirrors MISSED_REPORT_DAYS in server/src/routes/requests.ts. */
 export const MISSED_REPORT_DAYS = 30;
 
@@ -177,7 +191,7 @@ export function MissedLessonDialog({ booking, onClose }: { booking: Booking; onC
               ))}
             </Select>
           </Field>
-          <Field label="Tell us a little more" htmlFor="missed-reason" hint="A sentence or two is plenty.">
+          <Field label="Tell us a little more" htmlFor="missed-reason" hint={<ReasonLength reason={reason} />}>
             <Textarea
               id="missed-reason"
               value={reason}
@@ -191,7 +205,7 @@ export function MissedLessonDialog({ booking, onClose }: { booking: Booking; onC
             <Button type="button" variant="ghost" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit" disabled={report.pending || reason.trim().length < 10}>
+            <Button type="submit" disabled={report.pending || reason.trim().length < MIN_REASON_CHARS}>
               {report.pending ? "Sending…" : "Send to the team"}
             </Button>
           </div>
@@ -287,7 +301,16 @@ function FreeSessionDialog({ onClose }: { onClose: () => void }) {
             if (await ask.run()) setSent(true);
           }}
         >
-          <Field label="Why would a free session help?" htmlFor="free-reason" hint="For example: trying us out, money is tight this month, or a lesson that did not go to plan.">
+          <Field
+            label="Why would a free session help?"
+            htmlFor="free-reason"
+            hint={
+              <>
+                For example: trying us out, money is tight this month, or a lesson that did not go to plan.{" "}
+                <ReasonLength reason={reason} />
+              </>
+            }
+          >
             <Textarea
               id="free-reason"
               value={reason}
@@ -300,7 +323,7 @@ function FreeSessionDialog({ onClose }: { onClose: () => void }) {
             <Button type="button" variant="ghost" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit" disabled={ask.pending || reason.trim().length < 10}>
+            <Button type="submit" disabled={ask.pending || reason.trim().length < MIN_REASON_CHARS}>
               {ask.pending ? "Sending…" : "Send request"}
             </Button>
           </div>

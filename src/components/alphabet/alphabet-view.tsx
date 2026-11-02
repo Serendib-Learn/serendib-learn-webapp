@@ -198,11 +198,6 @@ export function AlphabetView({ initial, sheets }: { initial: "sinhala" | "tamil"
             <Button variant="secondary" size="sm" onClick={() => window.print()}>
               Print this sheet
             </Button>
-            <span className="text-xs text-ink-400">
-              {language === "tamil"
-                ? "Tap 🔊 on any letter to hear it."
-                : "Tap 🔊 to hear a letter. Sinhala audio is recorded by our tutors, letter by letter — the rest are on their way."}
-            </span>
             {canRecord ? (
               <Button
                 variant={recording ? "forest" : "secondary"}

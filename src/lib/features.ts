@@ -10,4 +10,11 @@
  */
 export const features = {
   games: false,
+  /**
+   * Messages: the portal's direct messages between students, tutors and
+   * practice partners. Off because lessons are arranged on WhatsApp. The
+   * page, its API and its data are intact; search `MESSAGES-HIDDEN` for each
+   * place it is switched off.
+   */
+  messages: false,
 } as const;

@@ -28,6 +28,7 @@ import type {
   PublicProfile,
   User,
 } from "@/lib/types";
+import { features } from "@/lib/features";
 
 type Tab = "stories" | "partners" | "friends";
 
@@ -142,10 +143,13 @@ function ConnectButton({ person }: { person: CommunityMember }) {
   const connection = person.connection;
 
   if (connection?.status === "accepted") {
-    return (
+    // MESSAGES-HIDDEN: with messages off, friends are simply shown as friends.
+    return features.messages ? (
       <ButtonLink href={`/portal/messages?with=${person.id}`} size="sm" variant="secondary">
         Message
       </ButtonLink>
+    ) : (
+      <Badge tone="jade">Friends</Badge>
     );
   }
   if (connection?.status === "pending" && connection.direction === "incoming") {

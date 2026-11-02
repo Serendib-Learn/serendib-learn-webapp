@@ -88,7 +88,7 @@ function HowItWorks() {
 const promises = [
   {
     t: "Personally vetted",
-    d: "Every tutor is interviewed by us. We assess fluency, warmth, subject depth, and reliability. Our acceptance rate is under 50%.",
+    d: "Every tutor is interviewed by us. We assess fluency, warmth, subject depth, and reliability.",
   },
   {
     t: "Quality guaranteed",
