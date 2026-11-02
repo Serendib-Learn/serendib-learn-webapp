@@ -415,7 +415,7 @@ function ReviewDialog({ item, onClose }: { item: HomeworkItem; onClose: () => vo
           />
         </Field>
 
-        <Field label={`Score — ${score}/100`} htmlFor="review-score">
+        <Field label={`Score: ${score}/100`} htmlFor="review-score">
           <input
             id="review-score"
             type="range"

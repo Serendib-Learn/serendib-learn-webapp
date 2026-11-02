@@ -97,7 +97,7 @@ export function WaitlistForm() {
           >
             <option value="sinhala">Sinhala</option>
             <option value="tamil">Tamil</option>
-            <option value="either">Either — help me decide</option>
+            <option value="either">Either, help me decide</option>
           </Select>
         </Field>
         <Field label="Where are you starting from?" htmlFor="wl-level">

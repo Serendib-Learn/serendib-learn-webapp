@@ -47,7 +47,7 @@ export async function grantCredit(input: {
     await deliver({
       to: student.email,
       subject: "You have a free lesson to book",
-      body: `${why[input.reason]}${input.note ? `\n\n${input.note}` : ""}\n\nPick any open hour in your calendar and choose "Book with a free lesson" — no payment needed: ${config.appUrl}/portal/calendar`,
+      body: `${why[input.reason]}${input.note ? `\n\n${input.note}` : ""}\n\nPick any open hour in your calendar and choose "Book with a free lesson". No payment needed: ${config.appUrl}/portal/calendar`,
       kind: "notification",
     });
   }

@@ -142,7 +142,7 @@ export default function LoginPage() {
         <Field
           label="Email"
           htmlFor="login-email"
-          hint="Any email address works — Gmail, Yahoo, Outlook, iCloud or your own."
+          hint="Any email address works: Gmail, Yahoo, Outlook, iCloud or your own."
         >
           <Input
             id="login-email"

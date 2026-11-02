@@ -3,6 +3,7 @@ import { hashPassword } from "../lib/passwords.ts";
 import { openMongoStore } from "./mongo-store.ts";
 import { openStore, type Collection, type Doc, type Store } from "./store.ts";
 import { defaultChapters } from "../../../shared/curriculum.ts";
+import { applyDataFixes } from "./data-fixes.ts";
 import { DEMO_PASSWORD, createSeedData } from "../../../shared/seed.ts";
 import { alphabetSeed } from "../seed/alphabet.ts";
 import { heritageSeed } from "../seed/heritage.ts";
@@ -127,6 +128,12 @@ export interface ReminderClaim extends Doc {
   claimedAt: string;
 }
 
+/** A one-off data change that has run (db/data-fixes.ts). */
+export interface DataFix extends Doc {
+  id: string;
+  appliedAt: string;
+}
+
 /** A recorded voice note. The audio stays on the server, base64 encoded. */
 export interface VoiceNote extends Doc {
   id: string;
@@ -196,6 +203,7 @@ export interface Database {
   gameResults: Collection<GameResult>;
   paymentEvents: Collection<PaymentEvent>;
   reminderClaims: Collection<ReminderClaim>;
+  dataFixes: Collection<DataFix>;
   feedback: Collection<SessionFeedback>;
   chapters: Collection<CourseChapter>;
   connections: Collection<Connection>;
@@ -243,6 +251,7 @@ function build(from: Store): Database {
     gameResults: from.collection<GameResult>("gameResults"),
     paymentEvents: from.collection<PaymentEvent>("paymentEvents"),
     reminderClaims: from.collection<ReminderClaim>("reminderClaims"),
+    dataFixes: from.collection<DataFix>("dataFixes"),
     feedback: from.collection<SessionFeedback>("feedback"),
     chapters: from.collection<CourseChapter>("chapters"),
     connections: from.collection<Connection>("connections"),
@@ -295,6 +304,7 @@ async function seedContents(): Promise<Record<string, Doc[]>> {
     gameResults: seed.gameResults,
     paymentEvents: [],
     reminderClaims: [],
+    dataFixes: [],
     feedback: [],
     connections: [],
     postImages: [],
@@ -339,6 +349,7 @@ export async function connect(): Promise<Database> {
 
   await seedTeachingContent(database);
   await priceOldBookingsInRupees(database);
+  await applyDataFixes(database);
   return database;
 }
 

@@ -89,7 +89,7 @@ export const portalSections: PortalSection[] = [
     href: "/portal/content",
     label: "Content",
     description: "Phrase lists, alphabet sheets, holidays",
-    tagline: "The course's teaching content — edit it here and every page uses it.",
+    tagline: "The course's teaching content. Edit it here and every page uses it.",
     Icon: BookOpenText,
     roles: ["tutor", "admin"],
   },

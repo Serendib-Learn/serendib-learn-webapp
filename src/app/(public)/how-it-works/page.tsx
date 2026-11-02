@@ -36,10 +36,9 @@ const stages = [
   {
     step: "03",
     title: "Have the lesson",
-    body: "One hour, one-to-one, video. Your tutor writes up what you covered afterwards — what went well, what to work on, and every word introduced — and it goes straight into your portal.",
+    body: "One hour, one-to-one, on Google Meet, at a time that suits you. Your materials and homework stay in your portal between lessons.",
     detail: [
       "60 or 90 minute sessions",
-      "Lesson summary written up after every class",
     ],
   },
   {
@@ -61,7 +60,7 @@ const faqs = [
     a: "No, and most students never start there. Every phrase we teach comes with a romanised version, so you can be having conversations long before you can read a street sign. When you do want the script, we teach it properly.",
   },
   {
-    q: "Sinhala or Tamil — which should I learn?",
+    q: "Sinhala or Tamil: which should I learn?",
     a: "If you have family, learn theirs. If you are moving somewhere specific, learn what is spoken there: Sinhala across most of the south and centre, Tamil in the north and east, and a great deal of both in Colombo. If you genuinely do not know, say so on the waitlist form and we will talk it through.",
   },
   {
@@ -70,15 +69,15 @@ const faqs = [
   },
   {
     q: "What does it cost?",
-    a: "Every lesson is the same price, whichever tutor you choose, and you pay per session — there are no bundles and nothing renews. The price is on the tutors page, and card payments are taken securely in Sri Lankan rupees at checkout.",
+    a: "Every lesson is the same price, whichever tutor you choose. Pay for one lesson at a time, or book 5 or 10 together and pay once. Nothing renews. Prices are on our pricing page, and card payments are taken securely in Sri Lankan rupees at checkout.",
   },
   {
     q: "Can I change tutors?",
-    a: "Yes, at any time, and nobody takes it personally. Different tutors suit different reasons for learning. You can also work with two at once — some students do one Sinhala and one Tamil.",
+    a: "Yes, at any time, and nobody takes it personally. Different tutors suit different reasons for learning. You can also work with two at once; some students do one Sinhala and one Tamil.",
   },
   {
     q: "What if I need to cancel?",
-    a: "Move or cancel from the portal, up to 6 hours before the lesson, and you keep it: cancelled lessons become a credit to book again. Later than that, or if you miss it, the lesson is used. Unused lessons can be refunded within 30 days — see our Cancellation and Refund Policy.",
+    a: "Move or cancel from the portal, up to 6 hours before the lesson, and you keep it: cancelled lessons become a credit to book again. Later than that, or if you miss it, the lesson is used. Unused lessons can be refunded within 30 days. See our Cancellation and Refund Policy.",
   },
 ];
 

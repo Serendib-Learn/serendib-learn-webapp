@@ -6,7 +6,7 @@ import { fetchContent } from "@/lib/api/public";
 export const metadata: Metadata = {
   title: "Explore Heritage",
   description:
-    "Sri Lanka's heritage sites, from Sigiriya and Anuradhapura to Galle Face Green and the streets of Pettah — and why Colombo is a melting pot.",
+    "Sri Lanka's heritage sites, from Sigiriya and Anuradhapura to Galle Face Green and the streets of Pettah, and why Colombo is a melting pot.",
 };
 
 export const revalidate = 60;
@@ -38,7 +38,7 @@ export default async function HeritagePage() {
             <p>
               Galle Face Green, the streets of Pettah, a red-striped mosque, a Dutch
               church on a hill and the oldest Hindu temple in the city all sit within a
-              few kilometres of each other — and none of them came from one place. That is
+              few kilometres of each other, and none of them came from one place. That is
               what Colombo is: {meltingPotSites.length} of the places here are only
               explicable as a meeting of peoples.
             </p>

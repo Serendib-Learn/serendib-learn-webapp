@@ -48,7 +48,7 @@ export function StudentDashboard({ user }: { user: User }) {
     <>
       <GlanceHeader title={`Hello, ${firstName}`}>
         {next
-          ? `Your next lesson is ${relativeTime(next.startsAt)} — ${formatDateTime(next.startsAt)}.`
+          ? `Your next lesson is ${relativeTime(next.startsAt)}, ${formatDateTime(next.startsAt)}.`
           : "You have no lesson booked. The calendar has live availability whenever you are ready."}
       </GlanceHeader>
 

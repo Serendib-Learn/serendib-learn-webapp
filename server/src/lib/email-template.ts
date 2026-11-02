@@ -114,7 +114,7 @@ function paragraph(text: string): string {
 
 /** The heading: the subject, without a code repeated at the end of it. */
 function headingFor(message: RenderableEmail): string {
-  return message.subject.replace(/\s*—\s*your code is\s*\S+$/i, "").trim();
+  return message.subject.replace(/\s*[—:]\s*your code is\s*\S+$/i, "").trim();
 }
 
 function blockFor(block: string, message: RenderableEmail): string {
@@ -195,7 +195,7 @@ export function renderEmail(message: RenderableEmail): { html: string; text: str
 </body>
 </html>`;
 
-  const text = `${message.body}\n\n— The Serendib Learn team\nQuestions? Reply, or write to serendib.learn@gmail.com\n${site}`;
+  const text = `${message.body}\n\nThe Serendib Learn team\nQuestions? Reply, or write to serendib.learn@gmail.com\n${site}`;
   return { html, text };
 }
 

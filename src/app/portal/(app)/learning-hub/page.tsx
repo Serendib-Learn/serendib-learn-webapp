@@ -109,7 +109,7 @@ function StudentHub({ student }: { student: User }) {
                 {note.materialIds?.length ? (
                   <p className="mt-4 text-xs text-ink-500">
                     From the lesson:{" "}
-                    {note.materialIds.map((id) => titleOf.get(id) ?? "a material").join(", ")} — in your folders above.
+                    {note.materialIds.map((id) => titleOf.get(id) ?? "a material").join(", ")}, in your folders above.
                   </p>
                 ) : null}
               </div>
@@ -173,7 +173,7 @@ function TeachingHub({ owner }: { owner: User }) {
       {(materials.data ?? []).length === 0 ? (
         <Card className="mb-8 flex flex-wrap items-center justify-between gap-4 p-5">
           <p className="text-sm text-ink-600">
-            Your shelf is empty. Worksheets, audio drills, links — anything a student can work
+            Your shelf is empty. Worksheets, audio drills, links: anything a student can work
             through between lessons, filed by chapter.
           </p>
           <Button size="sm" onClick={() => setComposing(true)}>
@@ -234,7 +234,7 @@ function TeachingHub({ owner }: { owner: User }) {
         <section className="mt-12">
           <h2 className="text-xl">Shared library</h2>
           <p className="mt-1 text-sm text-ink-500">
-            What other tutors and the Serendib team have shared. Rate what you use — it helps them improve it.
+            What other tutors and the Serendib team have shared. Rate what you use; it helps them improve it.
           </p>
           <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {(library.data ?? []).map((material) => (
@@ -316,7 +316,7 @@ function MaterialComposer({
       open
       onClose={onClose}
       title="Add material"
-      description="Nothing is uploaded in the demo — describe the file and it appears for your students."
+      description="Nothing is uploaded in the demo. Describe the file and it appears for your students."
     >
       <div className="space-y-4">
         <Field label="Title" htmlFor="material-title">
@@ -324,7 +324,7 @@ function MaterialComposer({
             id="material-title"
             value={title}
             onChange={(event) => setTitle(event.target.value)}
-            placeholder="Sinhala verbs — present tense drill"
+            placeholder="Sinhala verbs: present tense drill"
           />
         </Field>
 

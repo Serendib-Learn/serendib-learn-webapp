@@ -105,7 +105,7 @@ async function announceTutorApplication(tutor: User): Promise<void> {
 }
 
 const pendingTutorWelcome =
-  "Thanks for applying to teach with Serendib Learn. Your application is with our team now — we personally vet every tutor, and we will be in touch to talk it through. In the meantime, fill in your profile and set your hours in the portal calendar; students can book you as soon as you are approved.";
+  "Thanks for applying to teach with Serendib Learn. Your application is with our team now. We personally vet every tutor, and we will be in touch to talk it through. In the meantime, fill in your profile and set your hours in the portal calendar; students can book you as soon as you are approved.";
 
 async function sendVerification(email: string): Promise<void> {
   const code = sixDigitCode();
@@ -115,8 +115,8 @@ async function sendVerification(email: string): Promise<void> {
 
   await deliver({
     to: email,
-    subject: `Confirm your email — your code is ${code}`,
-    body: `Welcome to Serendib Learn — we're so glad you're here.\n\nEnter this code on the verification screen to finish setting up your account:\n\n${code}\n\nIf you ask for a new code, this one stops working. If you didn't sign up, you can safely ignore this email.`,
+    subject: `Confirm your email: your code is ${code}`,
+    body: `Welcome to Serendib Learn. We're so glad you're here.\n\nEnter this code on the verification screen to finish setting up your account:\n\n${code}\n\nIf you ask for a new code, this one stops working. If you didn't sign up, you can safely ignore this email.`,
     kind: "verification",
     code,
   });
@@ -194,8 +194,8 @@ authRouter.post(
       to: user.email,
       subject:
         user.tutorStatus === "pending"
-          ? "We've got your application — welcome to Serendib Learn"
-          : "You're in — welcome to Serendib Learn",
+          ? "We've got your application. Welcome to Serendib Learn"
+          : "You're in. Welcome to Serendib Learn",
       body:
         user.tutorStatus === "pending"
           ? pendingTutorWelcome
@@ -251,7 +251,7 @@ authRouter.post(
 
     if (!user.verified) {
       throw new ApiError(
-        "Confirm your email address first — check your inbox (and spam folder) for the code.",
+        "Confirm your email address first. Check your inbox (and spam folder) for the code.",
         403,
         "not_verified",
       );
@@ -344,8 +344,8 @@ authRouter.post(
       to: created.email,
       subject:
         created.tutorStatus === "pending"
-          ? "We've got your application — welcome to Serendib Learn"
-          : "You're in — welcome to Serendib Learn",
+          ? "We've got your application. Welcome to Serendib Learn"
+          : "You're in. Welcome to Serendib Learn",
       body:
         created.tutorStatus === "pending"
           ? pendingTutorWelcome

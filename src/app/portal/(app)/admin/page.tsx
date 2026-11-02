@@ -477,7 +477,7 @@ function AddEmailDialog({ user, onClose }: { user: User; onClose: () => void }) 
         <div className="space-y-5">
           <Alert tone="jade">
             {sent.name} can now sign in and be booked. The invitation is on its way to{" "}
-            {sent.email} — ask them to set their hours under Calendar → My hours.
+            {sent.email}. Ask them to set their hours under Calendar → My hours.
           </Alert>
           <Button className="w-full" onClick={onClose}>
             Done
@@ -545,14 +545,14 @@ function InviteDialog({ onClose }: { onClose: () => void }) {
               <>
                 {sent.name}&rsquo;s account is ready and the email is on its way to {sent.email}.
                 {sent.role === "tutor"
-                  ? " They are approved already — ask them to fill in their profile and hours."
+                  ? " They are approved already: ask them to fill in their profile and hours."
                   : ""}
               </>
             ) : (
               <>
                 {sent.name} is on the tutors page. Fill in their profile and photo with
                 &ldquo;Edit profile&rdquo;, and use &ldquo;Add email &amp; invite&rdquo; once
-                you have their address — students can book them from then on.
+                you have their address. Students can book them from then on.
               </>
             )}
           </Alert>
@@ -568,7 +568,7 @@ function InviteDialog({ onClose }: { onClose: () => void }) {
           <Field
             label="Email"
             htmlFor="invite-email"
-            hint={role === "tutor" ? "Optional for a tutor — leave it blank to list them now and invite them later." : undefined}
+            hint={role === "tutor" ? "Optional for a tutor. Leave it blank to list them now and invite them later." : undefined}
           >
             <Input
               id="invite-email"

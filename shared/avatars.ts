@@ -31,7 +31,7 @@ export const characters: Character[] = [
     english: "Elder sister",
     sinhala: { script: "අක්කා", roman: "akka", say: "ak-kā" },
     tamil: { script: "அக்கா", roman: "akka", say: "ak-kā" },
-    note: "The same word in both languages — a good first one.",
+    note: "The same word in both languages: a good first one.",
   },
   {
     id: "aiya",

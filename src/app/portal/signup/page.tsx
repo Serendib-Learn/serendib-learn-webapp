@@ -36,7 +36,7 @@ const nextSteps = {
   ],
   tutor: [
     "We email you a six digit code to confirm the address",
-    "Our team reviews your application — we vet every tutor personally",
+    "Our team reviews your application. We vet every tutor personally",
     "Once approved, students can find you and book your hours",
   ],
 };
@@ -117,7 +117,7 @@ function SignUpForm() {
           </ol>
           <p className="mt-5 border-t border-ink-900/8 pt-4 text-xs leading-relaxed text-ink-400">
             {role === "tutor"
-              ? "Already teaching with us? Ask the team to add you instead — you will get an email to set your password."
+              ? "Already teaching with us? Ask the team to add you instead, and you will get an email to set your password."
               : "Looking to teach instead? Choose “Tutor” above."}
           </p>
         </Card>
@@ -193,7 +193,7 @@ function SignUpForm() {
         <Field
           label="Email"
           htmlFor="su-email"
-          hint="Any email address works — Gmail, Yahoo, Outlook, iCloud or your own. We send a six digit code to it."
+          hint="Any email address works: Gmail, Yahoo, Outlook, iCloud or your own. We send a six digit code to it."
         >
           <Input
             id="su-email"
@@ -240,14 +240,14 @@ function SignUpForm() {
           <p className="mt-2 text-xs text-ink-400">
             {role === "tutor"
               ? "Pick both if you teach both."
-              : "Pick both if you want both — some of our tutors teach Sinhala and Tamil together."}
+              : "Pick both if you want both. Some of our tutors teach Sinhala and Tamil together."}
           </p>
         </fieldset>
 
         <fieldset>
           <legend className="mb-1 text-sm font-medium text-ink-700">Pick a character to represent you</legend>
           <p className="mb-3 text-xs leading-relaxed text-ink-500">
-            Each one comes with its name in Sinhala and Tamil — your first two words.
+            Each one comes with its name in Sinhala and Tamil: your first two words.
           </p>
           <CharacterPicker value={avatarId} onChange={setAvatarId} languages={languages} />
         </fieldset>

@@ -52,7 +52,7 @@ export function GoogleMailConnect() {
               onClick={async () => {
                 const yes = await confirm({
                   title: "Disconnect Gmail?",
-                  message: "Emails stop reaching real inboxes straight away — verification codes, receipts and reminders only go to the log until you connect it again.",
+                  message: "Emails stop reaching real inboxes straight away: verification codes, receipts and reminders only go to the log until you connect it again.",
                   confirmLabel: "Disconnect Gmail",
                 });
                 if (yes) void disconnect.run();
@@ -63,7 +63,7 @@ export function GoogleMailConnect() {
             </button>
           </div>
           {sentTo ? (
-            <p className="mt-3 text-sm text-fern">Sent — check the inbox of {sentTo}.</p>
+            <p className="mt-3 text-sm text-fern">Sent. Check the inbox of {sentTo}.</p>
           ) : null}
           {test.error ? <p className="mt-3 text-sm text-clay-600">{test.error}</p> : null}
           {disconnect.error ? (
@@ -73,7 +73,7 @@ export function GoogleMailConnect() {
       ) : (
         <>
           <p className="mt-3 text-sm leading-relaxed text-ink-500">
-            Not connected — no email reaches a real inbox: not verification codes, receipts
+            Not connected, so no email reaches a real inbox: not verification codes, receipts
             or lesson reminders. Connect the Serendib Google account to send them over Gmail.
           </p>
           <GoogleConnectButton getUrl={api.integrations.google.mailConnectUrl} className="mt-4">

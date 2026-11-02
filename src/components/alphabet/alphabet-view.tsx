@@ -130,7 +130,7 @@ function RecordChip({
             ? "border-fern/30 bg-mist text-fern"
             : "border-forest/15 text-earth/60 hover:border-amber-spice/50",
       )}
-      title={done ? "Recorded — click to record again" : "Record this"}
+      title={done ? "Recorded. Click to record again" : "Record this"}
     >
       {state === "recording" ? <Square className="h-2.5 w-2.5" /> : <Mic className="h-2.5 w-2.5" />}
       {state === "recording" ? "Stop" : state === "saving" ? "Saving…" : state === "error" ? "Try again" : `${done ? "✓ " : ""}${label}`}

@@ -31,8 +31,8 @@ export default function ProfilePage() {
           Live on the{" "}
           <Link href="/tutors" className="font-medium text-jade-700 hover:text-jade-600">
             tutors page
-          </Link>{" "}
-          — changes appear there within a minute.
+          </Link>
+          . Changes appear there within a minute.
         </p>
       ) : null}
 

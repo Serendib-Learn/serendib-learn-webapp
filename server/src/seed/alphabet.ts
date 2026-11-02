@@ -16,7 +16,7 @@ const sinhala: Seed = {
   name: "Sinhala",
   native: "සිංහල හෝඩිය",
   intro:
-    "Sinhala is written left to right in a rounded script descended from Brahmi. Each consonant carries a short 'a' until a vowel sign or the hal kirīma (්) changes it. Start with the vowels and the everyday consonants — the aspirated letters near the end mostly appear in formal and borrowed words.",
+    "Sinhala is written left to right in a rounded script descended from Brahmi. Each consonant carries a short 'a' until a vowel sign or the hal kirīma (්) changes it. Start with the vowels and the everyday consonants. The aspirated letters near the end mostly appear in formal and borrowed words.",
   voiceLangs: ["si-LK", "si"],
   groups: [
     {
@@ -38,7 +38,7 @@ const sinhala: Seed = {
         { letter: "ඔ", roman: "o", sound: "a short o, as in “for” said quickly", ipa: "o", example: { word: "ඔව්", roman: "ow", meaning: "yes" } },
         { letter: "ඕ", roman: "ō", sound: "like the o in “go”, without sliding into a w", ipa: "oː", example: { word: "ඕනෑ", roman: "ōnǣ", meaning: "want, need" } },
         { letter: "ඖ", roman: "au", sound: "like the ow in “cow”", ipa: "au", example: { word: "ඖෂධ", roman: "auṣadha", meaning: "medicine" } },
-        { letter: "ඍ", roman: "ṛ", sound: "said “ru” — only in words from Sanskrit", ipa: "ru", example: { word: "ඍතුව", roman: "ṛtuva", meaning: "season" } },
+        { letter: "ඍ", roman: "ṛ", sound: "said “ru”, only in words from Sanskrit", ipa: "ru", example: { word: "ඍතුව", roman: "ṛtuva", meaning: "season" } },
       ],
     },
     {
@@ -46,7 +46,7 @@ const sinhala: Seed = {
       native: "ව්‍යඤ්ජන · vyañjana",
       intro: "Shown with the built-in short 'a'. Watch the two t's and d's: ත/ද touch the teeth, ට/ඩ curl the tongue back.",
       letters: [
-        { letter: "ක", roman: "ka", sound: "k as in “skip” — no puff of air", ipa: "k", example: { word: "කන්න", roman: "kanna", meaning: "to eat" } },
+        { letter: "ක", roman: "ka", sound: "k as in “skip”, no puff of air", ipa: "k", example: { word: "කන්න", roman: "kanna", meaning: "to eat" } },
         { letter: "ග", roman: "ga", sound: "g as in “go”", ipa: "ɡ", example: { word: "ගෙදර", roman: "gedara", meaning: "home" } },
         { letter: "ඟ", roman: "n̆ga", sound: "a quick “ng” before the g, as in “finger”", ipa: "ᵑɡ", example: { word: "සඟරාව", roman: "san̆garāva", meaning: "magazine" } },
         { letter: "ච", roman: "ca", sound: "ch as in “church”", ipa: "tʃ", example: { word: "චූටි", roman: "chūṭi", meaning: "tiny" } },
@@ -59,18 +59,18 @@ const sinhala: Seed = {
         { letter: "ද", roman: "da", sound: "d with the tongue touching the teeth", ipa: "d̪", example: { word: "දවස", roman: "davasa", meaning: "day" } },
         { letter: "න", roman: "na", sound: "n as in “no”", ipa: "n", example: { word: "නංගී", roman: "naṅgī", meaning: "younger sister" } },
         { letter: "ඳ", roman: "n̆da", sound: "a quick “n” before a teeth d, as in “and”", ipa: "ⁿd̪", example: { word: "හඳ", roman: "han̆da", meaning: "moon" } },
-        { letter: "ප", roman: "pa", sound: "p as in “spin” — no puff of air", ipa: "p", example: { word: "පාන්", roman: "pān", meaning: "bread" } },
+        { letter: "ප", roman: "pa", sound: "p as in “spin”, no puff of air", ipa: "p", example: { word: "පාන්", roman: "pān", meaning: "bread" } },
         { letter: "බ", roman: "ba", sound: "b as in “bat”", ipa: "b", example: { word: "බත්", roman: "bat", meaning: "rice" } },
         { letter: "ම", roman: "ma", sound: "m as in “mat”", ipa: "m", example: { word: "මල", roman: "mala", meaning: "flower" } },
         { letter: "ඹ", roman: "m̆ba", sound: "a quick “m” before the b, as in “amber”", ipa: "ᵐb", example: { word: "අඹ", roman: "am̆ba", meaning: "mango" } },
         { letter: "ය", roman: "ya", sound: "y as in “yes”", ipa: "j", example: { word: "යාළුවා", roman: "yāḷuvā", meaning: "friend" } },
         { letter: "ර", roman: "ra", sound: "a light, tapped r", ipa: "ɾ", example: { word: "රට", roman: "raṭa", meaning: "country" } },
         { letter: "ල", roman: "la", sound: "l as in “let”", ipa: "l", example: { word: "ලස්සන", roman: "lassana", meaning: "beautiful" } },
-        { letter: "ව", roman: "va", sound: "between v and w — lips barely touching", ipa: "ʋ", example: { word: "වතුර", roman: "vatura", meaning: "water" } },
+        { letter: "ව", roman: "va", sound: "between v and w, lips barely touching", ipa: "ʋ", example: { word: "වතුර", roman: "vatura", meaning: "water" } },
         { letter: "ස", roman: "sa", sound: "s as in “sun”", ipa: "s", example: { word: "සතුට", roman: "satuṭa", meaning: "happiness" } },
         { letter: "හ", roman: "ha", sound: "h as in “hat”", ipa: "h", example: { word: "හත", roman: "hata", meaning: "seven" } },
         { letter: "ළ", roman: "ḷa", sound: "today said just like ල (l)", ipa: "l", example: { word: "ළමයා", roman: "ḷamayā", meaning: "child" } },
-        { letter: "ෆ", roman: "fa", sound: "f as in “fan” — for borrowed words", ipa: "f", example: { word: "ෆෝන්", roman: "fōn", meaning: "phone" } },
+        { letter: "ෆ", roman: "fa", sound: "f as in “fan”, for borrowed words", ipa: "f", example: { word: "ෆෝන්", roman: "fōn", meaning: "phone" } },
       ],
     },
     {
@@ -78,7 +78,7 @@ const sinhala: Seed = {
       intro: "Not letters on their own, but on almost every line of text.",
       letters: [
         { letter: "ං", roman: "ṃ", sound: "“ng” as in “sing”, added after a letter", ipa: "ŋ", example: { word: "සිංහල", roman: "siṃhala", meaning: "Sinhala" } },
-        { letter: "්", roman: "(no vowel)", sound: "hal kirīma: removes the built-in a, so ක් is just “k”", ipa: "—", example: { word: "බත්", roman: "bat", meaning: "rice" } },
+        { letter: "්", roman: "(no vowel)", sound: "hal kirīma: removes the built-in a, so ක් is just “k”", ipa: "", example: { word: "බත්", roman: "bat", meaning: "rice" } },
       ],
     },
     {
@@ -91,7 +91,7 @@ const sinhala: Seed = {
         { letter: "ඡ", roman: "cha", sound: "said like ච (ch)", ipa: "tʃ", example: { word: "ඡායාරූපය", roman: "chāyārūpaya", meaning: "photograph" } },
         { letter: "ඣ", roman: "jha", sound: "said like ජ (j)", ipa: "dʒ" },
         { letter: "ඤ", roman: "ña", sound: "“ny” as in “canyon”", ipa: "ɲ" },
-        { letter: "ඥ", roman: "gña", sound: "“gny” — said “gn-ya”", ipa: "ɡɲ", example: { word: "ඥාතියා", roman: "gnyātiyā", meaning: "relative" } },
+        { letter: "ඥ", roman: "gña", sound: "“gny”, said “gn-ya”", ipa: "ɡɲ", example: { word: "ඥාතියා", roman: "gnyātiyā", meaning: "relative" } },
         { letter: "ඨ", roman: "ṭha", sound: "said like ට (curled-back t)", ipa: "ʈ", example: { word: "ශ්‍රේෂ්ඨ", roman: "śrēṣṭha", meaning: "excellent" } },
         { letter: "ඪ", roman: "ḍha", sound: "said like ඩ (curled-back d)", ipa: "ɖ" },
         { letter: "ථ", roman: "tha", sound: "said like ත (teeth t)", ipa: "t̪", example: { word: "ස්ථානය", roman: "sthānaya", meaning: "place" } },
@@ -172,24 +172,24 @@ const tamil: Seed = {
       native: "மெல்லினம் · mellinam",
       intro: "The nasals. Tamil has three n's you use every day: ந (teeth), ண (curled back), ன (just behind the teeth).",
       letters: [
-        { letter: "ங", roman: "ṅa", sound: "“ng” as in “sing” — almost always before க", ipa: "ŋ", example: { word: "சிங்கம்", roman: "ciṅkam (said singam)", meaning: "lion" } },
+        { letter: "ங", roman: "ṅa", sound: "“ng” as in “sing”, almost always before க", ipa: "ŋ", example: { word: "சிங்கம்", roman: "ciṅkam (said singam)", meaning: "lion" } },
         { letter: "ஞ", roman: "ña", sound: "“ny” as in “canyon”", ipa: "ɲ", example: { word: "ஞாயிறு", roman: "ñāyiṟu", meaning: "Sunday; the sun" } },
         { letter: "ண", roman: "ṇa", sound: "n with the tongue curled back", ipa: "ɳ", example: { word: "கண்", roman: "kaṇ", meaning: "eye" } },
-        { letter: "ந", roman: "na", sound: "n with the tongue on the teeth — mostly at the start of words", ipa: "n̪", example: { word: "நன்றி", roman: "naṉṟi", meaning: "thank you" } },
+        { letter: "ந", roman: "na", sound: "n with the tongue on the teeth, mostly at the start of words", ipa: "n̪", example: { word: "நன்றி", roman: "naṉṟi", meaning: "thank you" } },
         { letter: "ம", roman: "ma", sound: "m as in “mat”", ipa: "m", example: { word: "மழை", roman: "maḻai", meaning: "rain" } },
-        { letter: "ன", roman: "ṉa", sound: "n as in “no” — inside and at the end of words", ipa: "n", example: { word: "மீன்", roman: "mīṉ", meaning: "fish" } },
+        { letter: "ன", roman: "ṉa", sound: "n as in “no”, inside and at the end of words", ipa: "n", example: { word: "மீன்", roman: "mīṉ", meaning: "fish" } },
       ],
     },
     {
       title: "Middle consonants",
       native: "இடையினம் · iṭaiyiṉam",
-      intro: "Including ழ, the sound Tamil is famous for — practise it with your tutor.",
+      intro: "Including ழ, the sound Tamil is famous for. Practise it with your tutor.",
       letters: [
         { letter: "ய", roman: "ya", sound: "y as in “yes”", ipa: "j", example: { word: "யானை", roman: "yāṉai", meaning: "elephant" } },
         { letter: "ர", roman: "ra", sound: "a light, tapped r", ipa: "ɾ", example: { word: "மரம்", roman: "maram", meaning: "tree" } },
         { letter: "ல", roman: "la", sound: "l as in “let”", ipa: "l", example: { word: "பல்", roman: "pal", meaning: "tooth" } },
         { letter: "வ", roman: "va", sound: "between v and w", ipa: "ʋ", example: { word: "வணக்கம்", roman: "vaṇakkam", meaning: "hello" } },
-        { letter: "ழ", roman: "ḻa", sound: "curl the tongue far back and say an r–l without touching the roof — often written “zh”", ipa: "ɻ", example: { word: "தமிழ்", roman: "tamiḻ", meaning: "Tamil" } },
+        { letter: "ழ", roman: "ḻa", sound: "curl the tongue far back and say an r–l without touching the roof, often written “zh”", ipa: "ɻ", example: { word: "தமிழ்", roman: "tamiḻ", meaning: "Tamil" } },
         { letter: "ள", roman: "ḷa", sound: "l with the tongue curled back", ipa: "ɭ", example: { word: "பள்ளி", roman: "paḷḷi", meaning: "school" } },
       ],
     },
@@ -198,7 +198,7 @@ const tamil: Seed = {
       intro: "",
       letters: [
         { letter: "ஃ", roman: "ḵ", sound: "āytam: a soft breathy h, in a handful of words", ipa: "x ~ h", example: { word: "எஃகு", roman: "eḵku", meaning: "steel" } },
-        { letter: "்", roman: "(no vowel)", sound: "puḷḷi: the dot that removes the built-in a, so க் is just “k”", ipa: "—", example: { word: "பால்", roman: "pāl", meaning: "milk" } },
+        { letter: "்", roman: "(no vowel)", sound: "puḷḷi: the dot that removes the built-in a, so க் is just “k”", ipa: "", example: { word: "பால்", roman: "pāl", meaning: "milk" } },
       ],
     },
     {

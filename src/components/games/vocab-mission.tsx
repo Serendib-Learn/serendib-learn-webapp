@@ -381,7 +381,7 @@ export function VocabMission({ chapter, allChapters }: { chapter: Chapter; allCh
                   isCorrect ? "text-jade-700" : "text-clay-600",
                 )}
               >
-                {isCorrect ? "Correct." : `Not quite — it is ${romanOf(question.phrase, language)}.`}
+                {isCorrect ? "Correct." : `Not quite. It is ${romanOf(question.phrase, language)}.`}
               </p>
               {question.phrase.note ? (
                 <p className="mt-2 text-sm leading-relaxed text-ink-500">{question.phrase.note}</p>

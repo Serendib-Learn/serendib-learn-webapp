@@ -49,7 +49,7 @@ export function ChapterMap({ chapters }: { chapters: PhraseList[] }) {
         </div>
       ) : (
         <div className="mb-10 rounded-2xl border border-dashed border-ink-900/15 bg-sand-100/60 px-6 py-5 text-sm text-ink-500">
-          Playing as a guest — scores are not saved.{" "}
+          Playing as a guest: scores are not saved.{" "}
           <Link
             href="/portal/login"
             className="font-medium text-jade-700 underline decoration-jade-300 underline-offset-4"

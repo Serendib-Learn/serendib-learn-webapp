@@ -40,7 +40,7 @@ export async function scheduleMeeting(
       const meeting = await createGoogleMeeting({
         refreshToken: account.refreshToken,
         summary: `Serendib Learn: ${tutor.name} × ${student.name}`,
-        description: `${booking.focus}\n\nBooked through Serendib Learn — your lessons, materials and messages: ${config.appUrl}/portal/calendar`,
+        description: `${booking.focus}\n\nBooked through Serendib Learn. Your lessons and materials: ${config.appUrl}/portal/calendar`,
         startIso: startsAt.toISOString(),
         endIso: endsAt.toISOString(),
         timezone: validTimezone(tutor.timezone),
@@ -97,16 +97,16 @@ export async function confirmBooking(
   await deliver({
     to: student.email,
     subject: free
-      ? `Booked — your free lesson with ${tutor.name}`
-      : `Receipt — ${amount} for your session with ${tutor.name}`,
-    body: `${free ? "Booked with your free lesson — nothing to pay" : `Payment received${payment?.card ? ` (${payment.card})` : ""}`}.\n\n${formatInZone(current.startsAt, student.timezone)}\n${current.durationMins} minutes with ${tutor.name}\nFocus: ${current.focus}\n\n${meeting.meetingUrl ? `Join on Google Meet: ${meeting.meetingUrl}\n\nGoogle has also sent you a calendar invitation, and the link is on the booking in your calendar: ${config.appUrl}/portal/calendar` : `Your tutor will add the meeting link to the booking in your calendar before the lesson: ${config.appUrl}/portal/calendar`}\n\nWe will remind you a day before and an hour before.`,
+      ? `Booked: your free lesson with ${tutor.name}`
+      : `Receipt: ${amount} for your session with ${tutor.name}`,
+    body: `${free ? "Booked with your free lesson, nothing to pay" : `Payment received${payment?.card ? ` (${payment.card})` : ""}`}.\n\n${formatInZone(current.startsAt, student.timezone)}\n${current.durationMins} minutes with ${tutor.name}\nFocus: ${current.focus}\n\n${meeting.meetingUrl ? `Join on Google Meet: ${meeting.meetingUrl}\n\nGoogle has also sent you a calendar invitation, and the link is on the booking in your calendar: ${config.appUrl}/portal/calendar` : `Your tutor will add the meeting link to the booking in your calendar before the lesson: ${config.appUrl}/portal/calendar`}\n\nWe will remind you a day before and an hour before.`,
     kind: "receipt",
   });
 
   await deliver({
     to: tutor.email,
     subject: `New booking: ${student.name}, ${formatInZone(current.startsAt, tutor.timezone)}`,
-    body: `${student.name} has booked ${free ? "a free lesson (granted by the Serendib team) of" : "and paid for"} ${current.durationMins} minutes.\nFocus: ${current.focus}\n\n${meeting.meetingUrl ? `Google Meet: ${meeting.meetingUrl}` : "There is no meeting link yet — add one to the booking in your portal calendar, or connect Google Calendar under My hours so links are made for you."}\n\nYour calendar: ${config.appUrl}/portal/calendar`,
+    body: `${student.name} has booked ${free ? "a free lesson (granted by the Serendib team) of" : "and paid for"} ${current.durationMins} minutes.\nFocus: ${current.focus}\n\n${meeting.meetingUrl ? `Google Meet: ${meeting.meetingUrl}` : "There is no meeting link yet. Add one to the booking in your portal calendar, or connect Google Calendar under My hours so links are made for you."}\n\nYour calendar: ${config.appUrl}/portal/calendar`,
     kind: "notification",
   });
 

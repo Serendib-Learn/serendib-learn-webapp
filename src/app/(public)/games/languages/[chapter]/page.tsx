@@ -18,7 +18,7 @@ export async function generateMetadata(
   if (!chapter) return { title: "Chapter not found" };
 
   return {
-    title: `${chapter.title} — Survival Sri Lanka`,
+    title: `${chapter.title} · Survival Sri Lanka`,
     description: chapter.scene,
   };
 }

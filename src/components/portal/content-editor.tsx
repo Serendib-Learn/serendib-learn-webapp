@@ -185,7 +185,7 @@ function PhraseListForm({ list, isAdmin }: { list: PhraseList; isAdmin: boolean 
           </Field>
         </div>
         <p className="text-xs text-ink-400">
-          Id <code className="rounded bg-sand-100 px-1">{list.id}</code> — link it to a chapter in Learning hub → Manage
+          Id <code className="rounded bg-sand-100 px-1">{list.id}</code>. Link it to a chapter in Learning hub → Manage
           chapters.
         </p>
       </Card>
@@ -220,7 +220,7 @@ function PhraseListForm({ list, isAdmin }: { list: PhraseList; isAdmin: boolean 
 
       {save.error ? <Alert>{save.error}</Alert> : null}
       {remove.error ? <Alert>{remove.error}</Alert> : null}
-      {saved && !save.pending ? <Alert tone="jade">Saved — the learning hub shows it now.</Alert> : null}
+      {saved && !save.pending ? <Alert tone="jade">Saved. The learning hub shows it now.</Alert> : null}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Saved at={list.updatedAt} />
         <div className="flex gap-2">
@@ -395,7 +395,7 @@ function AlphabetForm({ sheet }: { sheet: AlphabetSheet }) {
           </Field>
           <Field label="Status" htmlFor="ab-status" hint="The public sheet says it is a draft until a tutor marks it checked.">
             <Select id="ab-status" value={status} onChange={(event) => setStatus(event.target.value as AlphabetSheet["status"])}>
-              <option value="draft">Draft — not yet checked</option>
+              <option value="draft">Draft, not yet checked</option>
               <option value="reviewed">Checked by a tutor</option>
             </Select>
           </Field>
@@ -464,7 +464,7 @@ function AlphabetForm({ sheet }: { sheet: AlphabetSheet }) {
       </Card>
 
       {save.error ? <Alert>{save.error}</Alert> : null}
-      {saved && !save.pending ? <Alert tone="jade">Saved — the public alphabet sheet updates within a minute.</Alert> : null}
+      {saved && !save.pending ? <Alert tone="jade">Saved. The public alphabet sheet updates within a minute.</Alert> : null}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Saved at={sheet.updatedAt} />
         <Button type="submit" disabled={save.pending || !name.trim()}>
@@ -509,7 +509,7 @@ function NewHoliday() {
     <Card className="space-y-3 p-5">
       <p className="font-medium text-ink-800">Add a holiday</p>
       <p className="text-xs text-ink-500">
-        Poya and Muslim holidays move every year — add next year&rsquo;s once the gazette is out.
+        Poya and Muslim holidays move every year. Add next year&rsquo;s once the gazette is out.
       </p>
       <div className="grid gap-2 sm:grid-cols-[10rem_1fr_10rem]">
         <Input aria-label="Date" type="date" className={small} value={date} onChange={(event) => setDate(event.target.value)} />

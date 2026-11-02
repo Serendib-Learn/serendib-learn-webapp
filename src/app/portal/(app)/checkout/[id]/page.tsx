@@ -86,7 +86,7 @@ function Checkout() {
       <PageHeader title={current.status === "confirmed" ? "You're booked" : "Checkout"}>
         {current.status === "confirmed"
           ? current.creditId
-            ? "Booked with your free lesson — nothing to pay. Your meeting link is below and in your calendar."
+            ? "Booked with your free lesson, nothing to pay. Your meeting link is below and in your calendar."
             : "Payment received. Your meeting link is below and in your calendar."
           : "Check the details, then pay securely by card."}
       </PageHeader>
@@ -109,13 +109,13 @@ function Checkout() {
               {returned && pollingDone ? (
                 <Alert tone="saffron">
                   We have not had confirmation of that payment yet. If you completed it, it
-                  will show here shortly and you will get a receipt by email — there is no need
+                  will show here shortly and you will get a receipt by email. There is no need
                   to pay again.
                 </Alert>
               ) : null}
               {cancelledAtCheckout ? (
                 <Alert tone="saffron">
-                  Payment was cancelled. The slot is held for you for a little while — pay
+                  Payment was cancelled. The slot is held for you for a little while: pay
                   below to keep it.
                 </Alert>
               ) : null}
@@ -325,7 +325,7 @@ function Confirmed({ booking }: { booking: Booking }) {
       </div>
       {!booking.meetingUrl ? (
         <p className="mt-4 text-sm text-ink-500">
-          Your tutor will add the meeting link to this booking before the lesson — you will get
+          Your tutor will add the meeting link to this booking before the lesson, and you will get
           an email when it is there.
         </p>
       ) : null}

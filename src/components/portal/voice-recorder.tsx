@@ -128,7 +128,7 @@ export function VoiceRecorder({
             {recording ? "Stop" : "Record a voice note"}
           </Button>
           <span className="text-xs text-ink-500">
-            {recording ? `${clock(seconds)} / ${clock(MAX_SECONDS)}` : "Up to three minutes — often easier than typing."}
+            {recording ? `${clock(seconds)} / ${clock(MAX_SECONDS)}` : "Up to three minutes. Often easier than typing."}
           </span>
         </div>
       )}

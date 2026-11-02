@@ -134,7 +134,7 @@ feedbackRouter.post(
       await deliver({
         to: tutor.email,
         subject: `${actor.name} rated your lesson ${"★".repeat(input.rating)}${"☆".repeat(5 - input.rating)}`,
-        body: `${input.comment || "(No written comment.)"}${extras.length ? `\n\n${extras.join("\n")}` : ""}${input.voiceNoteId ? "\n\nThey also left a voice note — listen in your portal." : ""}`,
+        body: `${input.comment || "(No written comment.)"}${extras.length ? `\n\n${extras.join("\n")}` : ""}${input.voiceNoteId ? "\n\nThey also left a voice note. Listen in your portal." : ""}`,
         kind: "notification",
       });
     }

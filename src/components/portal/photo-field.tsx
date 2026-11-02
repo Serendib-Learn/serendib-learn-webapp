@@ -103,7 +103,7 @@ export function PhotoField({ user }: { user: User }) {
       <p className="text-[11px] leading-relaxed text-earth/50">
         {user.role === "tutor"
           ? "Shown on the public tutors page and across the portal, instead of your character. A clear, friendly head-and-shoulders photo works best."
-          : "Shown across the portal instead of your character — to your tutors, and in the community and messages. Optional."}
+          : "Shown across the portal instead of your character: to your tutors, and in the community. Optional."}
       </p>
       {upload.error || remove.error ? <Alert>{upload.error ?? remove.error}</Alert> : null}
     </div>

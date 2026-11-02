@@ -64,7 +64,7 @@ export default function PrivacyPage() {
             through.
           </li>
           <li>
-            <span className="font-medium">Google</span> — if you choose to sign in with Google, and
+            <span className="font-medium">Google</span>, if you choose to sign in with Google, and
             to create the Google Meet link and calendar invitation for each lesson.
           </li>
         </ul>

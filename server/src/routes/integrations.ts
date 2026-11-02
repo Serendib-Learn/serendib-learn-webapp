@@ -186,7 +186,7 @@ integrationsRouter.post(
 function googleError(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error);
   if (/invalid_grant/i.test(message)) {
-    return "Google refused the saved connection (it was revoked, or expired — apps still in Google's \"Testing\" mode lose access after 7 days). Disconnect and connect again.";
+    return "Google refused the saved connection (it was revoked, or expired: apps still in Google's \"Testing\" mode lose access after 7 days). Disconnect and connect again.";
   }
   return `Google said: ${message}`;
 }

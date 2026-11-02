@@ -72,14 +72,14 @@ export function RescheduleDialog({
       open
       onClose={onClose}
       title="Move this lesson"
-      description={`Now ${formatDateTime(booking.startsAt)}. Moving it is free — the price, payment and meeting link stay the same, and both of you are emailed the new time.`}
+      description={`Now ${formatDateTime(booking.startsAt)}. Moving it is free: the price, payment and meeting link stay the same, and both of you are emailed the new time.`}
       className="sm:max-w-xl"
     >
       {tooLate ? (
         <div className="space-y-4">
           <Alert tone="saffron">
             Lessons can be moved up to {STUDENT_NOTICE_HOURS} hours before they start.
-            For anything later, message your tutor — or, if you cannot make it, report it under
+            If you cannot make it, report it under
             &ldquo;Free lessons &amp; help&rdquo; once the time has passed and we will sort it out.
           </Alert>
           <Button className="w-full" onClick={onClose}>
@@ -161,7 +161,7 @@ export function MissedLessonDialog({ booking, onClose }: { booking: Booking; onC
     <Modal
       open
       onClose={onClose}
-      title={sent ? "Thanks — we are on it" : "Report a missed lesson"}
+      title={sent ? "Thanks, we are on it" : "Report a missed lesson"}
       description={sent ? undefined : `The lesson on ${formatDateTime(booking.startsAt)}. The Serendib team reads every report and can give you a free make-up lesson.`}
     >
       {sent ? (

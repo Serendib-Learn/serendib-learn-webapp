@@ -38,7 +38,7 @@ if (existing) {
     { id: existing.id },
     { role: "admin", superAdmin: true, verified: true },
   );
-  console.log(`${email} already had an account — it is now a super admin. Password unchanged.`);
+  console.log(`${email} already had an account. It is now a super admin. Password unchanged.`);
 } else {
   let password = process.env.ADMIN_PASSWORD ?? "";
   if (!password) {

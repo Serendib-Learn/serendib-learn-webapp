@@ -77,7 +77,7 @@ function Messages() {
   return (
     <>
       <PageHeader title="Messages">
-        Quick questions between lessons — scheduling, a word you forgot, a link you promised.
+        Quick questions between lessons: scheduling, a word you forgot, a link you promised.
       </PageHeader>
 
       {summaries.length === 0 && newContacts.length === 0 ? (
@@ -215,7 +215,7 @@ function Conversation({
           <Loading label="Loading" />
         ) : list.length === 0 ? (
           <p className="py-8 text-center text-sm text-ink-400">
-            Say hello — {other.name.split(" ")[0]} will see it next time they log in.
+            Say hello. {other.name.split(" ")[0]} will see it next time they log in.
           </p>
         ) : (
           list.map((message) => {

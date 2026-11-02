@@ -40,7 +40,7 @@ function VerifyForm() {
                 It comes from serendib.learn@gmail.com and usually arrives within a minute.
                 Yahoo, Outlook and Hotmail sometimes file it under{" "}
                 <span className="font-medium text-ink-800">Spam</span> or{" "}
-                <span className="font-medium text-ink-800">Junk</span> — please look there too.
+                <span className="font-medium text-ink-800">Junk</span>. Please look there too.
               </p>
               <p>
                 Still nothing after a few minutes? Email{" "}
@@ -90,7 +90,7 @@ function VerifyForm() {
         {resend.error ? <Alert>{resend.error}</Alert> : null}
         {resent ? (
           <Alert tone="jade">
-            {demoMode ? "A new code is in the demo inbox." : "A new code is on its way — check your inbox and spam folder."}
+            {demoMode ? "A new code is in the demo inbox." : "A new code is on its way. Check your inbox and spam folder."}
           </Alert>
         ) : null}
 

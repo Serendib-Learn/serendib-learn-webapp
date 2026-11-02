@@ -6,7 +6,7 @@ import { fetchContent, fetchPhrasePhase } from "@/lib/api/public";
 export const metadata: Metadata = {
   title: "Games",
   description:
-    "Two free ways to learn Sri Lanka — the Survival Sri Lanka phrase decks in Sinhala and Tamil, and a heritage explorer covering the island and Colombo.",
+    "Two free ways to learn Sri Lanka: the Survival Sri Lanka phrase decks in Sinhala and Tamil, and a heritage explorer covering the island and Colombo.",
 };
 
 export const revalidate = 60;
@@ -133,7 +133,7 @@ export default async function GamesPage() {
         <div className="mt-16 rounded-2xl border border-dashed border-ink-900/15 bg-sand-100/60 p-8 text-center">
           <p className="font-display text-lg text-ink-900">More phases are being written</p>
           <p className="mx-auto mt-2 max-w-xl text-sm leading-relaxed text-ink-500">
-            Phase 1 gets you through arrival. Phase 2 is about staying — work, renting,
+            Phase 1 gets you through arrival. Phase 2 is about staying: work, renting,
             doctors, and the small talk that turns acquaintances into friends. If there is
             a situation you keep getting stuck in, tell your tutor and it may well end up
             in a chapter.

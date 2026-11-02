@@ -38,7 +38,7 @@ const requestSchema = z.object({
   reason: z
     .string({ error: "Tell us a little about why." })
     .trim()
-    .min(10, "Tell us a little about why — a sentence or two.")
+    .min(10, "Tell us a little about why, in at least 10 characters.")
     .max(2000, "Keep it under 2000 characters."),
   bookingId: z.string().optional(),
   cause: z.enum(["tutor_absent", "technical", "student_unable", "other"]).optional(),
@@ -110,7 +110,7 @@ requestsRouter.post(
       await deliver({
         to: student.email,
         subject: "Your lesson has been refunded",
-        body: `We have refunded your unused lesson to the card you paid with. Your bank may take 5 to 10 working days to show it.\n\nThe lesson has been taken off your account, so it can no longer be booked. Thank you for learning with us — you are welcome back any time: ${config.appUrl}/portal/calendar`,
+        body: `We have refunded your unused lesson to the card you paid with. Your bank may take 5 to 10 working days to show it.\n\nThe lesson has been taken off your account, so it can no longer be booked. Thank you for learning with us. You are welcome back any time: ${config.appUrl}/portal/calendar`,
         kind: "notification",
       });
     }
@@ -142,7 +142,7 @@ requestsRouter.post(
         throw new ApiError("Only a lesson that was booked and paid for can be reported as missed.");
       }
       const started = new Date(booking.startsAt).getTime();
-      if (started > Date.now()) throw new ApiError("That lesson has not happened yet — you can still move it.");
+      if (started > Date.now()) throw new ApiError("That lesson has not happened yet. You can still move it.");
       if (Date.now() - started > MISSED_REPORT_DAYS * 86_400_000) {
         throw new ApiError(`Missed lessons can be reported up to ${MISSED_REPORT_DAYS} days afterwards.`);
       }
@@ -224,7 +224,7 @@ requestsRouter.post(
   wrap(async (request, response) => {
     const actor = requireUser(request);
     const { note } = parseBody(decisionSchema, request.body ?? {});
-    if (!note) throw new ApiError("Say why, in a line — the student gets this note.");
+    if (!note) throw new ApiError("Say why, in a line. The student gets this note.");
     const item = await loadPending(pathParam(request, "id"));
 
     const updated = await db().studentRequests.updateOne(

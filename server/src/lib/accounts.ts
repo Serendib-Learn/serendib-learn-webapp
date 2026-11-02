@@ -58,7 +58,7 @@ export async function sendInvite(user: User, invitedBy: string): Promise<void> {
   await deliver({
     to: user.email,
     subject: "Your Serendib Learn account is ready",
-    body: `${invitedBy} has set up ${what} for you on Serendib Learn.\n\nChoose your password here — the link works once, for seven days:\n\n${link.url}\n\nIf you were not expecting this, you can ignore it.`,
+    body: `${invitedBy} has set up ${what} for you on Serendib Learn.\n\nChoose your password here. The link works once, for seven days:\n\n${link.url}\n\nIf you were not expecting this, you can ignore it.`,
     kind: "password_reset",
     token: link.token,
   });

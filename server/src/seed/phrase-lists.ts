@@ -23,7 +23,7 @@ const lists: Omit<PhraseList, "stage" | "updatedAt">[] = [
         sinhalaRoman: "Ayubowan",
         tamil: "வணக்கம்",
         tamilRoman: "Vanakkam",
-        note: "The all-purpose greeting — palms together, slight nod.",
+        note: "The all-purpose greeting: palms together, slight nod.",
       },
       {
         n: 2,
@@ -88,7 +88,7 @@ const lists: Omit<PhraseList, "stage" | "updatedAt">[] = [
         sinhalaRoman: "Mama tikak kathaakaranava",
         tamil: "நான் கொஞ்சம் பேசுவேன்",
         tamilRoman: "Naan konjam pesuven",
-        note: "Softens the conversation — most people will smile and slow down.",
+        note: "Softens the conversation. Most people will smile and slow down.",
       },
     ],
   },
@@ -134,8 +134,8 @@ const lists: Omit<PhraseList, "stage" | "updatedAt">[] = [
       {
         n: 5,
         english: "Can we stop for a bathroom?",
-        sinhala: "වැසිකිළියට නවත්තන්න පුළුවන්ද?",
-        sinhalaRoman: "Wesikiliyata nawaththanna puluvanda?",
+        sinhala: "ටොයිලට් එකකට නවත්තන්න පුළුවන්ද?",
+        sinhalaRoman: "Toilet ekakata nawaththanna puluvanda?",
         tamil: "கழிவறைக்கு நிறுத்த முடியுமா?",
         tamilRoman: "Kazhivaraiku niruththa mudiyumaa?",
       },
@@ -316,7 +316,7 @@ const lists: Omit<PhraseList, "stage" | "updatedAt">[] = [
     number: 5,
     emoji: "🍛",
     title: "Ordering food",
-    scene: "Kottu, hoppers, rice and curry — and 'no chilli' when you need it.",
+    scene: "Kottu, hoppers, rice and curry, and 'no chilli' when you need it.",
     phrases: [
       {
         n: 1,
@@ -503,7 +503,7 @@ const lists: Omit<PhraseList, "stage" | "updatedAt">[] = [
     number: 8,
     emoji: "🏡",
     title: "Meeting relatives",
-    scene: "Ammachi, Seeya, Aiya, Akka — greetings that matter.",
+    scene: "Ammachi, Seeya, Aiya, Akka: greetings that matter.",
     phrases: [
       {
         n: 1,

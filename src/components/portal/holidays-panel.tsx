@@ -54,7 +54,7 @@ export function HolidaysPanel({ holidays }: { holidays: Holiday[] }) {
       </p>
 
       {list.length === 0 ? (
-        <p className="text-xs text-earth/50">That is everything we have so far — next year&apos;s dates are added once they are gazetted.</p>
+        <p className="text-xs text-earth/50">That is everything we have so far. Next year&apos;s dates are added once they are gazetted.</p>
       ) : (
         <div className="max-h-[420px] space-y-3 overflow-y-auto pr-1">
           {list.map((holiday) => (

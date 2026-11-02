@@ -66,7 +66,7 @@ export function TutorDashboard({ user }: { user: User }) {
           <div className="min-w-0">
             <p className="font-medium text-ink-800">Finish your tutor profile</p>
             <p className="text-xs leading-relaxed text-ink-500">
-              Students choose a tutor from your headline and introduction — add both so they
+              Students choose a tutor from your headline and introduction. Add both so they
               know who they are booking.
             </p>
           </div>

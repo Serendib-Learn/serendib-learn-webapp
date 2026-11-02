@@ -38,7 +38,7 @@ function member(user: User, viewerId: string, connection: Connection | null): Co
 function requireVetted(user: User) {
   if (!isVetted(user)) {
     throw forbidden(
-      "Practice partners open up once you have booked your first lesson — that is how we vet everyone here.",
+      "Practice partners open up once you have booked your first lesson. That is how we vet everyone here.",
     );
   }
 }

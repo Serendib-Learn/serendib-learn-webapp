@@ -89,7 +89,7 @@ async function remindStudent(booking: Booking, first: boolean): Promise<boolean>
     subject: first
       ? `How was your lesson with ${tutor?.name ?? "your tutor"}?`
       : `A reminder: tell us how your lesson went`,
-    body: `It takes a minute: a star rating and a sentence, or just a quick voice note if that is easier.\n\nOpen your portal at ${config.appUrl}/portal — your lesson on "${booking.focus}" is waiting at the top.\n\nYour feedback goes to your tutor and helps us keep every lesson on Serendib this good.`,
+    body: `It takes a minute: a star rating and a sentence, or just a quick voice note if that is easier.\n\nOpen your portal at ${config.appUrl}/portal. Your lesson on "${booking.focus}" is waiting at the top.\n\nYour feedback goes to your tutor and helps us keep every lesson on Serendib this good.`,
     kind: "notification",
   });
   return true;
@@ -105,7 +105,7 @@ async function remindTutor(booking: Booking, first: boolean): Promise<boolean> {
     subject: first
       ? `Write up your lesson with ${student?.name ?? "your student"}`
       : `Reminder: ${student?.name ?? "your student"} is waiting for their lesson write-up`,
-    body: `A short note after every session is part of the Serendib promise: what you covered, what went well, what to work on, and the new words. A voice note works too.\n\nOpen your portal at ${config.appUrl}/portal — the lesson is waiting at the top.`,
+    body: `A short note after every session is part of the Serendib promise: what you covered, what went well, what to work on, and the new words. A voice note works too.\n\nOpen your portal at ${config.appUrl}/portal. The lesson is waiting at the top.`,
     kind: "notification",
   });
   return true;

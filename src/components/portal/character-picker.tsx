@@ -85,7 +85,7 @@ export function CharacterPicker({
         </div>
       ) : (
         <p className="mt-2 text-xs text-ink-400">
-          Optional — without one, your initials are shown instead.
+          Optional. Without one, your initials are shown instead.
         </p>
       )}
     </div>

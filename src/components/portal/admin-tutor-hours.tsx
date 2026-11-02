@@ -33,7 +33,7 @@ function lessonStatus(lesson: TutorHoursLesson): { tone: Tone; label: string } {
   if (lesson.dispute) {
     return {
       tone: "clay",
-      label: `Reported missed${lesson.dispute.cause ? ` — ${causeLabel[lesson.dispute.cause]}` : ""}${lesson.dispute.status === "approved" ? " (approved)" : ""}`,
+      label: `Reported missed${lesson.dispute.cause ? `: ${causeLabel[lesson.dispute.cause]}` : ""}${lesson.dispute.status === "approved" ? " (approved)" : ""}`,
     };
   }
   if (!lesson.writtenUp) return { tone: "saffron", label: "Awaiting write-up" };

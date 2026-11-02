@@ -177,6 +177,7 @@ export async function openMongoStore(uri: string, dbName: string): Promise<Store
     "googleMailer",
     "oauthStates",
     "reminderClaims",
+    "dataFixes",
     "paymentEvents",
     "availability",
     "bookings",

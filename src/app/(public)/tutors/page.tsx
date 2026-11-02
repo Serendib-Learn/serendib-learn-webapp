@@ -7,7 +7,7 @@ import { lkr } from "@/lib/format";
 export const metadata: Metadata = {
   title: "Tutors",
   description:
-    "The Sinhala and Tamil tutors at Serendib Learn — who they are, where they are from, and what they are best at teaching.",
+    "The Sinhala and Tamil tutors at Serendib Learn: who they are, where they are from, and what they are best at teaching.",
 };
 
 // Re-read the roster at most once a minute, so a newly approved tutor or an
@@ -26,7 +26,7 @@ export default async function TutorsPage() {
             Everyone here grew up speaking it.
           </h1>
           <p className="mt-6 max-w-2xl text-lg leading-relaxed text-ink-600">
-            Every tutor is interviewed by us before they join — we assess fluency, warmth
+            Every tutor is interviewed by us before they join. We assess fluency, warmth
             and reliability, and keep the roster small so that we know every person on it.
             If none of them fit, tell us and we will find someone who does.
           </p>

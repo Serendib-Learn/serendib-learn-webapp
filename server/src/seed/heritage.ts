@@ -24,7 +24,7 @@ const sites: (Omit<HeritageSite, "id" | "updatedAt"> & { slug: string })[] = [
     facts: [
       { label: "Laid out", value: "1859, by Governor Sir Henry Ward" },
       { label: "Length", value: "About 500 m along the sea wall" },
-      { label: "Eat", value: "Isso wade — deep-fried lentil patties topped with prawns" },
+      { label: "Eat", value: "Isso wade: deep-fried lentil patties topped with prawns" },
       { label: "Best time", value: "An hour before sunset, any day of the week" },
     ],
     meltingPot:
@@ -43,12 +43,12 @@ const sites: (Omit<HeritageSite, "id" | "updatedAt"> & { slug: string })[] = [
     lng: 79.8562,
     hook: "A bazaar district where each street sells one thing, and every street sells it to everyone.",
     story: [
-      "Pettah takes its name from the Tamil pettai, meaning the settlement outside the fort walls. The Sinhala name says the same thing — Pita Kotuwa, outside the fort. Two languages, one description, which tells you most of what you need to know about the place.",
+      "Pettah takes its name from the Tamil pettai, meaning the settlement outside the fort walls. The Sinhala name says the same thing: Pita Kotuwa, outside the fort. Two languages, one description, which tells you most of what you need to know about the place.",
       "The district is organised by trade rather than by map. Sea Street is goldsmiths, Gabo's Lane is ayurvedic herbs and spices, Fifth Cross Street is electrical parts, First Cross Street is fabric. Ask for an address and you will be given a trade instead.",
       "At the centre stands the Khan Clock Tower, put up in 1923 by a Parsi merchant family from Bombay who had settled in Colombo. It is the landmark everyone navigates by, and nobody thinks it odd that the middle of a Sinhala and Tamil bazaar is marked by a Parsi family's gift.",
     ],
     facts: [
-      { label: "Name", value: "From Tamil pettai — the town outside the fort" },
+      { label: "Name", value: "From Tamil pettai: the town outside the fort" },
       { label: "Landmark", value: "Khan Clock Tower, 1923" },
       { label: "Gold", value: "Sea Street, the goldsmiths' quarter" },
       { label: "Go early", value: "Before 9am, before the heat and the crowds" },
@@ -159,7 +159,7 @@ const sites: (Omit<HeritageSite, "id" | "updatedAt"> & { slug: string })[] = [
     ],
     facts: [
       { label: "Age", value: "Considered Colombo's oldest Hindu temple" },
-      { label: "Festival", value: "Vel — the chariot procession through the city" },
+      { label: "Festival", value: "Vel: the chariot procession through the city" },
       { label: "Setting", value: "Beside the Maradana railway yards" },
     ],
     meltingPot:
@@ -179,14 +179,14 @@ const sites: (Omit<HeritageSite, "id" | "updatedAt"> & { slug: string })[] = [
     hook: "A king built his palace on top of a two hundred metre rock, and put a lion in the doorway.",
     story: [
       "King Kashyapa took the throne in the 470s by walling up his father alive, then moved the capital to the top of a granite monolith where his brother could not easily reach him.",
-      "The way up passes a sheer face of frescoes — women in procession, painted around the rock — and then the mirror wall, polished plaster carrying more than a thousand years of visitors' graffiti. Some of the scratched verses are the oldest Sinhala writing of their kind.",
+      "The way up passes a sheer face of frescoes (women in procession, painted around the rock) and then the mirror wall, polished plaster carrying more than a thousand years of visitors' graffiti. Some of the scratched verses are the oldest Sinhala writing of their kind.",
       "At the summit are the foundations of the palace, cisterns cut into the rock, and gardens laid out below with a symmetry that only makes sense from up here. Kashyapa lasted eighteen years. The rock has done rather better.",
     ],
     facts: [
       { label: "Built", value: "Late 5th century, by King Kashyapa" },
       { label: "Height", value: "About 180 m above the surrounding plain" },
       { label: "UNESCO", value: "World Heritage since 1982" },
-      { label: "Climb", value: "Roughly 1,200 steps — go at opening time" },
+      { label: "Climb", value: "Roughly 1,200 steps. Go at opening time" },
     ],
     pairedChapter: "tuk-tuk-adventure",
   },
@@ -233,7 +233,7 @@ const sites: (Omit<HeritageSite, "id" | "updatedAt"> & { slug: string })[] = [
       { label: "Capital", value: "From the 4th century BCE for over 1,000 years" },
       { label: "Sri Maha Bodhi", value: "Planted 3rd century BCE" },
       { label: "UNESCO", value: "World Heritage since 1982" },
-      { label: "Getting round", value: "Hire a bicycle — the site is enormous" },
+      { label: "Getting round", value: "Hire a bicycle: the site is enormous" },
     ],
   },
   {
@@ -248,13 +248,13 @@ const sites: (Omit<HeritageSite, "id" | "updatedAt"> & { slug: string })[] = [
     hook: "The second capital, compact enough to see in a day, and the finest stone carving on the island.",
     story: [
       "After Anuradhapura fell, the kings moved here. Parakramabahu I rebuilt the city in the 12th century and dammed a reservoir so large it is still called the Sea of Parakrama.",
-      "The Gal Vihara is the reason people come — four figures of the Buddha cut from a single granite face, including a standing figure with folded arms and a reclining figure fourteen metres long. The stone's natural banding runs through the carving and the sculptors used it deliberately.",
+      "The Gal Vihara is the reason people come: four figures of the Buddha cut from a single granite face, including a standing figure with folded arms and a reclining figure fourteen metres long. The stone's natural banding runs through the carving and the sculptors used it deliberately.",
       "Parakramabahu is remembered for a line about water: not a drop should reach the sea without first serving people. The irrigation works around the city were the argument.",
     ],
     facts: [
       { label: "Peak", value: "12th century, under Parakramabahu I" },
       { label: "Gal Vihara", value: "Four Buddhas cut from one granite face" },
-      { label: "Reservoir", value: "Parakrama Samudra — the Sea of Parakrama" },
+      { label: "Reservoir", value: "Parakrama Samudra (the Sea of Parakrama)" },
       { label: "UNESCO", value: "World Heritage since 1982" },
     ],
   },
@@ -270,7 +270,7 @@ const sites: (Omit<HeritageSite, "id" | "updatedAt"> & { slug: string })[] = [
     unesco: true,
     hook: "A tooth of the Buddha, and the kingdom that was built around keeping it.",
     story: [
-      "The relic arrived on the island in the 4th century and became a proof of the right to rule — whoever held the tooth held the country. It moved from capital to capital as kingdoms rose and fell, and ended up in Kandy.",
+      "The relic arrived on the island in the 4th century and became a proof of the right to rule: whoever held the tooth held the country. It moved from capital to capital as kingdoms rose and fell, and ended up in Kandy.",
       "The temple sits beside the old royal palace on the edge of Kandy Lake. The relic itself stays in a casket within a casket and is almost never shown; the daily thevava ceremonies of drumming and offerings take place in front of the closed shrine.",
       "Kandy held out against the Portuguese and the Dutch and was the last kingdom on the island to fall, in 1815. Every July or August the Esala Perahera takes the relic's casket through the streets behind dancers, drummers and tusked elephants.",
     ],
@@ -349,7 +349,7 @@ const sites: (Omit<HeritageSite, "id" | "updatedAt"> & { slug: string })[] = [
     ],
     facts: [
       { label: "Built", value: "Around 1921, on the Badulla line" },
-      { label: "Arches", value: "Nine, in stone and brick — no steel" },
+      { label: "Arches", value: "Nine, in stone and brick, with no steel" },
       { label: "Getting there", value: "A 25 minute walk from Ella along the track" },
     ],
     pairedChapter: "finding-your-driver",
@@ -364,7 +364,7 @@ const sites: (Omit<HeritageSite, "id" | "updatedAt"> & { slug: string })[] = [
     lng: 80.028,
     hook: "Jaffna's great temple to Murugan, destroyed once and rebuilt on a different spot.",
     story: [
-      "The original temple was a centre of the Jaffna kingdom until the Portuguese destroyed it in 1620. Rebuilding began in 1734 on a nearby site, and has essentially never stopped — the gopurams, halls and gold work have been added to for close to three centuries.",
+      "The original temple was a centre of the Jaffna kingdom until the Portuguese destroyed it in 1620. Rebuilding began in 1734 on a nearby site, and has essentially never stopped. The gopurams, halls and gold work have been added to for close to three centuries.",
       "Men remove their shirts to enter, a custom kept here more strictly than at most kovils on the island.",
       "The annual festival runs for twenty-five days and fills Jaffna with people who have come home for it, some from a long way away.",
     ],
@@ -406,7 +406,7 @@ const sites: (Omit<HeritageSite, "id" | "updatedAt"> & { slug: string })[] = [
     hook: "Hills terraced with tea, worked by families brought here five generations ago.",
     story: [
       "Coffee failed in the 1860s, and the British planters replaced it with tea. James Taylor put in the first commercial plantation at Loolecondera in 1867, and within thirty years the hill country had been remade into estates, factories and narrow-gauge lines.",
-      "The labour came from South India — Tamil workers recruited in their thousands, whose descendants still live and work on the estates. Their citizenship was only fully resolved late in the twentieth century.",
+      "The labour came from South India: Tamil workers recruited in their thousands, whose descendants still live and work on the estates. Their citizenship was only fully resolved late in the twentieth century.",
       "Nuwara Eliya at the centre of it was built to look like an English hill town, with a racecourse, a golf course and a post office in red brick, at nearly 1,900 metres.",
     ],
     facts: [

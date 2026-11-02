@@ -75,7 +75,7 @@ export function AdminRequests() {
                 <p className="text-xs text-ink-400">
                   Decided {item.decidedAt ? relativeTime(item.decidedAt) : ""}
                   {item.decidedById ? ` by ${byId.get(item.decidedById)?.name ?? "an administrator"}` : ""}
-                  {item.decisionNote ? ` — “${item.decisionNote}”` : ""}
+                  {item.decisionNote ? `: “${item.decisionNote}”` : ""}
                 </p>
               </div>
               <Badge tone={statusTone[item.status]}>{item.status === "approved" ? "Approved" : "Declined"}</Badge>
@@ -119,7 +119,7 @@ function PendingRequest({ item, people }: { item: StudentRequest; people: Map<st
           {item.kind === "missed_session" ? (
             <p className="mt-2 text-sm text-ink-600">
               {booking.data
-                ? `Lesson on ${formatDateTime(booking.data.startsAt)} with ${people.get(booking.data.tutorId)?.name ?? "their tutor"} — ${booking.data.focus}.`
+                ? `Lesson on ${formatDateTime(booking.data.startsAt)} with ${people.get(booking.data.tutorId)?.name ?? "their tutor"}: ${booking.data.focus}.`
                 : "The lesson they missed."}{" "}
               {item.cause ? <span className="font-medium">{causeLabel[item.cause]}.</span> : null}
             </p>
@@ -158,7 +158,7 @@ function PendingRequest({ item, people }: { item: StudentRequest; people: Map<st
           Decline
         </Button>
         <Button disabled={busy} onClick={() => void approve.run()}>
-          {approve.pending ? "Approving…" : "Approve — give a free lesson"}
+          {approve.pending ? "Approving…" : "Approve and give a free lesson"}
         </Button>
       </div>
       {dialog}

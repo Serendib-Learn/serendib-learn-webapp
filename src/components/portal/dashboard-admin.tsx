@@ -54,7 +54,7 @@ export function AdminDashboard({ user }: { user: User }) {
           <p className="font-medium text-forest">Finish connecting Google</p>
           <ul className="mt-2 space-y-1 text-sm text-earth/70">
             {mailer.data && !mailer.data.connected ? (
-              <li>• Gmail is not connected, so no email reaches a real inbox — not verification codes, receipts or lesson reminders.</li>
+              <li>• Gmail is not connected, so no email reaches a real inbox: not verification codes, receipts or lesson reminders.</li>
             ) : null}
             {calendar.data && !calendar.data.connected ? (
               <li>• The Serendib calendar is not connected, so bookings only get a Meet link if their tutor connected their own calendar.</li>
