@@ -3,10 +3,14 @@ import process from "node:process";
 
 const root = path.resolve(import.meta.dirname, "..");
 
+/**
+ * A list setting, separated by commas or spaces — spaces because the Cloud
+ * Run deploy action splits its env_vars on commas.
+ */
 function list(value: string | undefined, fallback: string[]): string[] {
   if (!value) return fallback;
   return value
-    .split(",")
+    .split(/[,\s]+/)
     .map((entry) => entry.trim())
     .filter(Boolean);
 }

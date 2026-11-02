@@ -12,7 +12,7 @@ import { deliver } from "../lib/mail.ts";
 import { checkoutFor, paymentsEnabled } from "../lib/payments.ts";
 import { requireAuth, requireSelfOrAdmin, requireUser } from "../lib/sessions.ts";
 import { formatInZone, validTimezone } from "../lib/time.ts";
-import { syncBookingPayment } from "./payments.ts";
+import { syncBookingPayment } from "../lib/unpaid-bookings.ts";
 import type { Booking, LanguageCode, User } from "../../../shared/types.ts";
 
 export const bookingsRouter = Router();

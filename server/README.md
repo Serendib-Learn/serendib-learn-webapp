@@ -142,6 +142,12 @@ real ones — the key decides, the API address is the same.
 4. Confirmation (`lib/booking-confirmation.ts`, shared with the demo path and
    admin "mark paid") makes the Meet link, activates membership, and emails a
    receipt and a tutor notice. It is idempotent.
+5. **Unpaid bookings let go** (`lib/unpaid-bookings.ts`, run with the
+   reminders every few minutes): a booking whose checkout was never opened
+   is released after 30 minutes, one whose checkout ran out 5 minutes after
+   it expired — its checkout is asked first, in case it was paid and the
+   webhook was missed. A checkout from the other mode (sandbox, now payments
+   are live) is released without asking. The student is emailed.
 
 Once a key is set, `POST /bookings/:id/pay` (the instant demo confirm) is
 refused for students; admins keep it to record a payment taken some other way.

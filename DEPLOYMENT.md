@@ -463,11 +463,29 @@ build there instead, the way the prototype was hosted:
    that currently point at the Lovable prototype with Vercel's. The prototype
    keeps running at its own Lovable URL until you remove it, so there is an
    easy way back.
-4. Map `api.serendiblearn.com` to the Cloud Run service (step 2) and set the
-   GitHub variables `APP_URL=https://www.serendiblearn.com` and
-   `API_URL=https://api.serendiblearn.com`; update the Google OAuth client's
-   JavaScript origin and redirect URI, and the Payments.lk webhook URL, to
-   match. Set Vercel's `NEXT_PUBLIC_API_URL` to the API domain and redeploy.
+4. **Before the DNS switch**, let the API accept both sites: set the
+   `production` environment variable `CORS_ORIGINS` to the old and new
+   origins, separated by spaces (the deploy action splits on commas), e.g.
+   `https://serendib-learn-webapp.vercel.app https://www.serendiblearn.com https://serendiblearn.com`,
+   and re-run the API deploy. Without it the new domain's every API call
+   fails CORS. (`CORS_ORIGINS` falls back to `APP_URL` when unset.)
+5. Map `api.serendiblearn.com` to the Cloud Run service
+   (`gcloud beta run domain-mappings create --service serendib-api --domain api.serendiblearn.com --region us-central1`,
+   after verifying the domain in Search Console) and add its CNAME
+   (`ghs.googlehosted.com`). Wait for its certificate.
+6. In the Google OAuth client, **add** (keep the old ones) the JavaScript
+   origin `https://www.serendiblearn.com` and the redirect URI
+   `https://api.serendiblearn.com/api/integrations/google/callback`.
+7. Set Vercel's `NEXT_PUBLIC_API_URL=https://api.serendiblearn.com` and
+   `NEXT_PUBLIC_SITE_URL=https://www.serendiblearn.com` and redeploy (the
+   image optimiser's allowed photo host follows `NEXT_PUBLIC_API_URL`). Then
+   set the GitHub variables `APP_URL=https://www.serendiblearn.com` and
+   `API_URL=https://api.serendiblearn.com` and re-run the API deploy:
+   `APP_URL` is where email links and the Payments.lk return page point,
+   `API_URL` the Google callback.
+8. Optionally move the Payments.lk live webhook to
+   `https://api.serendiblearn.com/api/payments/webhook`; the `run.app`
+   address keeps working either way.
 
 The site is installable like the prototype was ("Add to Home Screen" /
 "Install app") — the manifest and the prototype's icons ship with it.
@@ -489,12 +507,12 @@ The site is installable like the prototype was ("Add to Home Screen" /
 - [ ] `COOKIE_SAMESITE=none` + `COOKIE_SECURE=true` in the API's deployed env (already set) — required because Vercel and Cloud Run are different domains
 - [ ] (optional) Cloudflare Turnstile site created at [dash.cloudflare.com](https://dash.cloudflare.com/?to=/:account/turnstile) if you want CAPTCHA on signup/waitlist — `TURNSTILE_SECRET_KEY` as a Cloud Run secret, `NEXT_PUBLIC_TURNSTILE_SITE_KEY` as a Vercel env var. Skipping this just means no CAPTCHA, same as local dev today.
 - [ ] Owners' super admin created (`SUPER_ADMIN_EMAIL` or `create-admin`), and any demo accounts left over from a demo-mode start deleted (step 9)
-- [x] Payments.lk sandbox profile created, `PAYMENTS_LK_SECRET_KEY` + `PAYMENTS_LK_WEBHOOK_SECRET` in Secret Manager and referenced in `deploy-backend.yml`, webhook registered (step 7) — sandbox card payment and signed webhook verified. Still to do: swap in the `sk_live_…` key (and the live webhook's secret) once Payments.lk approves the account
+- [x] Payments.lk **live** since 2 Nov 2026: `sk_live_…` key (version 4) and the live webhook's secret (version 3) in Secret Manager, old test versions disabled, `/api/payments/config` reports `mode: live`, a dashboard test event to the live webhook accepted (step 7)
 - [x] Serendib Google account connected under Administration → Google, so every booking gets a Meet link — done 28 Oct 2026
 - [x] `CRON_SECRET` + the Cloud Scheduler job for lesson and feedback reminders (step 8) — set up
 - [x] Gmail sender connected under Administration → Google and its test button pressed — done 28 Oct 2026 (serendib.learn@gmail.com)
 - [ ] Google OAuth consent screen **published** and submitted for verification (sensitive scopes: `calendar.events`, `gmail.send`)
-- [ ] Terms of service and a refund/cancellation policy written and linked (payment providers expect them), privacy policy wording confirmed
-- [ ] Real tutors invited or approved, with their profiles, rates and weekly hours filled in
+- [x] Terms (`/terms`) and Cancellation and Refund Policy (`/refunds`) live and linked, 2 Nov 2026
+- [ ] Real tutors invited or approved, with their profiles, timezone and weekly hours filled in
 - [ ] Alphabet sheets checked by tutors (Portal → Content) and next year's holidays added before January
 - [ ] Push to `main` → CI runs → deploy workflow runs → visit your domain

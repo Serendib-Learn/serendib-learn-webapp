@@ -906,6 +906,11 @@ sequenceDiagram
   - `payment.failed` records the decline reason.
   - `checkout.expired` cancels the booking, releases the slot and emails
     the student.
+- **Unpaid bookings.** The reminders job (every 5 minutes) also releases
+  any booking left unpaid: 30 minutes after booking if the checkout was
+  never opened, or once its checkout has run out (`lib/unpaid-bookings.ts`).
+  It checks the checkout first, so a payment whose webhook went missing is
+  confirmed, never released.
   - A bad signature returns 400. If payments aren't configured, the
     endpoint returns 404.
 - **Confirmation** (`confirmBooking`) is idempotent. It:

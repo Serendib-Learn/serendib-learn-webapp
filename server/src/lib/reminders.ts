@@ -9,6 +9,7 @@ import {
 } from "./feedback.ts";
 import { deliver } from "./mail.ts";
 import { formatInZone } from "./time.ts";
+import { releaseUnpaidBookings } from "./unpaid-bookings.ts";
 import type { Booking } from "../../../shared/types.ts";
 
 /**
@@ -143,11 +144,17 @@ export async function runLessonReminders(now = Date.now()): Promise<number> {
   return sent;
 }
 
-/** Everything timed: before-the-lesson and after-the-lesson reminders. */
-export async function runReminders(now = Date.now()): Promise<{ lesson: number; feedback: number }> {
+/**
+ * Everything timed: before-the-lesson and after-the-lesson reminders, and
+ * releasing hours held by bookings that were never paid for.
+ */
+export async function runReminders(
+  now = Date.now(),
+): Promise<{ lesson: number; feedback: number; released: number }> {
   return {
     lesson: await runLessonReminders(now),
     feedback: await runFeedbackReminders(now),
+    released: await releaseUnpaidBookings(now),
   };
 }
 

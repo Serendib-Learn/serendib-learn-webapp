@@ -24,7 +24,7 @@ after(async () => {
 });
 
 let slot = 0;
-/** A tutor (approved, $25/hr default) and a student with a booking awaiting payment. */
+/** A tutor (approved) and a student with a booking awaiting payment (LKR 5,000 for the hour). */
 async function awaitingBooking(name: string) {
   const tutor = await signedUpUser(harness, "tutor", `${name}-tutor@example.com`);
   const student = await signedUpUser(harness, "student", `${name}-student@example.com`);
@@ -164,4 +164,64 @@ test("status check: confirms from the checkout itself when no webhook arrives (l
 
   const tutorView = await tutor.client.post(`/bookings/${booking.id}/checkout`);
   assert.equal(tutorView.status, 403, "only the student starts a checkout");
+});
+
+test("unpaid bookings release their hour: 30 minutes with no checkout, or once the checkout runs out", async () => {
+  const { db } = await import("../db/database.ts");
+  const { releaseUnpaidBookings } = await import("../lib/unpaid-bookings.ts");
+  const minutesAgo = (minutes: number) => new Date(Date.now() - minutes * 60_000).toISOString();
+  const status = async (id: string) => (await db().bookings.findById(id))?.status;
+  const withCheckout = async (name: string) => {
+    const made = await awaitingBooking(name);
+    assert.equal((await made.student.client.post(`/bookings/${made.booking.id}/checkout`)).status, 200);
+    const booking = (await db().bookings.findById(made.booking.id))!;
+    return { ...made, booking, checkoutId: booking.payment!.checkoutId };
+  };
+  const expireLocally = async (id: string, minutes: number) => {
+    const booking = (await db().bookings.findById(id))!;
+    await db().bookings.updateOne({ id }, { payment: { ...booking.payment!, expiresAt: minutesAgo(minutes) } });
+  };
+
+  // Never opened the checkout: held 30 minutes, then released, and the student is told.
+  const stale = await awaitingBooking("unpaid-stale");
+  await db().bookings.updateOne({ id: stale.booking.id }, { createdAt: minutesAgo(31) });
+  const fresh = await awaitingBooking("unpaid-fresh");
+
+  // A checkout that ran out, one still open, and one paid whose webhook never came.
+  const ranOut = await withCheckout("unpaid-ranout");
+  payments.expire(ranOut.checkoutId);
+  await expireLocally(ranOut.booking.id, 10);
+  const open = await withCheckout("unpaid-open");
+  const paid = await withCheckout("unpaid-paid");
+  payments.pay(paid.checkoutId);
+  await expireLocally(paid.booking.id, 10);
+
+  // A checkout from the other mode (sandbox, once payments are live) can never be paid.
+  const otherMode = await withCheckout("unpaid-othermode");
+  const otherBooking = (await db().bookings.findById(otherMode.booking.id))!;
+  await db().bookings.updateOne(
+    { id: otherMode.booking.id },
+    { payment: { ...otherBooking.payment!, mode: "live", checkoutId: "chk_from_the_other_mode", expiresAt: minutesAgo(60) } },
+  );
+
+  // At least these three (the demo seed has a stale one of its own).
+  assert.ok((await releaseUnpaidBookings()) >= 3);
+  assert.equal(await status(stale.booking.id), "cancelled");
+  assert.equal(await status(fresh.booking.id), "awaiting_payment");
+  assert.equal(await status(ranOut.booking.id), "cancelled");
+  assert.equal(await status(open.booking.id), "awaiting_payment");
+  assert.equal(await status(paid.booking.id), "confirmed", "a paid checkout is confirmed, never released");
+  assert.equal(await status(otherMode.booking.id), "cancelled");
+  assert.match((await latestMail(harness, "unpaid-stale-student@example.com", "notification"))?.subject ?? "", /released/);
+
+  // The released hour can be booked again.
+  const again = await stale.student.client.post("/bookings", {
+    tutorId: stale.tutor.user.id,
+    startsAt: stale.booking.startsAt,
+    durationMins: 60,
+    language: "sinhala",
+    focus: "Second try",
+  });
+  assert.equal(again.status, 201, JSON.stringify(again.body));
+  assert.equal(await releaseUnpaidBookings(), 0, "nothing else is due");
 });

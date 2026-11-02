@@ -51,7 +51,7 @@ jobs:
           image: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/serendib/api:${{ github.sha }}
           flags: --allow-unauthenticated
           env_vars: |
-            CORS_ORIGINS=${{ vars.APP_URL }}
+            CORS_ORIGINS=${{ vars.CORS_ORIGINS || vars.APP_URL }}
             APP_URL=${{ vars.APP_URL }}
             MONGODB_DB_NAME=serendib_learn
             COOKIE_SAMESITE=none

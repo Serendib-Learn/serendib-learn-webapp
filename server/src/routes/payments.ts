@@ -10,10 +10,9 @@ import {
   paymentFromEvent,
   paymentsConfig,
   paymentsEnabled,
-  refreshFromCheckout,
   verifyWebhook,
 } from "../lib/payments.ts";
-import type { Booking } from "../../../shared/types.ts";
+import { releaseSlot } from "../lib/unpaid-bookings.ts";
 
 export const paymentsRouter = Router();
 
@@ -28,11 +27,6 @@ async function bookingForCheckout(reference: string | null, checkoutId: string) 
   const booking = await db().bookings.findById(reference);
   if (!booking || booking.payment?.checkoutId !== checkoutId) return null;
   return booking;
-}
-
-async function releaseSlot(booking: Booking, reason: string) {
-  if (booking.status !== "awaiting_payment") return;
-  await db().bookings.updateOne({ id: booking.id }, { status: "cancelled", cancelReason: reason });
 }
 
 /**
@@ -104,25 +98,3 @@ export const paymentsWebhook = wrap(async (request: Request, response: Response)
   await db().paymentEvents.insertOne({ id: event.id, type: event.type, receivedAt: nowIso() });
   response.json({ received: true });
 });
-
-/**
- * Brings a booking up to date from its checkout, for when the webhook has not
- * arrived (it never does on localhost). Returns the booking as it now stands.
- */
-export async function syncBookingPayment(booking: Booking): Promise<Booking> {
-  if (!paymentsEnabled() || !booking.payment || booking.status !== "awaiting_payment") {
-    return booking;
-  }
-
-  const outcome = await refreshFromCheckout(booking.payment);
-  if (outcome.kind === "paid") {
-    if (outcome.payment.amountCents !== booking.payment.amountCents) return booking;
-    return confirmBooking(booking, { payment: outcome.payment });
-  }
-  if (outcome.kind === "expired") {
-    await releaseSlot(booking, "The checkout expired before payment.");
-  } else {
-    await db().bookings.updateOne({ id: booking.id }, { payment: outcome.payment });
-  }
-  return (await db().bookings.findById(booking.id)) ?? booking;
-}

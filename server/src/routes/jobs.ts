@@ -13,7 +13,8 @@ function secretMatches(given: string): boolean {
 }
 
 /**
- * Runs the lesson and feedback reminders now. For Cloud Scheduler (or any cron) to call
+ * Runs the lesson and feedback reminders now, and releases hours held by
+ * unpaid bookings (lib/unpaid-bookings.ts). For Cloud Scheduler (or any cron) to call
  * every few minutes with the header `X-Cron-Secret: <CRON_SECRET>`, since an
  * idle Cloud Run instance gets no CPU for the in-process timer.
  */
