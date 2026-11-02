@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, ChevronLeft, ChevronRight, CircleHelp, MessageSquareText, Search, X } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight, MessageSquareText, Search, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -15,6 +15,7 @@ import {
   type HelpCategory,
   type HelpTopic,
 } from "@/lib/help-guide";
+import { AraliyaFlower } from "@/components/site/araliya-flower";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Textarea } from "@/components/ui/field";
 import { Alert } from "@/components/ui/primitives";
@@ -63,13 +64,13 @@ export function HelpWidget() {
         type="button"
         onClick={() => setOpen((value) => !value)}
         className={cn(
-          "fixed bottom-4 left-4 z-50 flex items-center gap-2 rounded-full bg-forest py-2.5 pr-4 pl-3 text-sm font-medium text-cream shadow-lifted transition hover:bg-fern print:hidden",
+          "fixed bottom-4 left-4 z-50 flex items-center gap-2 rounded-full bg-forest py-2 pr-4 pl-2 text-sm border border-cream/30 font-medium text-cream shadow-lifted transition hover:bg-fern print:hidden",
           open && "bg-fern",
         )}
         aria-expanded={open}
         aria-controls="help-panel"
       >
-        {open ? <X className="size-4.5" aria-hidden /> : <CircleHelp className="size-4.5" aria-hidden />}
+        <AraliyaFlower className="size-6" />
         Help
       </button>
 
@@ -324,7 +325,7 @@ function AskPrompt({ onAsk, label = "Can't find what you need?" }: { onAsk: () =
       <MessageSquareText className="size-4.5 shrink-0 text-amber-spice" aria-hidden />
       <span className="flex-1">
         <span className="block text-ink-500">{label}</span>
-        <span className="font-medium text-ink-900">Ask us — we reply by email</span>
+        <span className="font-medium text-ink-900">Ask us and we&rsquo;ll reply by email</span>
       </span>
       <ChevronRight className="size-4 text-ink-400" aria-hidden />
     </button>

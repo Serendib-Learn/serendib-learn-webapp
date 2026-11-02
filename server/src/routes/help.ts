@@ -34,7 +34,7 @@ const questionSchema = z.object({
   question: z
     .string({ error: "What's your question?" })
     .trim()
-    .min(10, "Tell us a little more — a sentence or two.")
+    .min(10, "Tell us a little more, a sentence or two.")
     .max(3000, "Keep it under 3000 characters."),
   page: z.string().max(200).optional(),
   turnstileToken: z.string().optional(),
@@ -117,7 +117,7 @@ helpRouter.post(
     await deliver({
       to: question.email,
       subject: "Re: your question to Serendib Learn",
-      body: `Hi ${question.name},\n\n${body}\n\n— ${actor.name}\n\nYou asked:\n${question.question}`,
+      body: `Hi ${question.name},\n\n${body}\n\nThanks,\n${actor.name}\n\nYou asked:\n${question.question}`,
       kind: "notification",
     });
     await logAudit(actor, "help_replied", question.name, question.email);
