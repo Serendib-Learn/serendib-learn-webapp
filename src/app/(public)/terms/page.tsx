@@ -95,6 +95,12 @@ export default function TermsPage() {
             Lessons booked with a lesson credit (a &quot;free lesson&quot;) are confirmed without a
             payment.
           </li>
+          <li>
+            A bundle is 5 or 10 lessons, with any of our tutors, chosen together and paid for in one
+            payment. Nothing renews. Until it is paid, a bundle holds its hours as one: it is released
+            together if it is not paid in time. Once paid, each lesson is moved, cancelled and refunded
+            like any other.
+          </li>
         </ul>
       </LegalSection>
 

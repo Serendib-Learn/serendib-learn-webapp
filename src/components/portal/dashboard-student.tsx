@@ -15,6 +15,7 @@ import { Badge, Card, EmptyState, Loading, Stat } from "@/components/ui/primitiv
 //   const phaseOne = { chapters: lists.data ?? [] };
 import type { User } from "@/lib/types";
 import { features } from "@/lib/features";
+import { checkoutHref } from "@/lib/checkout-link";
 
 export function StudentDashboard({ user }: { user: User }) {
   const bookings = useQuery(() => api.bookings.forUser(user.id), [user.id]);
@@ -79,7 +80,7 @@ export function StudentDashboard({ user }: { user: User }) {
                 booking={booking}
                 counterpart={tutorsById.get(booking.tutorId)}
                 actions={
-                  <ButtonLink href={`/portal/checkout/${booking.id}`} size="sm" variant="saffron">
+                  <ButtonLink href={checkoutHref(booking)} size="sm" variant="saffron">
                     Pay and confirm
                   </ButtonLink>
                 }

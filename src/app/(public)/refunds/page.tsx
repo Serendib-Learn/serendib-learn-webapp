@@ -43,6 +43,10 @@ export default function RefundsPage() {
             <strong>Unused lessons can be refunded within 30 days</strong> of paying for them.
           </li>
           <li>
+            <strong>Bundles of 5 or 10 lessons</strong> are paid for once, and each lesson in a
+            bundle follows these same rules.
+          </li>
+          <li>
             <strong>If your tutor or we cancel, you never lose out</strong>: you keep the lesson,
             or can have a full refund.
           </li>
@@ -112,6 +116,10 @@ export default function RefundsPage() {
           <li>a lesson your tutor or we cancelled, or a missed lesson whose report we upheld;</li>
           <li>a payment taken in error, such as a duplicate charge, at any time.</li>
         </ul>
+        <p>
+          For a bundle, each lesson counts as one fifth or one tenth of the payment: the lessons you
+          have not used can be refunded within 30 days of paying for the bundle.
+        </p>
         <p>We cannot refund:</p>
         <ul>
           <li>lessons that have taken place;</li>

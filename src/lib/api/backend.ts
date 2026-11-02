@@ -1,4 +1,6 @@
 import type {
+  BundleDetail,
+  BundleLessonInput,
   HelpKind,
   TutorHoursReport,
   AuditLogEntry,
@@ -189,6 +191,19 @@ export interface Backend {
     heldCredits(): Promise<LessonCredit[]>;
     /** Records an unused lesson as refunded to the card, so it can no longer be booked. Administrators only. */
     markCreditRefunded(id: string): Promise<LessonCredit>;
+  };
+
+  /** Bundles: 5 or 10 lessons with any tutors, booked together and paid for once. */
+  bundles: {
+    create(lessons: BundleLessonInput[]): Promise<BundleDetail>;
+    /** The bundle and its lessons, brought up to date from the payment provider first. */
+    get(id: string): Promise<BundleDetail>;
+    /** Starts the one card payment for the whole bundle; returns where to send the browser. */
+    startCheckout(id: string): Promise<{ url: string }>;
+    /** Demo checkout, or an admin recording a payment taken some other way. */
+    pay(id: string): Promise<BundleDetail>;
+    /** Lets an unpaid bundle go, freeing every hour in it. */
+    cancel(id: string): Promise<BundleDetail>;
   };
 
   /** Reports for administrators only. */

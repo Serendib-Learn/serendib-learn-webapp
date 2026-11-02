@@ -14,6 +14,7 @@ import { cn } from "@/lib/cn";
 const links = [
   { href: "/#how", label: "About us" },
   { href: "/tutors", label: "Tutors" },
+  { href: "/pricing", label: "Pricing" },
   { href: "/alphabet", label: "Alphabet" },
   // GAMES-HIDDEN: the original nav had "Play" here — see src/lib/features.ts.
   // { href: "/games", label: "Play" },

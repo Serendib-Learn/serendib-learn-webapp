@@ -13,6 +13,8 @@ import { AvailabilityEditor } from "@/components/portal/availability-editor";
 import { HolidaysPanel } from "@/components/portal/holidays-panel";
 import { MonthCalendar, toISODate, type DayMarks } from "@/components/portal/month-calendar";
 import { BookingRow } from "@/components/portal/booking-row";
+import { checkoutHref } from "@/lib/checkout-link";
+import { BookingModeSwitch, BundleSlot, BundleTray } from "@/components/portal/bundle-picker";
 import { FeedbackForm } from "@/components/portal/feedback-form";
 import {
   FreeLessonsPanel,
@@ -120,6 +122,14 @@ function CalendarWorkspace({ user }: { user: User }) {
   const [cursor, setCursor] = useState(() => new Date(today.getFullYear(), today.getMonth(), 1));
   const [selected, setSelected] = useState(todayISO);
   const [tutorFilter, setTutorFilter] = useState(params.get("tutor") ?? "");
+  // A bundle (?bundle=5 from the pricing page): pick that many hours, pay once.
+  const [bundleSize, setBundleSize] = useState<number | null>(() => {
+    const asked = Number(params.get("bundle"));
+    return isStudent && Number.isInteger(asked) && asked > 1 ? asked : null;
+  });
+  const [picked, setPicked] = useState<Slot[]>([]);
+  const [bundleLanguage, setBundleLanguage] = useState<LanguageCode>(user.languages[0] ?? "sinhala");
+  const [bundleFocus, setBundleFocus] = useState("");
 
   const bookings = useQuery(() => api.bookings.forUser(user.id), [user.id]);
   const people = useQuery(() => api.users.directory(), []);
@@ -167,10 +177,29 @@ function CalendarWorkspace({ user }: { user: User }) {
     .filter((slot) => toISODate(new Date(slot.startsAt)) === selected)
     .sort((a, b) => a.startsAt.localeCompare(b.startsAt));
   const holiday = holidayByDate.get(selected);
+  const bundleSizes = payments.data?.bundleSizes ?? [5, 10];
+  const isPicked = (slot: Slot) => picked.some((item) => item.tutorId === slot.tutorId && item.startsAt === slot.startsAt);
+  const clashes = (slot: Slot) => {
+    const start = new Date(slot.startsAt).getTime();
+    return picked.some((item) => {
+      const other = new Date(item.startsAt).getTime();
+      return start < other + item.durationMins * 60_000 && other < start + slot.durationMins * 60_000;
+    });
+  };
+  const chooseBundleSize = (size: number | null) => {
+    setBundleSize(size);
+    setPicked((current) => (size ? current.slice(0, size) : []));
+  };
+  const chooseBundleLanguage = (language: LanguageCode) => {
+    setBundleLanguage(language);
+    // Hours with tutors who don't teach it can't stay in the bundle.
+    setPicked((current) => current.filter((slot) => tutorsById.get(slot.tutorId)?.languages.includes(language)));
+  };
 
   return (
     <div className="grid items-start gap-6 lg:grid-cols-[320px_1fr]">
       <div className="space-y-4">
+        {isStudent ? <BookingModeSwitch sizes={bundleSizes} size={bundleSize} onChange={chooseBundleSize} /> : null}
         <MonthCalendar
           cursor={cursor}
           selected={selected}
@@ -200,6 +229,20 @@ function CalendarWorkspace({ user }: { user: User }) {
       </div>
 
       <div className="min-w-0 space-y-6">
+        {isStudent && bundleSize ? (
+          <BundleTray
+            size={bundleSize}
+            picked={picked}
+            tutorsById={tutorsById}
+            priceLkr={payments.data?.lessonPriceLkr}
+            language={bundleLanguage}
+            languages={["sinhala", "tamil"]}
+            onLanguage={chooseBundleLanguage}
+            focus={bundleFocus}
+            onFocus={setBundleFocus}
+            onRemove={(slot) => setPicked((current) => current.filter((item) => item !== slot))}
+          />
+        ) : null}
         <div className="rounded-xl border border-forest/10 bg-white p-5">
           <p className="mb-3 text-sm font-medium text-forest">
             {new Date(`${selected}T00:00:00`).toLocaleDateString("en-GB", {
@@ -249,7 +292,27 @@ function CalendarWorkspace({ user }: { user: User }) {
                   </li>
                 );
               })}
-              {daySlots.map((slot) => (
+              {bundleSize
+                ? daySlots.map((slot) => (
+                    <BundleSlot
+                      key={`${slot.tutorId}-${slot.startsAt}`}
+                      slot={slot}
+                      tutor={tutorsById.get(slot.tutorId)}
+                      picked={isPicked(slot)}
+                      full={picked.length >= bundleSize}
+                      clash={!isPicked(slot) && clashes(slot)}
+                      teaches={tutorsById.get(slot.tutorId)?.languages.includes(bundleLanguage) ?? true}
+                      onToggle={() =>
+                        setPicked((current) =>
+                          isPicked(slot)
+                            ? current.filter((item) => !(item.tutorId === slot.tutorId && item.startsAt === slot.startsAt))
+                            : [...current, slot],
+                        )
+                      }
+                    />
+                  ))
+                : null}
+              {!bundleSize && daySlots.map((slot) => (
                 <OpenSlot
                   key={`${slot.tutorId}-${slot.startsAt}`}
                   slot={slot}
@@ -499,7 +562,7 @@ function Schedule({ viewer }: { viewer: User }) {
                 actions={
                   <div className="flex flex-wrap items-center justify-end gap-2">
                     {booking.status === "awaiting_payment" && !isTutor ? (
-                      <ButtonLink href={`/portal/checkout/${booking.id}`} size="sm" variant="saffron">
+                      <ButtonLink href={checkoutHref(booking)} size="sm" variant="saffron">
                         Pay now
                       </ButtonLink>
                     ) : null}
@@ -560,7 +623,9 @@ function Schedule({ viewer }: { viewer: User }) {
                         onClick={async () => {
                           const message =
                             booking.status !== "confirmed"
-                              ? "The hour is released for other students. Nothing has been paid yet."
+                              ? booking.bundleId
+                                ? "This lesson is part of an unpaid bundle, so every hour in the bundle is released. Nothing has been paid yet."
+                                : "The hour is released for other students. Nothing has been paid yet."
                               : viewer.id !== booking.studentId
                                 ? "The student is emailed and keeps the lesson, to book another time."
                                 : canStudentReschedule(booking)

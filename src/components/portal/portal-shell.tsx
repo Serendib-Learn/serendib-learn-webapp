@@ -14,6 +14,7 @@ import { Avatar, Loading } from "@/components/ui/primitives";
 import { FeedbackPrompt } from "./feedback-prompt";
 import { portalSections } from "./portal-nav";
 import { features } from "@/lib/features";
+import { loginPathFor } from "@/lib/next-path";
 
 /**
  * The portal frame, as on the original site: a forest-green bar with the
@@ -53,8 +54,9 @@ export function PortalShell({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // A failed session check is not a logout: stay put and say so below.
-    if (!loading && !user && !error) router.replace("/portal/login");
-  }, [loading, user, error, router]);
+    // Remember where they were heading (a bundle from the pricing page, say).
+    if (!loading && !user && !error) router.replace(loginPathFor(pathname, window.location.search));
+  }, [loading, user, error, router, pathname]);
 
   // Only before we know who this is. `loading` is also true while the session
   // is re-checked after every write; blanking the page then would unmount it

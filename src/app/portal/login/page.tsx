@@ -10,6 +10,7 @@ import { Field, Input } from "@/components/ui/field";
 import { Alert, Card } from "@/components/ui/primitives";
 import { ApiError, DEMO_PASSWORD, api, demoAccounts } from "@/lib/api";
 import { useAction, useQuery, useTimezone } from "@/lib/hooks";
+import { afterSignInPath } from "@/lib/next-path";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -42,7 +43,7 @@ export default function LoginPage() {
         intent: "login",
         timezone: timezone || "UTC",
       });
-      router.push("/portal");
+      router.push(afterSignInPath());
     } catch (failure) {
       // Nobody has signed up with this Google address yet, and signup needs to
       // know whether they are here to learn or to teach.
@@ -136,7 +137,7 @@ export default function LoginPage() {
         onSubmit={async (event) => {
           event.preventDefault();
           const user = await run(email, password);
-          if (user) router.push("/portal");
+          if (user) router.push(afterSignInPath());
         }}
       >
         <Field

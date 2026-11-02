@@ -1,6 +1,7 @@
 import { ApiError, type Backend, type GoogleSignInResult } from "./backend";
 import { bumpRevision } from "./revision";
 import type {
+  BundleDetail,
   TutorHoursReport,
   MaterialFeedback,
   MaterialFeedbackSummary,
@@ -363,6 +364,28 @@ export const httpBackend: Backend = {
 
     markCreditRefunded(id) {
       return request<LessonCredit>(`/requests/credits/${id}/refunded`, { method: "POST" });
+    },
+  },
+
+  bundles: {
+    create(lessons) {
+      return request<BundleDetail>("/bundles", { method: "POST", body: { lessons } });
+    },
+
+    get(id) {
+      return request<BundleDetail>(`/bundles/${id}`);
+    },
+
+    startCheckout(id) {
+      return request<{ url: string }>(`/bundles/${id}/checkout`, { method: "POST" });
+    },
+
+    pay(id) {
+      return request<BundleDetail>(`/bundles/${id}/pay`, { method: "POST" });
+    },
+
+    cancel(id) {
+      return request<BundleDetail>(`/bundles/${id}/cancel`, { method: "POST" });
     },
   },
 

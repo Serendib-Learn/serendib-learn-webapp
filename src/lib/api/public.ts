@@ -71,12 +71,17 @@ export async function fetchPublicTutors(): Promise<PublicTutor[]> {
 
 /** What an hour-long lesson costs, in rupees — the same for every tutor for now. Null when the API is unreachable. */
 export async function fetchLessonPriceLkr(): Promise<number | null> {
+  return (await fetchPaymentsConfig())?.lessonPriceLkr ?? null;
+}
+
+/** Prices and bundle sizes, for the pricing page. Null when the API is unreachable. */
+export async function fetchPaymentsConfig(): Promise<PaymentsConfig | null> {
   try {
     const response = await fetch(`${BASE}/api/payments/config`, {
       next: { revalidate: TUTOR_REVALIDATE_SECONDS },
     });
     if (!response.ok) return null;
-    return ((await response.json()) as PaymentsConfig).lessonPriceLkr ?? null;
+    return (await response.json()) as PaymentsConfig;
   } catch {
     return null;
   }

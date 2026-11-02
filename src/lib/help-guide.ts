@@ -53,10 +53,12 @@ export const helpCategories: HelpCategory[] = [
         title: "How much does a lesson cost?",
         steps: [
           "Every lesson is LKR 5,000 for an hour, the same for every tutor.",
+          "Book one at a time, or 5 or 10 together and pay once. Nothing renews.",
           "You pay by card when you book, through Payments.lk. Card details never touch our site.",
+          "Not sure? Book a free intro call with our team from the pricing page.",
         ],
-        link: { href: "/refunds", label: "Cancellation and refunds" },
-        keywords: "price cost fee money pay rupees lkr",
+        link: { href: "/pricing", label: "Pricing" },
+        keywords: "price cost fee money pay rupees lkr bundle package intro call",
       },
       {
         id: "browse-tutors",
@@ -236,6 +238,18 @@ export const helpCategories: HelpCategory[] = [
         ],
         link: { href: "/portal/calendar", label: "Calendar" },
         keywords: "book booking schedule session class lesson slot",
+      },
+      {
+        id: "bundle",
+        title: "Book 5 or 10 lessons at once",
+        steps: [
+          "In Calendar, choose 5 lessons or 10 lessons under How would you like to book?",
+          "Pick days and press Add on open hours. Mix tutors however you like.",
+          "Once all are chosen, press Continue to payment and pay once for them all.",
+          "Each lesson can still be moved or cancelled up to 6 hours before, and you keep it.",
+        ],
+        link: { href: "/pricing", label: "Pricing" },
+        keywords: "bundle package pack 5 10 lessons sessions discount plan monthly",
       },
       {
         id: "pay",
