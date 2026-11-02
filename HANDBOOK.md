@@ -1331,12 +1331,14 @@ signing up, paying or getting lesson links.
 3. ~~**Meet links.**~~ **Done 28 Oct 2026:** the shared Serendib calendar
    is connected, so every booking gets a Meet link. Tutors can also
    connect their own under Calendar → My hours.
-4. **Payments (blocking for paid lessons).**
-   - Get the Payments.lk account approved.
-   - Register the live webhook (`https://<API>/api/payments/webhook`).
-   - Store the `sk_live_…` key and the `whsec_…` secret as new secret
-     versions (DEPLOYMENT §7), then redeploy.
-   - Do one real low-value payment end to end.
+4. **Payments.** **Live since 2 Nov 2026:** the account is approved, the
+   `sk_live_…` key and the live webhook's `whsec_…` secret are stored
+   (DEPLOYMENT §7), the API reports `mode: live`, and a dashboard test
+   event to the live webhook was accepted. Still to do:
+   - One real payment end to end, then cancel it in good time, refund it
+     in the Payments.lk dashboard and press **Mark refunded**.
+   - After the domain move, point the live webhook at
+     `https://api.serendiblearn.com/api/payments/webhook`.
    - Ask Payments.lk to accept **overseas phone numbers and postcodes**.
      Their hosted checkout page takes only Sri Lankan ones; the API sends
      just the name and email, and their SDK has no country option, so it
