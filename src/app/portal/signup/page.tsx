@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { AuthCard, AuthFooterLink } from "@/components/portal/auth-card";
@@ -324,6 +325,21 @@ function SignUpForm() {
               ? "Send my application"
               : "Create account"}
         </Button>
+        <p className="text-center text-[11px] leading-relaxed text-ink-400">
+          By creating an account you agree to our{" "}
+          <Link href="/terms" className="underline hover:text-ink-600">
+            Terms and Conditions
+          </Link>
+          ,{" "}
+          <Link href="/refunds" className="underline hover:text-ink-600">
+            Refund Policy
+          </Link>{" "}
+          and{" "}
+          <Link href="/privacy" className="underline hover:text-ink-600">
+            Privacy Policy
+          </Link>
+          .
+        </p>
       </form>
 
       <div className="mt-6">

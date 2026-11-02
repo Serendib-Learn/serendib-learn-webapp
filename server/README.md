@@ -65,7 +65,7 @@ form, the tutor list and the demo inbox needs a session cookie.
 | Users | `GET /users` (admin), `GET /users/directory`, `GET /users/tutors` (public: approved tutors, no emails, with `bookable`), `POST /users/invite` (admin; email optional for a tutor), `POST /users/:id/email` (admin: add the address to an account listed without one, and send the invite), `POST /users/:id/verify` (admin: confirm someone's email when the code never arrived), `GET /users/audit-log` (admin), `GET /users/:id` (yourself, your own students for a tutor, anyone for an admin), `GET /users/:id/tutees`, `GET /users/:id/tutors` (public profiles, no emails), `PATCH /users/:id` (profile fields only, zod-validated), `POST /users/:id/role` (admin), `POST /users/:id/tutor-status` (admin), `POST /users/:id/membership` (admin), `DELETE /users/:id` (admin) |
 | Availability | `GET /availability?tutorId`, `GET /availability/slots?tutorId&days`, `POST /availability`, `DELETE /availability/:id` |
 | Bookings | `GET /bookings?userId`, `GET /bookings/:id`, `POST /bookings`, `POST /bookings/:id/checkout`, `GET /bookings/:id/payment`, `POST /bookings/:id/pay` (demo, or admin), `/cancel`, `/complete`, `/meeting-link`, `/reschedule` (free), `/use-credit` (book with a free lesson) |
-| Requests | `GET /requests` (yours; all for an admin), `POST /requests` (students: `free_session` or `missed_session`), `POST /requests/:id/approve\|decline` (admin), `GET /requests/credits` (free lessons left) |
+| Requests | `GET /requests` (yours; all for an admin), `POST /requests` (students: `free_session` or `missed_session`), `POST /requests/:id/approve\|decline` (admin), `GET /requests/credits` (free lessons left), `GET /requests/credits/held` (admin: every unused one), `POST /requests/credits/:id/refunded` (admin) |
 | Reports | `GET /reports/tutor-hours?from&to` (admin: each tutor's lessons between two instants, with taught, verified, upcoming and cancelled lessons, card payments, free lessons and ratings; a period of up to 370 days) |
 | Payments | `GET /payments/config`, `POST /payments/webhook` (Payments.lk, signature-verified) |
 | Feedback | `GET /feedback/pending`, `POST /feedback`, `GET /feedback?tutorId\|studentId` (or all, admin), `POST /feedback/lesson-notes`, `POST /voice-notes`, `GET /voice-notes/:id` |
@@ -168,7 +168,9 @@ The API enforces these itself; the portal only hides what a role cannot use.
 | Set homework, assign material | — | ✓ own students only | ✓ anyone |
 | Read a full account record (email) | own | own + own students | ✓ |
 | Rate, years teaching, specialties on a profile | — | ✓ | ✓ on tutors |
-| Move a lesson (free) | ✓ ≥24h before, to an open hour | ✓ any time before it starts | ✓ |
+| Move a lesson (free) | ✓ ≥6h before, to an open hour | ✓ any time before it starts | ✓ |
+| Cancel a paid lesson | ✓ ≥6h before: kept as a free lesson; later: used | ✓ student keeps it | ✓ student keeps it |
+| Mark an unused lesson refunded | — | — | ✓ |
 | Ask for a free session / report a missed lesson | ✓ | — | — |
 | Approve or decline those requests | — | — | ✓ (super admin too) |
 | Feedback after a lesson | rating, pace, materials, what next | write-up, progress, engagement, materials used | reads all |
@@ -185,16 +187,22 @@ an assigned material or homework from that tutor.
   the payment (or free lesson) and the Meet link, moves the Google Calendar
   event (`lib/google.ts`'s `moveGoogleMeeting`), resets the before-lesson
   reminders, records the move in `booking.reschedules` and emails both
-  people. Students need `STUDENT_RESCHEDULE_NOTICE_HOURS` (24) notice and one
+  people. Students need `STUDENT_NOTICE_HOURS` (6) notice and one
   of the tutor's open hours; tutors and admins can move it any time before
   it starts, to any free time.
 - **Free lessons** (`lessonCredits`) are one-hour lessons a student books
   instead of paying (`POST /bookings/:id/use-credit`, offered on the
   calendar and the checkout page). They come from an approved request, or
-  automatically when a tutor or admin cancels a lesson the student paid
-  for. Cancelling a lesson booked with one gives it back. A student
-  cancelling their own paid lesson is not refunded — the portal suggests
-  moving it instead.
+  automatically when a lesson is cancelled under the **refund policy**
+  (`/refunds`): by the tutor or an admin at any time, or by the student with
+  `STUDENT_NOTICE_HOURS` (6) notice — a paid lesson becomes a free one, a
+  lesson booked with a free one gets it back. Cancelled later by the
+  student, the lesson is used.
+- **Refunds.** An unused paid lesson can be refunded within 30 days of the
+  payment. The money goes back in the Payments.lk dashboard; an admin then
+  presses **Mark refunded** under Administration → Requests → *Free lessons
+  held* (`POST /requests/credits/:id/refunded`), which takes the credit off
+  the account (`refundedAt`) and emails the student.
 - **Requests** (`studentRequests`) are a student asking for a free session
   (a reason, one pending at a time) or reporting a missed lesson (which one,
   what happened, up to 30 days after). Admins are emailed and decide under

@@ -54,7 +54,7 @@ async function moveBooking(id: string, startsAt: Date) {
   await db().bookings.updateOne({ id }, { startsAt: startsAt.toISOString() });
 }
 
-test("rescheduling: free, to an open hour, with 24 hours' notice for students", async () => {
+test("rescheduling: free, to an open hour, with 6 hours' notice for students", async () => {
   const tutor = await busyTutor("move-tutor@example.com");
   const student = await signedUpUser(harness, "student", "move-student@example.com");
   const stranger = await signedUpUser(harness, "student", "move-stranger@example.com");
@@ -77,7 +77,7 @@ test("rescheduling: free, to an open hour, with 24 hours' notice for students", 
   assert.equal(moved.body.reschedules[0].from, booking.startsAt);
   assert.match((await latestMail(harness, "move-tutor@example.com", "notification"))?.subject ?? "", /Lesson moved/);
 
-  // Inside 24 hours the student is pointed at a help request; the tutor can still move it.
+  // Inside 6 hours the student is pointed at a help request; the tutor can still move it.
   await moveBooking(booking.id, new Date(Date.now() + 5 * 3600_000));
   const late = await student.client.post(`/bookings/${booking.id}/reschedule`, { startsAt: third.startsAt });
   assert.equal(late.status, 409);
@@ -201,18 +201,81 @@ test("missed lessons: reported after the fact, declined with a note or approved 
   assert.ok((await admin.client.get("/requests")).body.length >= 2);
 });
 
-test("cancelling a paid lesson: by the tutor it becomes a free lesson, by the student it does not", async () => {
+test("cancelling a paid lesson follows the refund policy: kept with 6 hours' notice, used after", async () => {
   const tutor = await busyTutor("cancel-tutor@example.com");
   const student = await signedUpUser(harness, "student", "cancel-student@example.com");
-  const [slotA, slotB] = await openSlots(tutor, 30);
+  const [slotA, slotB, slotC] = await openSlots(tutor, 30);
+  const reasons = async () =>
+    ((await student.client.get("/requests/credits")).body.credits as { reason: string; usedBookingId?: string }[])
+      .filter((credit) => !credit.usedBookingId)
+      .map((credit) => credit.reason)
+      .sort();
 
-  const byStudent = await paidLesson(student, tutor, slotA);
-  assert.equal((await student.client.post(`/bookings/${byStudent.id}/cancel`)).status, 200);
-  assert.equal((await student.client.get("/requests/credits")).body.available, 0);
+  // In good time: the student keeps the lesson as a free one.
+  const early = await paidLesson(student, tutor, slotA);
+  assert.equal((await student.client.post(`/bookings/${early.id}/cancel`)).status, 200);
+  assert.deepEqual(await reasons(), ["student_cancelled"]);
+  assert.match((await latestMail(harness, "cancel-student@example.com", "notification"))?.body ?? "", /30 days/);
 
-  const byTutor = await paidLesson(student, tutor, slotB);
+  // Inside 6 hours: the lesson counts as used.
+  const late = await paidLesson(student, tutor, slotB);
+  await moveBooking(late.id, new Date(Date.now() + 5 * 3600_000));
+  assert.equal((await student.client.post(`/bookings/${late.id}/cancel`)).status, 200);
+  assert.deepEqual(await reasons(), ["student_cancelled"]);
+
+  // The tutor cancelling, however late: the student keeps it.
+  const byTutor = await paidLesson(student, tutor, slotC);
+  await moveBooking(byTutor.id, new Date(Date.now() + 2 * 3600_000));
   assert.equal((await tutor.client.post(`/bookings/${byTutor.id}/cancel`)).status, 200);
-  const credits = await student.client.get("/requests/credits");
-  assert.equal(credits.body.available, 1);
-  assert.equal(credits.body.credits[0].reason, "tutor_cancelled");
+  assert.deepEqual(await reasons(), ["student_cancelled", "tutor_cancelled"]);
+});
+
+test("cancelling a lesson booked with a free lesson: it comes back only with 6 hours' notice", async () => {
+  const { db } = await import("../db/database.ts");
+  const tutor = await busyTutor("credit-cancel-tutor@example.com");
+  const student = await signedUpUser(harness, "student", "credit-cancel-student@example.com");
+  const [slot] = await openSlots(tutor, 30);
+  const available = async () => (await student.client.get("/requests/credits")).body.available as number;
+
+  const lesson = await paidLesson(student, tutor, slot);
+  assert.equal((await tutor.client.post(`/bookings/${lesson.id}/cancel`)).status, 200);
+  assert.equal(await available(), 1);
+
+  const created = await student.client.post("/bookings", {
+    tutorId: tutor.user.id,
+    startsAt: (await openSlots(tutor, 30))[0].startsAt,
+    durationMins: 60,
+    language: "sinhala",
+    focus: "Make-up lesson",
+  });
+  assert.equal((await student.client.post(`/bookings/${created.body.id}/use-credit`)).status, 200);
+  assert.equal(await available(), 0);
+  await db().bookings.updateOne({ id: created.body.id }, { startsAt: new Date(Date.now() + 3 * 3600_000).toISOString() });
+  assert.equal((await student.client.post(`/bookings/${created.body.id}/cancel`)).status, 200);
+  assert.equal(await available(), 0, "cancelled inside 6 hours: the free lesson is used");
+});
+
+test("refunding an unused lesson: administrators only, and it can no longer be booked", async () => {
+  const tutor = await busyTutor("refund-tutor@example.com");
+  const student = await signedUpUser(harness, "student", "refund-student@example.com");
+  const admin = await adminClient(harness);
+  const [slot] = await openSlots(tutor, 30);
+
+  const lesson = await paidLesson(student, tutor, slot);
+  assert.equal((await student.client.post(`/bookings/${lesson.id}/cancel`)).status, 200);
+  assert.equal((await student.client.get("/requests/credits")).body.available, 1);
+
+  assert.equal((await student.client.get("/requests/credits/held")).status, 403);
+  const held = await admin.client.get("/requests/credits/held");
+  const credit = (held.body as { id: string; studentId: string }[]).find((item) => item.studentId === student.user.id);
+  assert.ok(credit, "the cancelled lesson is held as a credit");
+
+  assert.equal((await student.client.post(`/requests/credits/${credit.id}/refunded`)).status, 403);
+  const refunded = await admin.client.post(`/requests/credits/${credit.id}/refunded`);
+  assert.equal(refunded.status, 200);
+  assert.ok(refunded.body.refundedAt);
+  assert.equal((await student.client.get("/requests/credits")).body.available, 0);
+  assert.match((await latestMail(harness, "refund-student@example.com", "notification"))?.subject ?? "", /refunded/);
+  const after = await admin.client.get("/requests/credits/held");
+  assert.ok(!(after.body as { id: string }[]).some((item) => item.id === credit.id));
 });

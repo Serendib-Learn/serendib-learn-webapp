@@ -74,6 +74,51 @@ requestsRouter.get(
   }),
 );
 
+/** Every unused free lesson, for the team — newest first. Administrators only. */
+requestsRouter.get(
+  "/credits/held",
+  requireAdmin,
+  wrap(async (_request, response) => {
+    const all = await db().lessonCredits.find({}, { sort: newestFirst });
+    response.json(all.filter((credit) => !credit.usedBookingId && !credit.refundedAt));
+  }),
+);
+
+/**
+ * Records that an unused lesson was refunded to the student's card (the
+ * refund policy, /refunds), so it can no longer be booked. The money itself
+ * is returned in the Payments.lk dashboard first.
+ */
+requestsRouter.post(
+  "/credits/:id/refunded",
+  requireAdmin,
+  wrap(async (request, response) => {
+    const actor = requireUser(request);
+    const credit = await db().lessonCredits.findById(pathParam(request, "id"));
+    if (!credit) throw notFound("That free lesson has gone.");
+    if (credit.usedBookingId) throw new ApiError("That free lesson has already been booked.");
+    if (credit.refundedAt) {
+      response.json(credit);
+      return;
+    }
+    const updated = await db().lessonCredits.updateOne(
+      { id: credit.id },
+      { refundedAt: nowIso(), refundedById: actor.id },
+    );
+    const student = await db().users.findById(credit.studentId);
+    if (student) {
+      await deliver({
+        to: student.email,
+        subject: "Your lesson has been refunded",
+        body: `We have refunded your unused lesson to the card you paid with. Your bank may take 5 to 10 working days to show it.\n\nThe lesson has been taken off your account, so it can no longer be booked. Thank you for learning with us — you are welcome back any time: ${config.appUrl}/portal/calendar`,
+        kind: "notification",
+      });
+    }
+    await logAudit(actor, "credit_refunded", student?.name ?? credit.studentId, credit.reason);
+    response.json(updated);
+  }),
+);
+
 requestsRouter.post(
   "/",
   requireAuth,

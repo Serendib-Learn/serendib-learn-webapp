@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { useConfirm } from "@/components/ui/confirm";
 import { Field, Textarea } from "@/components/ui/field";
 import { Alert, Avatar, Badge, Card, EmptyState, Loading } from "@/components/ui/primitives";
-import type { MissedCause, PublicProfile, StudentRequest } from "@/lib/types";
+import type { CreditReason, LessonCredit, MissedCause, PublicProfile, StudentRequest } from "@/lib/types";
 
 const causeLabel: Record<MissedCause, string> = {
   tutor_absent: "Tutor did not come",
@@ -19,6 +19,17 @@ const causeLabel: Record<MissedCause, string> = {
 };
 
 const statusTone = { pending: "saffron", approved: "jade", declined: "clay" } as const;
+
+const creditReasonLabel: Record<CreditReason, string> = {
+  free_session: "Free session request approved",
+  missed_session: "Missed lesson made up",
+  tutor_cancelled: "Paid lesson cancelled by the tutor or team",
+  student_cancelled: "Paid lesson cancelled by the student in good time",
+};
+
+/** Credits that stand for a lesson the student paid for, so can be refunded (the refund policy). */
+const refundable = (credit: LessonCredit) =>
+  credit.reason === "tutor_cancelled" || credit.reason === "student_cancelled";
 
 /**
  * Administration → Requests: free session requests and missed-lesson
@@ -48,6 +59,8 @@ export function AdminRequests() {
           pending.map((item) => <PendingRequest key={item.id} item={item} people={byId} />)
         )}
       </section>
+
+      <HeldCredits people={byId} />
 
       {decided.length > 0 ? (
         <section className="space-y-3">
@@ -152,3 +165,64 @@ function PendingRequest({ item, people }: { item: StudentRequest; people: Map<st
     </Card>
   );
 }
+
+/**
+ * Unused free lessons, and recording a refund of one (the refund policy: an
+ * unused paid lesson can be refunded within 30 days). The money goes back in
+ * the Payments.lk dashboard; this takes the lesson off the student's account.
+ */
+function HeldCredits({ people }: { people: Map<string, PublicProfile> }) {
+  const credits = useQuery(() => api.requests.heldCredits(), []);
+  const refund = useAction((id: string) => api.requests.markCreditRefunded(id));
+  const { confirm, dialog } = useConfirm();
+  const held = credits.data ?? [];
+  if (credits.loading || held.length === 0) return null;
+
+  return (
+    <section className="space-y-3">
+      <div>
+        <h2 className="font-display text-xl text-forest">Free lessons held</h2>
+        <p className="text-xs text-ink-400">
+          Lessons students can still book without paying. One that stands for a paid lesson can be
+          refunded within 30 days of the payment: refund it in the Payments.lk dashboard, then mark
+          it refunded here.
+        </p>
+      </div>
+      {refund.error ? <Alert>{refund.error}</Alert> : null}
+      {held.map((credit) => {
+        const student = people.get(credit.studentId);
+        return (
+          <Card key={credit.id} className="flex flex-wrap items-center justify-between gap-3 p-4">
+            <div className="min-w-0">
+              <p className="text-sm text-ink-800">{student?.name ?? "Former student"}</p>
+              <p className="text-xs text-ink-400">
+                {creditReasonLabel[credit.reason]} · {relativeTime(credit.createdAt)}
+              </p>
+            </div>
+            {refundable(credit) ? (
+              <Button
+                variant="danger-ghost"
+                size="sm"
+                disabled={refund.pending}
+                onClick={async () => {
+                  const yes = await confirm({
+                    title: "Mark this lesson refunded?",
+                    message: `Do this after refunding the payment in the Payments.lk dashboard. The free lesson is taken off ${student?.name ?? "the student"}'s account, so it can no longer be booked, and they are emailed that it was refunded.`,
+                    confirmLabel: "Mark refunded",
+                  });
+                  if (yes) void refund.run(credit.id);
+                }}
+              >
+                Mark refunded
+              </Button>
+            ) : (
+              <Badge tone="neutral">Goodwill, not refundable</Badge>
+            )}
+          </Card>
+        );
+      })}
+      {dialog}
+    </section>
+  );
+}
+

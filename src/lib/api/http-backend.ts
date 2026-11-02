@@ -355,6 +355,14 @@ export const httpBackend: Backend = {
         query: { studentId },
       });
     },
+
+    heldCredits() {
+      return request<LessonCredit[]>("/requests/credits/held");
+    },
+
+    markCreditRefunded(id) {
+      return request<LessonCredit>(`/requests/credits/${id}/refunded`, { method: "POST" });
+    },
   },
 
   reports: {

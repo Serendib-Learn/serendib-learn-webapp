@@ -51,6 +51,14 @@ export function Footer() {
           </a>
         </span>
         <span className="hidden sm:inline">·</span>
+        <Link href="/terms" className="transition-colors hover:text-cream">
+          Terms
+        </Link>
+        <span className="hidden sm:inline">·</span>
+        <Link href="/refunds" className="transition-colors hover:text-cream">
+          Refunds
+        </Link>
+        <span className="hidden sm:inline">·</span>
         <Link href="/privacy" className="transition-colors hover:text-cream">
           Privacy Policy
         </Link>

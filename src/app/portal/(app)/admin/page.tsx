@@ -976,6 +976,7 @@ const actionLabel: Record<string, string> = {
   email_verified: "Confirmed email",
   request_approved: "Approved request",
   request_declined: "Declined request",
+  credit_refunded: "Refunded a lesson",
   tutor_review: "Reviewed tutor",
 };
 

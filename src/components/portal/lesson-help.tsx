@@ -10,14 +10,18 @@ import { Modal } from "@/components/ui/modal";
 import { Alert, Badge, Card, Loading } from "@/components/ui/primitives";
 import type { Booking, MissedCause, StudentRequest, User } from "@/lib/types";
 
-/** Mirrors STUDENT_RESCHEDULE_NOTICE_HOURS in server/src/routes/bookings.ts. */
-export const STUDENT_RESCHEDULE_NOTICE_HOURS = 24;
+/**
+ * The refund policy's notice period: mirrors STUDENT_NOTICE_HOURS in
+ * server/src/routes/bookings.ts. Until then a student can move a lesson, or
+ * cancel it and keep it as a free lesson.
+ */
+export const STUDENT_NOTICE_HOURS = 6;
 
 /** Mirrors MISSED_REPORT_DAYS in server/src/routes/requests.ts. */
 export const MISSED_REPORT_DAYS = 30;
 
 export function canStudentReschedule(booking: Booking): boolean {
-  return new Date(booking.startsAt).getTime() - Date.now() >= STUDENT_RESCHEDULE_NOTICE_HOURS * 3600_000;
+  return new Date(booking.startsAt).getTime() - Date.now() >= STUDENT_NOTICE_HOURS * 3600_000;
 }
 
 export function canReportMissed(booking: Booking): boolean {
@@ -60,7 +64,7 @@ export function RescheduleDialog({
       {tooLate ? (
         <div className="space-y-4">
           <Alert tone="saffron">
-            Lessons can be moved up to {STUDENT_RESCHEDULE_NOTICE_HOURS} hours before they start.
+            Lessons can be moved up to {STUDENT_NOTICE_HOURS} hours before they start.
             For anything later, message your tutor — or, if you cannot make it, report it under
             &ldquo;Free lessons &amp; help&rdquo; once the time has passed and we will sort it out.
           </Alert>

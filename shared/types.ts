@@ -186,10 +186,11 @@ export interface BookingReschedule {
 }
 
 /**
- * Why a student holds a free lesson: an approved request, or a paid lesson
- * the tutor (or the team) cancelled.
+ * Why a student holds a free lesson: an approved request, a paid lesson the
+ * tutor (or the team) cancelled, or one the student cancelled in good time
+ * (the refund policy's notice period).
  */
-export type CreditReason = "free_session" | "missed_session" | "tutor_cancelled";
+export type CreditReason = "free_session" | "missed_session" | "tutor_cancelled" | "student_cancelled";
 
 /**
  * One free lesson a student can book instead of paying. Used once; given
@@ -203,12 +204,19 @@ export interface LessonCredit {
   durationMins: number;
   /** The request it came from, when it came from one. */
   requestId?: string;
-  /** The cancelled booking it replaces, for a tutor_cancelled credit. */
+  /** The cancelled booking it replaces, for a tutor_cancelled or student_cancelled credit. */
   sourceBookingId?: string;
   grantedById: string;
   createdAt: string;
   usedBookingId?: string;
   usedAt?: string;
+  /**
+   * Refunded to the student's card instead (the refund policy): it can no
+   * longer be booked. The money goes back through the Payments.lk dashboard;
+   * this only records it.
+   */
+  refundedAt?: string;
+  refundedById?: string;
 }
 
 export type StudentRequestKind = "free_session" | "missed_session";

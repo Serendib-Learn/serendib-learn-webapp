@@ -20,11 +20,13 @@ export const bookingsRouter = Router();
 const byStart = (a: Booking, b: Booking) => a.startsAt.localeCompare(b.startsAt);
 
 /**
- * How long before a lesson a student can still move it themselves. Tutors and
- * administrators can move a lesson any time before it starts; a student who
- * is later than this asks the team through a help request.
+ * The refund policy's notice period (/refunds). Up to this long before a
+ * lesson, a student can move it for free, or cancel it and keep the lesson as
+ * a credit; later, a cancelled or missed lesson counts as used. Tutors and
+ * administrators can move or cancel a lesson any time before it starts; a
+ * student who is later than this asks the team through a help request.
  */
-export const STUDENT_RESCHEDULE_NOTICE_HOURS = 24;
+export const STUDENT_NOTICE_HOURS = 6;
 
 /** A lesson time in an email, in the reader's own timezone. */
 const when = (iso: string, reader: User) => formatInZone(iso, reader.timezone);
@@ -239,7 +241,7 @@ bookingsRouter.post(
 /**
  * Moves a lesson to another time, for free: the price, the payment (or free
  * lesson) and the Meet link all stay with it. The student needs
- * STUDENT_RESCHEDULE_NOTICE_HOURS' notice and one of the tutor's open hours;
+ * STUDENT_NOTICE_HOURS' notice and one of the tutor's open hours;
  * the tutor and administrators can move it to any free time before it starts.
  */
 bookingsRouter.post(
@@ -257,9 +259,9 @@ bookingsRouter.post(
     if (oldStart <= Date.now()) throw new ApiError("That lesson has already started.");
 
     const isStudent = actor.id === booking.studentId && actor.role !== "admin";
-    if (isStudent && oldStart - Date.now() < STUDENT_RESCHEDULE_NOTICE_HOURS * 3600_000) {
+    if (isStudent && oldStart - Date.now() < STUDENT_NOTICE_HOURS * 3600_000) {
       throw new ApiError(
-        `Lessons can be moved up to ${STUDENT_RESCHEDULE_NOTICE_HOURS} hours before they start. For anything later, send us a help request from your calendar.`,
+        `Lessons can be moved up to ${STUDENT_NOTICE_HOURS} hours before they start. For anything later, send us a help request from your calendar.`,
         409,
         "too_late",
       );
@@ -360,15 +362,20 @@ bookingsRouter.post(
 
     const cancelled = await db().bookings.updateOne({ id: booking.id }, { status: "cancelled" });
 
-    // A free lesson comes back. A lesson the student paid for, cancelled by
-    // the tutor or the team rather than the student, becomes a free one.
+    // The refund policy (/refunds). Cancelled by the tutor or the team, the
+    // student always keeps the lesson. Cancelled by the student with
+    // STUDENT_NOTICE_HOURS' notice, they keep it too; later, it counts as used.
+    // Kept means a lesson booked with a free lesson gets it back, and a paid
+    // one becomes a free lesson to book another time.
     const byStudent = actor.id === booking.studentId;
-    if (booking.creditId) {
+    const inTime = new Date(booking.startsAt).getTime() - Date.now() >= STUDENT_NOTICE_HOURS * 3600_000;
+    const keepsLesson = booking.status === "confirmed" && (!byStudent || inTime);
+    if (keepsLesson && booking.creditId) {
       await releaseCredit(booking);
-    } else if (booking.status === "confirmed" && booking.paidAt && !byStudent) {
+    } else if (keepsLesson && booking.paidAt) {
       await grantCredit({
         studentId: booking.studentId,
-        reason: "tutor_cancelled",
+        reason: byStudent ? "student_cancelled" : "tutor_cancelled",
         grantedById: actor.id,
         sourceBookingId: booking.id,
       });

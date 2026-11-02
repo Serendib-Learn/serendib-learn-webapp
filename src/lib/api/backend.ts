@@ -152,7 +152,7 @@ export interface Backend {
     setMeetingLink(id: string, url: string): Promise<Booking>;
     cancel(id: string): Promise<Booking>;
     complete(id: string): Promise<Booking>;
-    /** Moves a lesson to a new time, free. Students: 24 hours' notice and an open hour. */
+    /** Moves a lesson to a new time, free. Students: 6 hours' notice (the refund policy) and an open hour. */
     reschedule(id: string, startsAt: string): Promise<Booking>;
     /** Confirms a booking with one of the student's free lessons instead of paying. */
     useCredit(id: string): Promise<Booking>;
@@ -183,6 +183,10 @@ export interface Backend {
     decline(id: string, note: string): Promise<StudentRequest>;
     /** A student's free lessons: how many are left, and every one granted. */
     credits(studentId?: string): Promise<{ available: number; credits: LessonCredit[] }>;
+    /** Every student's unused free lessons. Administrators only. */
+    heldCredits(): Promise<LessonCredit[]>;
+    /** Records an unused lesson as refunded to the card, so it can no longer be booked. Administrators only. */
+    markCreditRefunded(id: string): Promise<LessonCredit>;
   };
 
   /** Reports for administrators only. */

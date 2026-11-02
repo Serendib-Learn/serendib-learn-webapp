@@ -9,16 +9,17 @@ export const CREDIT_MINUTES = 60;
 
 const oldestFirst = (a: LessonCredit, b: LessonCredit) => a.createdAt.localeCompare(b.createdAt);
 
-/** Unused credits, oldest first — the order they are spent in. */
+/** Unused credits, oldest first — the order they are spent in. Refunded ones are gone. */
 export async function availableCredits(studentId: string): Promise<LessonCredit[]> {
   const all = await db().lessonCredits.find({ studentId }, { sort: oldestFirst });
-  return all.filter((credit) => !credit.usedBookingId);
+  return all.filter((credit) => !credit.usedBookingId && !credit.refundedAt);
 }
 
 const why: Record<CreditReason, string> = {
   free_session: "Your request for a free session was approved.",
   missed_session: "We have looked into your missed lesson and added a make-up lesson for you.",
   tutor_cancelled: "Your tutor had to cancel a lesson you had paid for, so you have a free lesson to book instead.",
+  student_cancelled: "You cancelled a paid lesson in good time, so you keep it: book it again whenever suits you. If you would rather have your money back, reply within 30 days of paying and we will refund it to your card.",
 };
 
 /** Gives a student one free lesson and tells them how to use it. */

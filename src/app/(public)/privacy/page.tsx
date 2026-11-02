@@ -1,37 +1,30 @@
 import type { Metadata } from "next";
+import { ContactEmail, LegalPage, LegalSection } from "@/components/site/legal";
 
 export const metadata: Metadata = {
   title: "Privacy Policy",
   description: "How Serendib.learn collects, uses and protects the information of students and families.",
 };
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <section className="mb-8">
-      <h2 className="mb-2 font-display text-lg font-semibold text-forest">{title}</h2>
-      <div className="space-y-3 text-[15px] leading-relaxed text-earth/80">{children}</div>
-    </section>
-  );
-}
 
-const email = (
-  <a href="mailto:serendib.learn@gmail.com" className="text-amber-spice underline">
-    serendib.learn@gmail.com
-  </a>
-);
-
-/** The original site's privacy policy, word for word, plus the services this version relies on. */
+/**
+ * The original site's privacy policy, plus the services this version relies on
+ * (and "Confidentiality" corrected to say they receive what they need).
+ */
 export default function PrivacyPage() {
   return (
-    <main className="mx-auto max-w-3xl px-4 py-12 sm:px-6 sm:py-16">
-      <h1 className="mb-6 font-display text-3xl text-forest sm:mb-8 md:text-4xl">Privacy Policy</h1>
+    <LegalPage
+      title="Privacy Policy"
+      updated="2 November 2026"
+      intro={
+        <p>
+          Serendib.learn (&quot;we,&quot; &quot;us,&quot; &quot;our&quot;) is committed to protecting
+          the privacy of our students and their families.
+        </p>
+      }
+    >
 
-      <p className="mb-8 text-[15px] leading-relaxed text-earth/80">
-        Serendib.learn (&quot;we,&quot; &quot;us,&quot; &quot;our&quot;) is committed to protecting the
-        privacy of our students and their families.
-      </p>
-
-      <Section title="What we collect">
+      <LegalSection title="What we collect">
         <p>We collect personal information solely for the purposes of:</p>
         <ul className="list-disc space-y-1 pl-5">
           <li>Scheduling and coordinating lessons</li>
@@ -41,24 +34,25 @@ export default function PrivacyPage() {
           </li>
           <li>Maintaining a student database to support the ongoing delivery of our services</li>
         </ul>
-      </Section>
+      </LegalSection>
 
-      <Section title="How your information is used">
+      <LegalSection title="How your information is used">
         <p>
           The information you provide is used only for the purposes listed above. We do not use
           your data for any purpose beyond delivering and improving our tutoring services.
         </p>
-      </Section>
+      </LegalSection>
 
-      <Section title="Confidentiality">
+      <LegalSection title="Confidentiality">
         <p>
-          All personal and student information is kept strictly confidential. We do not sell, rent,
-          or share your information with any third-party vendors or external organizations.
+          All personal and student information is kept strictly confidential. We do not sell or
+          rent your information, and we share it only with the services below that carry out
+          parts of a lesson for us, and only what each needs.
         </p>
-      </Section>
+      </LegalSection>
 
       {/* Added for the portal: the services that carry out parts of a lesson on our behalf. */}
-      <Section title="Services we use">
+      <LegalSection title="Services we use">
         <p>
           A few trusted services carry out parts of a lesson for us, and receive only what that
           part needs:
@@ -78,22 +72,22 @@ export default function PrivacyPage() {
           Lesson feedback and voice notes you record in the portal are shared only with your tutor
           and our team.
         </p>
-      </Section>
+      </LegalSection>
 
-      <Section title="Data retention">
+      <LegalSection title="Data retention">
         <p>
           We retain student information for as long as necessary to provide our services. If you
           would like your information updated or removed from our records, please contact us at{" "}
-          {email}.
+          <ContactEmail />.
         </p>
-      </Section>
+      </LegalSection>
 
-      <Section title="Contact us">
+      <LegalSection title="Contact us">
         <p>
           If you have any questions about this Privacy Policy or how your information is handled,
-          please reach out to us at {email}.
+          please reach out to us at <ContactEmail />.
         </p>
-      </Section>
-    </main>
+      </LegalSection>
+    </LegalPage>
   );
 }

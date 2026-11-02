@@ -115,8 +115,8 @@ use. ✓ = yes, — = no, *own* = only their own.
 | **Lessons** | Publish weekly teaching hours | — | — | ✓ *own* | ✓ any tutor |
 | | Book and pay for a lesson | — | ✓ | — | ✓ for a student |
 | | Book with a free lesson | — | ✓ | — | ✓ for a student |
-| | Reschedule (free) | — | ✓ ≥24h before, to an open hour | ✓ any time before it starts | ✓ |
-| | Cancel | — | ✓ (no refund if paid) | ✓ (student gets a free lesson) | ✓ (student gets a free lesson) |
+| | Reschedule (free) | — | ✓ ≥6h before, to an open hour | ✓ any time before it starts | ✓ |
+| | Cancel | — | ✓ (≥6h before: kept as a free lesson; later: used) | ✓ (student keeps the lesson) | ✓ (student keeps the lesson) |
 | | Add / change the meeting link, mark complete | — | — | ✓ *own lessons* | ✓ |
 | | Join the Google Meet | — | ✓ | ✓ | — |
 | **Help** | Ask for a free session, report a missed lesson | — | ✓ | — | — |
@@ -183,13 +183,16 @@ none of the tutor rows. Unverified students cannot log in at all.
 #### Student: change of plans
 
 - **Move a lesson** (free): Your sessions → **Reschedule** → pick another
-  of the tutor's open hours. This works up to 24 hours before; the tutor is
+  of the tutor's open hours. This works up to 6 hours before; the tutor is
   emailed and the Meet link moves too.
-- **Later than 24 hours:** message the tutor, or, once the time has passed,
-  **Report missed lesson**.
-- **Cancel:** possible, but a paid lesson isn't refunded (the dialog
-  suggests rescheduling). If the *tutor* cancels, the student automatically
-  gets a free lesson.
+- **Less than 6 hours before:** message the tutor, or, once the time has
+  passed, **Report missed lesson**.
+- **Cancel** (the refund policy, `/refunds`): up to 6 hours before, the
+  student keeps the lesson as a free lesson to book again; later, or a
+  no-show, the lesson is used. If the *tutor* or the team cancels, the
+  student always keeps it.
+- **Refund:** an unused paid lesson can be refunded within 30 days of
+  paying — the student emails the team (see the admin steps).
 
 #### Student: free lessons and help
 
@@ -519,6 +522,8 @@ flowchart LR
 | `/tutors` | Approved tutors from `GET /users/tutors`, fetched server-side with `revalidate = 60` (no emails exposed), with their photos. A tutor listed without an email yet shows "Ask for a lesson" instead of availability. |
 | `/alphabet` | The Sinhala and Tamil alphabet sheets with audio; tutors can record letters here |
 | `/privacy` | The original privacy text, plus a "Services we use" section |
+| `/terms` | Terms and Conditions: accounts, booking and payment, lessons, conduct and safeguarding, tutors, content, liability, Sri Lankan law |
+| `/refunds` | Cancellation and Refund Policy: move or cancel up to 6 hours before and keep the lesson; later or missed is used; unused lessons refundable within 30 days |
 | `/games/**` | **Parked.** Every route 404s while `features.games` is false |
 
 **Portal, signed out** (`src/app/portal/`):
@@ -823,15 +828,23 @@ Both `awaiting_payment` and `confirmed` hold the tutor's slot.
   the tutor adds a link by hand.
 - **Rescheduling is free.** Either party can move a lesson to another time;
   the price, payment and Meet link stay with it, the Google event moves,
-  and both are emailed. Students need 24 hours' notice and pick one of the
+  and both are emailed. Students need 6 hours' notice and pick one of the
   tutor's open hours; tutors and admins can move it any time before it
   starts. Each move is kept on the booking ("Moved from …").
-- **Cancelling.** Either party can cancel, and the Google event is deleted
-  on a best-effort basis. If the tutor or an admin cancels a lesson the
-  student paid for, the student gets a free lesson in its place; a student
-  cancelling their own paid lesson is not refunded (they are pointed at
-  rescheduling). Cancelling a lesson booked with a free lesson gives it
-  back.
+- **Cancelling** follows the published refund policy (`/refunds`, the
+  notice is `STUDENT_NOTICE_HOURS` = 6). Either party can cancel, and the
+  Google event is deleted on a best-effort basis. Cancelled by the tutor or
+  an admin, or by the student at least 6 hours ahead, the student keeps
+  the lesson: a paid one becomes a free lesson, one booked with a free
+  lesson gets it back. Cancelled later by the student, it is used.
+- **Refunds.** Unused paid lessons can be refunded within 30 days of
+  payment. Refund the payment in the Payments.lk dashboard, then press
+  **Mark refunded** under Administration → Requests → *Free lessons held*,
+  which removes the free lesson and emails the student.
+- **Policy pages.** `/terms` (Terms and Conditions), `/refunds`
+  (Cancellation and Refund Policy) and `/privacy` share
+  `components/site/legal.tsx`, are linked in the footer, and are agreed to
+  at sign-up and checkout. Change the rules and the pages together.
 
 ### 8.2a Free lessons and help requests
 
@@ -1320,12 +1333,10 @@ signing up, paying or getting lesson links.
      Their hosted checkout page takes only Sri Lankan ones; the API sends
      just the name and email, and their SDK has no country option, so it
      cannot be fixed on our side.
-5. **Terms and refunds.** Payment providers usually require Terms of
-   service and a refund and cancellation policy on the site. Write them
-   (they should match the rules in 2.2: free reschedules up to 24 hours,
-   no refund when a student cancels, a free lesson when the tutor
-   cancels), and confirm the privacy policy wording. **A sample is
-   drafted** (the owners' local `TERMS-SAMPLE.md`), for a lawyer to review.
+5. ~~**Terms and refunds.**~~ **Done 2 Nov 2026:** `/terms` and
+   `/refunds` are live (6 hours' notice to move or cancel and keep the
+   lesson; unused lessons refundable within 30 days), linked in the
+   footer, sign-up and checkout. Worth a lawyer's read before launch.
    **Pricing is agreed** (LKR 5,000 a lesson; LKR 8,000 for two people
    together; the owners' local `PRICING-MODEL.md`). The site charges LKR
    5,000 a lesson for every tutor (`LESSON_PRICE_LKR`); pair lessons are not

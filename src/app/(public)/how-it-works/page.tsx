@@ -71,7 +71,7 @@ const faqs = [
   },
   {
     q: "What does it cost?",
-    a: "Each tutor sets their own hourly rate, shown on their profile, and you pay per session — there are no bundles and nothing renews. Card payments are taken securely in Sri Lankan rupees at checkout.",
+    a: "Every lesson is the same price, whichever tutor you choose, and you pay per session — there are no bundles and nothing renews. The price is on the tutors page, and card payments are taken securely in Sri Lankan rupees at checkout.",
   },
   {
     q: "Can I change tutors?",
@@ -79,7 +79,7 @@ const faqs = [
   },
   {
     q: "What if I need to cancel?",
-    a: "Cancel from the portal. More than 24 hours before the session and it is refunded in full; inside 24 hours we ask you to reschedule instead, because your tutor has already held the slot.",
+    a: "Move or cancel from the portal, up to 6 hours before the lesson, and you keep it: cancelled lessons become a credit to book again. Later than that, or if you miss it, the lesson is used. Unused lessons can be refunded within 30 days — see our Cancellation and Refund Policy.",
   },
 ];
 

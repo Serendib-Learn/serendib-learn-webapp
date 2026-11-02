@@ -17,7 +17,9 @@ import {
   FreeLessonsPanel,
   MissedLessonDialog,
   RescheduleDialog,
+  STUDENT_NOTICE_HOURS,
   canReportMissed,
+  canStudentReschedule,
 } from "@/components/portal/lesson-help";
 import { GoogleCalendarConnect } from "@/components/portal/google-calendar-connect";
 import { PageHeader } from "@/components/portal/page-header";
@@ -552,11 +554,11 @@ function Schedule({ viewer }: { viewer: User }) {
                           const message =
                             booking.status !== "confirmed"
                               ? "The hour is released for other students. Nothing has been paid yet."
-                              : booking.creditId
-                                ? "Your free lesson comes back to you, to book another time."
-                                : isTutor
-                                  ? "The student is emailed and gets a free lesson in its place."
-                                  : "A paid lesson is not refunded when you cancel. You can move it to another time for free with “Reschedule” instead.";
+                              : viewer.id !== booking.studentId
+                                ? "The student is emailed and keeps the lesson, to book another time."
+                                : canStudentReschedule(booking)
+                                  ? "You keep the lesson: it becomes a free lesson to book another time. You can also move it with “Reschedule” instead."
+                                  : `It is less than ${STUDENT_NOTICE_HOURS} hours away, so under our refund policy the lesson counts as used and is not refunded.`;
                           const yes = await confirm({
                             title: booking.status === "confirmed" ? "Cancel this lesson?" : "Cancel this booking?",
                             message,

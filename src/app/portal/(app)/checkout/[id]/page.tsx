@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { api } from "@/lib/api";
@@ -266,6 +267,18 @@ function PayPanel({ booking, config }: { booking: Booking; config?: PaymentsConf
           </Button>
         </>
       )}
+
+      <p className="mt-3 text-center text-[11px] leading-relaxed text-ink-400">
+        By paying you agree to our{" "}
+        <Link href="/terms" className="underline hover:text-ink-600">
+          Terms
+        </Link>{" "}
+        and{" "}
+        <Link href="/refunds" className="underline hover:text-ink-600">
+          Cancellation and Refund Policy
+        </Link>
+        : move or cancel up to 6 hours before and you keep the lesson.
+      </p>
 
       <Button
         variant="danger-ghost"
