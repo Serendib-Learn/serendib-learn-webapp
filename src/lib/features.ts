@@ -17,4 +17,12 @@ export const features = {
    * place it is switched off.
    */
   messages: false,
+  /**
+   * After-lesson feedback: the "How was your lesson?" banner for students and
+   * the write-up prompt for tutors (with their reminder emails, switched off
+   * on the API in lib/reminders.ts). Off: the owners decided against asking
+   * after every lesson. Students and tutors can send feedback any time from
+   * the calendar instead. Search `FEEDBACK-HIDDEN`.
+   */
+  lessonFeedback: false,
 } as const;

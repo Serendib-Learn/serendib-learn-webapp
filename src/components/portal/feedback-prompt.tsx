@@ -240,7 +240,7 @@ function WriteUpDialog({ item, onClose }: { item: PendingFeedback; onClose: () =
       open
       onClose={onClose}
       title={`Write up: ${item.other.name}`}
-      description="Goes to their learning hub and their inbox. Keep it short — a voice note works too."
+      description="Goes to their learning hub and their inbox. Keep it short. A voice note works too."
       className="sm:max-w-xl"
     >
       <form
@@ -286,7 +286,7 @@ function WriteUpDialog({ item, onClose }: { item: PendingFeedback; onClose: () =
           <fieldset>
             <legend className="mb-2 text-sm font-medium text-ink-700">
               Materials you used or recommend{" "}
-              <span className="font-normal text-ink-400">— they go to the student&rsquo;s hub</span>
+              <span className="font-normal text-ink-400">(they go to the student&rsquo;s hub)</span>
             </legend>
             <div className="max-h-36 space-y-1.5 overflow-y-auto pr-1">
               {(materials.data ?? []).map((material) => (

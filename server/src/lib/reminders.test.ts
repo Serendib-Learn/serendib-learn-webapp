@@ -43,9 +43,20 @@ async function lesson(name: string): Promise<Booking> {
   return (await student.client.post(`/bookings/${created.body.id}/pay`)).body as Booking;
 }
 
-test("feedback reminders: three runs at once send each email once", async () => {
+test("feedback reminders are off: the job sends no after-lesson emails", async () => {
   const { db } = await import("../db/database.ts");
   const { runReminders } = await import("./reminders.ts");
+  const booking = await lesson("feedback-off");
+  await db().bookings.updateOne({ id: booking.id }, { startsAt: new Date(Date.now() - 70 * 60_000).toISOString() });
+  await runReminders();
+  await runReminders(Date.now() + 24 * 3600_000);
+  assert.equal((await mailTo("feedback-off-student@example.com", /How was your lesson|tell us how your lesson went/i)).length, 0);
+  assert.equal((await mailTo("feedback-off-tutor@example.com", /Write up your lesson|lesson write-up/i)).length, 0);
+});
+
+test("feedback reminders (when switched back on): three runs at once send each email once", async () => {
+  const { db } = await import("../db/database.ts");
+  const { runFeedbackReminders: runReminders } = await import("./reminders.ts");
   const booking = await lesson("race-feedback");
   // The lesson ended ten minutes ago.
   await db().bookings.updateOne({ id: booking.id }, { startsAt: new Date(Date.now() - 70 * 60_000).toISOString() });

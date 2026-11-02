@@ -35,10 +35,10 @@ type Tab = "people" | "requests" | "questions" | "hours" | "tutors" | "feedback"
 const tabs: { id: Tab; label: string }[] = [
   { id: "people", label: "People" },
   { id: "requests", label: "Requests" },
-  { id: "questions", label: "Questions" },
+  { id: "questions", label: "Inbox" },
   { id: "hours", label: "Tutor hours" },
   { id: "tutors", label: "Tutor applications" },
-  { id: "feedback", label: "Feedback" },
+  { id: "feedback", label: "Lesson ratings" },
   { id: "moderation", label: "Moderation" },
   { id: "waitlist", label: "Waitlist" },
   { id: "mail", label: "Google" },
@@ -762,8 +762,9 @@ function AllFeedback() {
   const items = feedback.data ?? [];
   if (items.length === 0) {
     return (
-      <EmptyState icon="⭐" title="No feedback yet">
-        Students are asked for a rating — or a voice note — as soon as each lesson ends.
+      <EmptyState icon="⭐" title="No lesson ratings">
+        Ratings and write-ups from when the portal asked after every lesson. That is switched off now:
+        feedback from students and tutors arrives in Inbox.
       </EmptyState>
     );
   }

@@ -176,7 +176,8 @@ export function PortalShell({ children }: { children: React.ReactNode }) {
       </header>
 
       <main className="mx-auto max-w-5xl px-5 py-9 sm:px-8 sm:py-14">
-        <FeedbackPrompt user={user} />
+        {/* FEEDBACK-HIDDEN */}
+        {features.lessonFeedback ? <FeedbackPrompt user={user} /> : null}
         {children}
       </main>
     </div>

@@ -186,8 +186,9 @@ async function cookieOf(client: ReturnType<typeof harness.client>): Promise<stri
   return (login.headers.get("set-cookie") ?? "").split(";")[0];
 }
 
-test("reminders: at the end of class, again a day later, then never", async () => {
+test("reminders (parked, run directly): at the end of class, again a day later, then never; the job sends none", async () => {
   const { booking } = await finishedLesson("nudged");
+  const { runFeedbackReminders } = await import("../lib/reminders.ts");
   const cron = (secret: string) =>
     fetch(`${harness.baseUrl}/jobs/reminders`, {
       method: "POST",
@@ -195,14 +196,17 @@ test("reminders: at the end of class, again a day later, then never", async () =
     });
 
   assert.equal((await cron("wrong")).status, 403);
+  // Switched off: the scheduled job asks nobody for feedback.
+  assert.equal((await cron("test-cron-secret")).status, 200);
+  assert.ok(!(await mailTo("nudged-student@example.com")).some((item) => /How was your lesson/.test(item.subject)));
 
-  await cron("test-cron-secret");
+  await runFeedbackReminders();
   const studentFirst = await mailTo("nudged-student@example.com");
   assert.ok(studentFirst.some((item) => /How was your lesson/.test(item.subject)));
   const tutorFirst = await mailTo("nudged-tutor@example.com");
   assert.ok(tutorFirst.some((item) => /Write up your lesson/.test(item.subject)));
 
-  await cron("test-cron-secret");
+  await runFeedbackReminders();
   assert.equal(
     (await mailTo("nudged-student@example.com")).filter((item) => /lesson/.test(item.subject)).length,
     studentFirst.filter((item) => /lesson/.test(item.subject)).length,
@@ -216,13 +220,13 @@ test("reminders: at the end of class, again a day later, then never", async () =
     { id: booking.id },
     { startsAt: new Date(new Date(current.startsAt).getTime() - 25 * 3600_000).toISOString() },
   );
-  await cron("test-cron-secret");
+  await runFeedbackReminders();
   assert.ok(
     (await mailTo("nudged-student@example.com")).some((item) => /A reminder/.test(item.subject)),
   );
 
   const before = (await mailTo("nudged-student@example.com")).length;
-  await cron("test-cron-secret");
+  await runFeedbackReminders();
   assert.equal((await mailTo("nudged-student@example.com")).length, before, "two reminders, no more");
 });
 

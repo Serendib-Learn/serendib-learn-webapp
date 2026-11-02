@@ -179,15 +179,24 @@ export async function runLessonReminders(now = Date.now()): Promise<number> {
 }
 
 /**
- * Everything timed: before-the-lesson and after-the-lesson reminders, and
- * releasing hours held by bookings that were never paid for.
+ * After-the-lesson feedback and write-up reminders are switched off: the
+ * owners decided against asking after every lesson (November 2026), so the
+ * portal no longer prompts either side. runFeedbackReminders is kept, and
+ * tested, for when they want it back: set this to true.
+ */
+export const FEEDBACK_REMINDERS_ON = false;
+
+/**
+ * Everything timed: before-the-lesson reminders (and, when switched on,
+ * after-the-lesson ones), and releasing hours held by bookings that were
+ * never paid for.
  */
 export async function runReminders(
   now = Date.now(),
 ): Promise<{ lesson: number; feedback: number; released: number }> {
   return {
     lesson: await runLessonReminders(now),
-    feedback: await runFeedbackReminders(now),
+    feedback: FEEDBACK_REMINDERS_ON ? await runFeedbackReminders(now) : 0,
     released: await releaseUnpaidBookings(now),
   };
 }

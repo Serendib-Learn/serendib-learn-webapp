@@ -136,3 +136,41 @@ test("an admin can close a question without replying, or delete it", async () =>
   assert.ok(!list.some((item) => item.id === second.id));
   assert.equal((await admin.client.delete(`/help/questions/${second.id}`)).status, 404);
 });
+
+test("feedback from the calendar and intro call requests land in the same inbox, each its own kind", async () => {
+  const student = await signedUpUser(harness, "student", "inbox-feedback@example.com");
+  const feedback = await student.client.post("/help/questions", {
+    kind: "feedback",
+    name: student.user.name,
+    email: student.user.email,
+    question: "The calendar is lovely, but I'd like evening slots on Sundays.",
+    page: "/portal/calendar",
+  });
+  assert.equal(feedback.status, 201, JSON.stringify(feedback.body));
+  assert.equal(feedback.body.kind, "feedback");
+  assert.match((await latestMail(harness, "inbox-feedback@example.com", "notification"))?.subject ?? "", /Thanks for your feedback/);
+
+  // Feedback still needs a few words.
+  assert.equal((await student.client.post("/help/questions", { ...ask(), kind: "feedback", question: "ok" })).status, 400);
+
+  // An intro call needs a number to arrange it on; the message is optional.
+  assert.equal((await harness.client().post("/help/questions", ask({ kind: "intro_call", question: "" }))).status, 400);
+  const call = await harness.client().post(
+    "/help/questions",
+    ask({ kind: "intro_call", email: "intro@example.com", question: "", phone: "+44 7700 900123", goodTimes: "Weekday evenings" }),
+  );
+  assert.equal(call.status, 201, JSON.stringify(call.body));
+  assert.equal(call.body.kind, "intro_call");
+  assert.equal(call.body.phone, "+44 7700 900123");
+  assert.equal(call.body.goodTimes, "Weekday evenings");
+  assert.match((await latestMail(harness, "intro@example.com", "notification"))?.subject ?? "", /intro call request/);
+
+  const admin = await adminClient(harness);
+  const inbox = (await admin.client.get("/help/questions")).body as HelpQuestion[];
+  assert.ok(inbox.some((item) => item.id === feedback.body.id && item.kind === "feedback"));
+  assert.ok(inbox.some((item) => item.id === call.body.id && item.kind === "intro_call"));
+
+  const replied = await admin.client.post(`/help/questions/${call.body.id}/reply`, { body: "How about Tuesday at 7pm your time?" });
+  assert.equal(replied.status, 200);
+  assert.match((await latestMail(harness, "intro@example.com", "notification"))?.subject ?? "", /Your free intro call/);
+});

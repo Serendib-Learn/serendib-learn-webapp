@@ -36,7 +36,6 @@ function lessonStatus(lesson: TutorHoursLesson): { tone: Tone; label: string } {
       label: `Reported missed${lesson.dispute.cause ? `: ${causeLabel[lesson.dispute.cause]}` : ""}${lesson.dispute.status === "approved" ? " (approved)" : ""}`,
     };
   }
-  if (!lesson.writtenUp) return { tone: "saffron", label: "Awaiting write-up" };
   return { tone: "jade", label: "Verified" };
 }
 
@@ -49,7 +48,7 @@ function paymentText(lesson: TutorHoursLesson) {
 function downloadCsv(tutors: TutorHoursSummary[], people: Map<string, PublicProfile>, month: Date) {
   const header = [
     "Tutor", "Student", "Starts", "Minutes", "Language", "State", "Status",
-    "Paid with", "Card amount (LKR)", "Test payment", "Written up", "Verified", "Student rating",
+    "Paid with", "Card amount (LKR)", "Test payment", "Verified", "Student rating",
   ];
   const rows = tutors.flatMap((tutor) =>
     tutor.lessons.map((lesson) => [
@@ -63,7 +62,6 @@ function downloadCsv(tutors: TutorHoursSummary[], people: Map<string, PublicProf
       paidLabel[lesson.paidWith],
       lesson.amountCents === undefined ? "" : lesson.amountCents / 100,
       lesson.testPayment ? "yes" : "",
-      lesson.writtenUp ? "yes" : "no",
       lesson.verified ? "yes" : "no",
       lesson.rating ?? "",
     ]),
@@ -82,7 +80,7 @@ function downloadCsv(tutors: TutorHoursSummary[], people: Map<string, PublicProf
 
 /**
  * Administration → Tutor hours: what each tutor taught in a month, what can
- * be paid for (verified: taught, written up, not reported missed), and what
+ * be paid for (verified: taught and not reported missed), and what
  * was collected. Administrators only — the API refuses everyone else.
  */
 export function AdminTutorHours() {
@@ -102,7 +100,7 @@ export function AdminTutorHours() {
   const active = tutors.filter((tutor) => tutor.lessons.length > 0);
   const idle = tutors.filter((tutor) => tutor.lessons.length === 0);
   const total = (pick: (tutor: TutorHoursSummary) => number) => active.reduce((sum, tutor) => sum + pick(tutor), 0);
-  const toCheck = total((tutor) => tutor.awaitingWriteUp + tutor.disputed);
+  const toCheck = total((tutor) => tutor.disputed);
   const isThisMonth = month.getTime() === new Date(new Date().getFullYear(), new Date().getMonth(), 1).getTime();
 
   return (
@@ -157,10 +155,9 @@ export function AdminTutorHours() {
             <Stat label="To check" value={String(toCheck)} warn={toCheck > 0} />
           </div>
           <p className="text-xs leading-relaxed text-ink-400">
-            <strong className="text-ink-600">Verified</strong> lessons have been taught, written up by the tutor and not
-            reported missed. Work out tutors&apos; pay from these. A lesson awaiting a write-up becomes verified once the
-            tutor writes it up; a reported one once its report is declined under Requests. A report that the student
-            could not make it doesn&apos;t count against the tutor.
+            <strong className="text-ink-600">Verified</strong> lessons have been taught and not reported missed. Work
+            out tutors&apos; pay from these. A reported lesson becomes verified if its report is declined under
+            Requests; a report that the student could not make it doesn&apos;t count against the tutor.
           </p>
           {active.map((tutor) => (
             <TutorCard key={tutor.tutorId} tutor={tutor} people={byId} />
@@ -206,9 +203,6 @@ function TutorCard({ tutor, people }: { tutor: TutorHoursSummary; people: Map<st
               : ""}
           </p>
           <div className="mt-2 flex flex-wrap gap-2">
-            {tutor.awaitingWriteUp > 0 ? (
-              <Badge tone="saffron">{tutor.awaitingWriteUp} awaiting write-up</Badge>
-            ) : null}
             {tutor.disputed > 0 ? <Badge tone="clay">{tutor.disputed} reported missed</Badge> : null}
           </div>
         </div>

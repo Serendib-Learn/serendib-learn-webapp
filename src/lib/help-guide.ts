@@ -352,22 +352,13 @@ export const helpCategories: HelpCategory[] = [
     topics: [
       {
         id: "feedback",
-        title: "Rate a lesson",
+        title: "Send feedback, a question or a concern",
         steps: [
-          "After a lesson, a banner asks How was your lesson? on every portal page.",
-          "Rate it, and the pace and materials, say what you want next time, and add a comment or voice note.",
+          "In Calendar, use Questions or concerns? at the bottom of the page.",
+          "It goes straight to the Serendib team, who read every message and reply by email.",
         ],
-        keywords: "feedback rate rating review stars voice note",
-      },
-      {
-        id: "lesson-notes",
-        title: "See my tutor's notes",
-        steps: [
-          "Open Learning hub → Lesson notes.",
-          "Each lesson's write-up has what was covered, what went well, what to work on, new words and where you are now.",
-        ],
-        link: { href: "/portal/learning-hub", label: "Learning hub" },
-        keywords: "notes progress write up summary report",
+        link: { href: "/portal/calendar", label: "Calendar" },
+        keywords: "feedback rate rating review concern complaint question suggestion",
       },
       {
         id: "materials",
@@ -506,15 +497,14 @@ export const helpCategories: HelpCategory[] = [
         keywords: "reschedule cancel move tutor",
       },
       {
-        id: "write-up",
-        title: "Write up a lesson",
+        id: "tutor-feedback",
+        title: "Send the team feedback or a concern",
         steps: [
-          "After the lesson, press Write it up (in Calendar, or the banner at the top of the portal).",
-          "Add what you covered, what went well, what to work on, new words, progress, engagement and the materials used.",
-          "Progress is shown to the student. Engagement is only for you and the team. Materials used go into the student's hub.",
+          "In Calendar, use Questions or concerns? at the bottom of the page.",
+          "It goes straight to the Serendib team, who reply by email.",
         ],
         link: { href: "/portal/calendar", label: "Calendar" },
-        keywords: "write up notes report feedback after lesson complete",
+        keywords: "feedback concern complaint question suggestion",
       },
       {
         id: "tutor-materials",
@@ -634,7 +624,8 @@ export const helpCategories: HelpCategory[] = [
         id: "admin-records",
         title: "Feedback, waitlist and audit log",
         steps: [
-          "Feedback: every lesson rating and write-up.",
+          "Inbox: questions from the Help button, feedback from the calendar and free intro call requests. Reply by email from there.",
+          "Feedback: lesson ratings and write-ups from before after-lesson feedback was switched off.",
           "Waitlist: people who registered interest on the home page.",
           "Audit log: a record of every admin action.",
         ],

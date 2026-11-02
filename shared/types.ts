@@ -276,8 +276,6 @@ export interface TutorHoursLesson {
   amountCents?: number;
   /** A Payments.lk sandbox payment: no real money moved. */
   testPayment?: boolean;
-  /** The tutor has written the lesson up. */
-  writtenUp: boolean;
   /** The student's rating, 1 to 5, once they have given feedback. */
   rating?: number;
   /**
@@ -285,7 +283,7 @@ export interface TutorHoursLesson {
    * except "I could not make it", which says nothing about the tutor.
    */
   dispute?: { status: StudentRequestStatus; cause?: MissedCause };
-  /** Taught, written up and not reported missed: counts towards the tutor's pay. */
+  /** Taught and not reported missed: counts towards the tutor's pay. */
   verified: boolean;
   cancelReason?: string;
 }
@@ -297,8 +295,6 @@ export interface TutorHoursSummary {
   taughtLessons: number;
   taughtMinutes: number;
   verifiedMinutes: number;
-  /** Taught, but the tutor has not written them up yet. */
-  awaitingWriteUp: number;
   disputed: number;
   upcomingLessons: number;
   upcomingMinutes: number;
@@ -589,11 +585,25 @@ export interface WaitlistEntry {
  * guided topics did not answer. It goes to Admin → Questions; an
  * administrator's reply is emailed to the address given.
  */
+/**
+ * What reached the team's inbox: a question from the help widget's "Ask us",
+ * feedback from the calendar's "Questions or concerns?", or a request for a
+ * free intro call with the team (the pricing page).
+ */
+export type HelpKind = "question" | "feedback" | "intro_call";
+
 export interface HelpQuestion {
   id: string;
+  /** Missing on questions from before kinds existed: a question. */
+  kind?: HelpKind;
   name: string;
   email: string;
+  /** The message itself. For an intro call, what they want to learn (may be empty). */
   question: string;
+  /** Intro calls: a WhatsApp or phone number to arrange it on. */
+  phone?: string;
+  /** Intro calls: days and times that suit them, in their words. */
+  goodTimes?: string;
   /** The page they were on when they asked, e.g. "/portal/calendar". */
   page?: string;
   /** Set when they asked while signed in. */

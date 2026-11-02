@@ -13,6 +13,7 @@ import { AvailabilityEditor } from "@/components/portal/availability-editor";
 import { HolidaysPanel } from "@/components/portal/holidays-panel";
 import { MonthCalendar, toISODate, type DayMarks } from "@/components/portal/month-calendar";
 import { BookingRow } from "@/components/portal/booking-row";
+import { FeedbackForm } from "@/components/portal/feedback-form";
 import {
   FreeLessonsPanel,
   MissedLessonDialog,
@@ -93,6 +94,12 @@ function Calendar() {
           <h2 className="font-display text-xl text-forest">My hours</h2>
           <GoogleCalendarConnect />
           <AvailabilityEditor tutorId={user.id} timezone={user.timezone} />
+        </section>
+      ) : null}
+
+      {user.role !== "admin" ? (
+        <section className="mt-12">
+          <FeedbackForm user={user} />
         </section>
       ) : null}
     </>

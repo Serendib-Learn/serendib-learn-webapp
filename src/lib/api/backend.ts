@@ -1,4 +1,5 @@
 import type {
+  HelpKind,
   TutorHoursReport,
   AuditLogEntry,
   AvailabilityRule,
@@ -306,10 +307,14 @@ export interface Backend {
 
   /** The help widget's "Ask us" questions (anyone asks; admins read and reply). */
   help: {
+    /** A question (the help widget), feedback (the calendar) or an intro call request (pricing). */
     ask(input: {
+      kind?: HelpKind;
       name: string;
       email: string;
       question: string;
+      phone?: string;
+      goodTimes?: string;
       page?: string;
       turnstileToken?: string;
     }): Promise<HelpQuestion>;

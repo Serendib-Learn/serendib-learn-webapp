@@ -18,7 +18,7 @@ after(async () => {
 
 const hour = 3600_000;
 
-test("tutor hours: taught, verified, awaiting a write-up, reported missed, upcoming", async () => {
+test("tutor hours: taught, verified, reported missed, upcoming", async () => {
   const { db } = await import("../db/database.ts");
   const tutor = await signedUpUser(harness, "tutor", "hours-tutor@example.com");
   const student = await signedUpUser(harness, "student", "hours-student@example.com");
@@ -77,8 +77,7 @@ test("tutor hours: taught, verified, awaiting a write-up, reported missed, upcom
   assert.equal(mine.tutorName, tutor.user.name);
   assert.equal(mine.taughtLessons, 3);
   assert.equal(mine.taughtMinutes, 180);
-  assert.equal(mine.verifiedMinutes, 60, "only the written-up, undisputed lesson counts towards pay");
-  assert.equal(mine.awaitingWriteUp, 2);
+  assert.equal(mine.verifiedMinutes, 120, "every taught lesson not reported missed counts towards pay");
   assert.equal(mine.disputed, 1);
   assert.equal(mine.upcomingLessons, 1);
   assert.equal(mine.cancelledLessons, 0, "an abandoned checkout is left out");
@@ -86,7 +85,8 @@ test("tutor hours: taught, verified, awaiting a write-up, reported missed, upcom
 
   const byId = new Map(mine.lessons.map((lesson) => [lesson.bookingId, lesson]));
   assert.equal(byId.get(written.id)?.verified, true);
-  assert.equal(byId.get(unwritten.id)?.verified, false);
+  assert.equal(byId.get(unwritten.id)?.verified, true, "no write-up needed");
+  assert.equal(byId.get(missed.id)?.verified, false);
   assert.deepEqual(byId.get(missed.id)?.dispute, { status: "pending", cause: "tutor_absent" });
   assert.equal(byId.get(coming.id)?.state, "upcoming");
   // Paid through the demo checkout: recorded, not a card payment.

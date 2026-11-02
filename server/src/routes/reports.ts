@@ -15,8 +15,9 @@ import type {
 /**
  * Reports for administrators only. The tutor hours report shows, for any
  * period, every lesson each tutor taught or has coming, how it was paid for,
- * and whether it is *verified* — taught, written up by the tutor and not
- * reported missed — which is what a tutor's pay should be worked out from.
+ * and whether it is *verified* (taught and not reported missed), which is
+ * what a tutor's pay should be worked out from. Tutors no longer write every
+ * lesson up, so a write-up is not part of it.
  */
 export const reportsRouter = Router();
 
@@ -56,13 +57,11 @@ reportsRouter.get(
     );
     const ids = bookings.map((booking) => booking.id);
 
-    const [notes, feedback, reports, tutors] = await Promise.all([
-      db().lessonNotes.find({ bookingId: { $in: ids } }),
+    const [feedback, reports, tutors] = await Promise.all([
       db().feedback.find({ bookingId: { $in: ids } }),
       db().studentRequests.find({ kind: "missed_session", bookingId: { $in: ids } }),
       db().users.find({ role: "tutor" }),
     ]);
-    const writtenUp = new Set(notes.map((note) => note.bookingId));
     const ratingFor = new Map(feedback.map((item) => [item.bookingId, item.rating]));
     const disputeFor = new Map<string, StudentRequest>();
     for (const report of reports) {
@@ -76,7 +75,6 @@ reportsRouter.get(
       const ends = new Date(booking.startsAt).getTime() + booking.durationMins * 60_000;
       const state = booking.status === "cancelled" ? "cancelled" : ends <= now ? "taught" : "upcoming";
       const dispute = disputeFor.get(booking.id);
-      const done = booking.status === "completed" || writtenUp.has(booking.id);
       const paid = paidWith(booking);
       return {
         bookingId: booking.id,
@@ -89,10 +87,9 @@ reportsRouter.get(
         paidWith: paid,
         amountCents: paid === "card" ? booking.payment?.amountCents : undefined,
         testPayment: paid === "card" && booking.payment?.mode === "test" ? true : undefined,
-        writtenUp: done,
         rating: ratingFor.get(booking.id),
         dispute: dispute ? { status: dispute.status, cause: dispute.cause } : undefined,
-        verified: state === "taught" && done && !dispute,
+        verified: state === "taught" && !dispute,
         cancelReason: booking.cancelReason,
       };
     };
@@ -119,7 +116,6 @@ reportsRouter.get(
         taughtLessons: taught.length,
         taughtMinutes: minutes(taught),
         verifiedMinutes: minutes(taught.filter((lesson) => lesson.verified)),
-        awaitingWriteUp: taught.filter((lesson) => !lesson.writtenUp).length,
         disputed: lessons.filter((lesson) => lesson.dispute).length,
         upcomingLessons: upcoming.length,
         upcomingMinutes: minutes(upcoming),

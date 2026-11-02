@@ -12,7 +12,7 @@ import { helpQuestionLimiter } from "../lib/rate-limit.ts";
 import { requireAdmin, requireUser } from "../lib/sessions.ts";
 import { requireTurnstile } from "../lib/turnstile.ts";
 import { parseBody } from "../lib/validate.ts";
-import type { HelpQuestion } from "../../../shared/types.ts";
+import type { HelpKind, HelpQuestion } from "../../../shared/types.ts";
 
 /**
  * The help widget's "Ask us": a question the guided topics did not answer,
@@ -21,24 +21,59 @@ import type { HelpQuestion } from "../../../shared/types.ts";
  */
 export const helpRouter = Router();
 
-const questionSchema = z.object({
-  name: z
-    .string({ error: "We need your name." })
-    .trim()
-    .min(1, "We need your name.")
-    .max(100, "Keep your name under 100 characters."),
-  email: z
-    .string({ error: "We need an email address to reply to." })
-    .trim()
-    .pipe(z.email({ error: "That email address doesn't look right." })),
-  question: z
-    .string({ error: "What's your question?" })
-    .trim()
-    .min(10, "Tell us a little more, a sentence or two.")
-    .max(3000, "Keep it under 3000 characters."),
-  page: z.string().max(200).optional(),
-  turnstileToken: z.string().optional(),
-});
+const questionSchema = z
+  .object({
+    kind: z.enum(["question", "feedback", "intro_call"]).default("question"),
+    name: z
+      .string({ error: "We need your name." })
+      .trim()
+      .min(1, "We need your name.")
+      .max(100, "Keep your name under 100 characters."),
+    email: z
+      .string({ error: "We need an email address to reply to." })
+      .trim()
+      .pipe(z.email({ error: "That email address doesn't look right." })),
+    question: z.string().trim().max(3000, "Keep it under 3000 characters.").default(""),
+    phone: z.string().trim().max(40, "That number looks too long.").optional(),
+    goodTimes: z.string().trim().max(300, "Keep the times under 300 characters.").optional(),
+    page: z.string().max(200).optional(),
+    turnstileToken: z.string().optional(),
+  })
+  // A question or feedback needs a few words; an intro call needs a way to arrange it.
+  .superRefine((input, context) => {
+    if (input.kind !== "intro_call" && input.question.length < 10) {
+      context.addIssue({
+        code: "custom",
+        path: ["question"],
+        message: "Tell us a little more, at least 10 characters.",
+      });
+    }
+    if (input.kind === "intro_call" && !input.phone) {
+      context.addIssue({ code: "custom", path: ["phone"], message: "Add a WhatsApp or phone number so we can arrange the call." });
+    }
+  });
+
+/** How each kind reads in emails. */
+const kindWords: Record<HelpKind, { ack: string; ackBody: string; admin: string; reply: string }> = {
+  question: {
+    ack: "We've got your question",
+    ackBody: "Someone from the team will reply to this address, usually within a day.",
+    admin: "Help question",
+    reply: "Re: your question to Serendib Learn",
+  },
+  feedback: {
+    ack: "Thanks for your feedback",
+    ackBody: "Someone from the team reads every message, and will reply here if there is anything to follow up.",
+    admin: "Feedback",
+    reply: "Re: your feedback to Serendib Learn",
+  },
+  intro_call: {
+    ack: "We've got your intro call request",
+    ackBody: "Someone from the team will be in touch on WhatsApp or by email, usually within a day, to set a time. The call is free and there is nothing to pay.",
+    admin: "Intro call request",
+    reply: "Your free intro call with Serendib Learn",
+  },
+};
 
 const replySchema = z.object({
   body: z
@@ -58,9 +93,12 @@ helpRouter.post(
 
     const question: HelpQuestion = {
       id: newId("hq"),
+      kind: input.kind,
       name: input.name,
       email: normaliseEmail(input.email),
       question: input.question,
+      phone: input.phone || undefined,
+      goodTimes: input.goodTimes || undefined,
       page: input.page?.startsWith("/") ? input.page : undefined,
       userId: request.user?.id,
       status: "open",
@@ -69,15 +107,23 @@ helpRouter.post(
     };
     const created = await db().helpQuestions.insertOne(question);
 
+    const words = kindWords[input.kind];
+    const details = [
+      created.phone ? `WhatsApp / phone: ${created.phone}` : "",
+      created.goodTimes ? `Good times: ${created.goodTimes}` : "",
+      created.question,
+    ]
+      .filter(Boolean)
+      .join("\n");
     await deliver({
       to: created.email,
-      subject: "We've got your question",
-      body: `Thanks ${created.name}. Someone from the team will reply to this address, usually within a day.\n\nYou asked:\n${created.question}`,
+      subject: words.ack,
+      body: `Thanks ${created.name}. ${words.ackBody}${details ? `\n\nYou sent:\n${details}` : ""}`,
       kind: "notification",
     });
     await notifyAdmins(
-      `Help question from ${created.name}`,
-      `${created.name} (${created.email})${created.page ? `, on ${created.page}` : ""}, asks:\n\n${created.question}\n\nReply: ${config.appUrl}/portal/admin?tab=questions`,
+      `${words.admin} from ${created.name}`,
+      `${created.name} (${created.email})${created.page ? `, on ${created.page}` : ""}:\n\n${details}\n\nReply: ${config.appUrl}/portal/admin?tab=questions`,
     );
 
     response.status(201).json(created);
@@ -116,8 +162,8 @@ helpRouter.post(
 
     await deliver({
       to: question.email,
-      subject: "Re: your question to Serendib Learn",
-      body: `Hi ${question.name},\n\n${body}\n\nThanks,\n${actor.name}\n\nYou asked:\n${question.question}`,
+      subject: kindWords[question.kind ?? "question"].reply,
+      body: `Hi ${question.name},\n\n${body}\n\nThanks,\n${actor.name}${question.question ? `\n\nYou wrote:\n${question.question}` : ""}`,
       kind: "notification",
     });
     await logAudit(actor, "help_replied", question.name, question.email);
