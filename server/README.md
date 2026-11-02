@@ -80,7 +80,8 @@ form, the help widget's questions, the tutor list and the demo inbox needs a ses
 | Content | `GET /content/:kind`, `GET /content/:kind/:id` (public), `PUT /content/:kind/:id` (create: admin; change: its editors), `DELETE /content/:kind/:id` (admin) — kinds `phrase-lists`, `alphabet`, `holidays`, `stages`, `heritage` |
 | Alphabet audio | `GET /alphabet-audio` (public list), `GET /alphabet-audio/:language/:key` (public audio), `PUT\|DELETE /alphabet-audio/:language/:key` (approved tutors and admins) |
 | Waitlist | `POST /waitlist`, `GET /waitlist` (admin) |
-| Help questions | `POST /help/questions` (anyone; 10 an hour per IP; Turnstile when signed out), `GET /help/questions` (admin), `POST /help/questions/:id/reply` (admin, emails the asker), `POST /help/questions/:id/close` (admin), `DELETE /help/questions/:id` (admin) |
+| Bundles | `POST /bundles` (a student: 5 or 10 open hours, any tutors), `GET /bundles/:id` (synced from Payments.lk first), `POST /bundles/:id/checkout`, `POST /bundles/:id/pay` (demo, or admin), `POST /bundles/:id/cancel` (unpaid only) |
+| Help questions | `POST /help/questions` (anyone; `kind` question, feedback or intro_call, the last with `phone` and `goodTimes`; 10 an hour per IP; Turnstile when signed out), `GET /help/questions` (admin), `POST /help/questions/:id/reply` (admin, emails the asker), `POST /help/questions/:id/close` (admin), `DELETE /help/questions/:id` (admin) |
 | Demo | `GET /mail`, `POST /mail/:id/read`, `DELETE /mail`, `POST /demo/reset` |
 | Integrations | `GET /integrations/google/status`, `GET /integrations/google/connect`, `POST /integrations/google/disconnect`, `GET /integrations/google/mail/status\|connect` (admin), `POST /integrations/google/mail/disconnect` (admin), `GET /integrations/google/system-calendar/status\|connect` (admin), `POST /integrations/google/system-calendar/disconnect` (admin), `GET /integrations/google/callback` |
 
@@ -164,6 +165,15 @@ Google sign-in record the browser's zone; invited accounts get Asia/Colombo.
 `routes/availability.test.ts` checks a tutor in three zones — run the tests
 with `TZ=UTC` to see them as production does.
 
+## Data fixes
+
+`db/data-fixes.ts` runs one-off changes to data already in the database
+when the API starts, each recorded by id in `dataFixes` so it never runs
+twice. The first, `2026-11-content-copy`, rewrites the teaching content
+with `lib/text-fixes.ts`: no em dashes, and "Wesikiliyata" becomes "Toilet
+ekakata". The seed files already read that way. Add a fix by appending to
+its list with a new id; every fix must give the same result if run twice.
+
 ## Who can do what: students, tutors, admins
 
 The API enforces these itself; the portal only hides what a role cannot use.
@@ -223,6 +233,12 @@ an assigned material or homework from that tutor.
   Unpaid checkouts are left out. Admins only.
 
 ## Lesson feedback, voice notes and reminders
+
+**After-lesson feedback is switched off** (November 2026): the portal no
+longer prompts either side and `runReminders` skips the feedback reminders
+(`FEEDBACK_REMINDERS_ON` in `lib/reminders.ts`). The code below is kept and
+tested for when it is wanted back. Feedback now arrives any time through
+the help inbox (`kind: "feedback"`, the calendar's form).
 
 `routes/feedback.ts`, `lib/feedback.ts`, `lib/reminders.ts`. Once a lesson's
 end time passes, `GET /feedback/pending` lists it for each side, and each

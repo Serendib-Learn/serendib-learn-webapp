@@ -524,6 +524,7 @@ flowchart LR
 | `/` | Home. **Hero:** "Tutors for Sri Lankans wherever they call home". **About us:** the process. **Why families choose Serendib:** the promise. **Register your interest:** the waitlist form. |
 | `/how-it-works` | Four stages: tell us why you're learning → pick a tutor and a time → have the lesson → practise in between |
 | `/tutors` | Approved tutors from `GET /users/tutors`, fetched server-side with `revalidate = 60` (no emails exposed), with their photos. A tutor listed without an email yet shows "Ask for a lesson" instead of availability. |
+| `/pricing` | Single class, 5 sessions, 10 sessions (prices from `LESSON_PRICE_LKR` and `BUNDLE_SIZES`), the booking rules, and **Book your free intro call** (a request to the team, see 8.8 Inbox) |
 | `/alphabet` | The Sinhala and Tamil alphabet sheets with audio; tutors can record letters here |
 | `/privacy` | The original privacy text, plus a "Services we use" section |
 | `/terms` | Terms and Conditions: accounts, booking and payment, lessons, conduct and safeguarding, tutors, content, liability, Sri Lankan law |
@@ -867,6 +868,28 @@ Both `awaiting_payment` and `confirmed` hold the tutor's slot.
 - Who may do what as a student, tutor or admin is tabulated in
   `server/README.md` → "Who can do what".
 
+### 8.2b Bundles (5 or 10 lessons, paid once)
+
+- **Booking.** On the calendar a student chooses *5 lessons* or *10
+  lessons* (or arrives with `?bundle=5` from the pricing page), presses
+  **Add** on open hours with any tutors, picks the language and what to
+  work on, then **Continue to payment**. `POST /bundles` checks every hour
+  is open (up to 60 days ahead), in a language the tutor teaches, and that
+  no two are at the same time, then books them as ordinary bookings
+  carrying `bundleId`, plus one `bundles` record with the total.
+- **Paying.** `/portal/checkout/bundle/[id]`: one Payments.lk checkout for
+  the total (reference = the bundle). The webhook, or the page's check on
+  return, confirms every lesson (each carries its share of the payment, so
+  Tutor hours and refunds work per lesson), with **one receipt** for the
+  student and **one note per tutor**.
+- **Unpaid, a bundle is one unit.** Its lessons can't be paid for one by
+  one; cancelling one releases the bundle; the reminders job releases it
+  30 minutes after booking with no checkout, or once the checkout runs out.
+- **Paid, each lesson is ordinary:** moved, cancelled (6-hour rule, kept
+  as a free lesson), refunded per lesson within 30 days, reminded and
+  reported like any other.
+- `lib/bundles.ts`, `routes/bundles.ts`, `components/portal/bundle-picker.tsx`.
+
 ### 8.3 Payments (Payments.lk)
 
 ```mermaid
@@ -954,6 +977,16 @@ sequenceDiagram
 
 ### 8.5 The feedback loop
 
+**Switched off (November 2026).** The owners decided against asking after
+every lesson: the after-lesson banner (`features.lessonFeedback`, search
+`FEEDBACK-HIDDEN`) and its reminder emails (`FEEDBACK_REMINDERS_ON` in
+`lib/reminders.ts`) are off, for students and tutors alike. Instead, the
+calendar has a small **Questions or concerns?** form for students and
+tutors; it lands in Administration → **Inbox** as feedback, and the team
+replies by email. Tutor hours no longer need a write-up to count (8.8).
+Everything below still works and is tested, for when it is switched back
+on.
+
 1. Once a lesson's end time passes, `GET /feedback/pending` lists it for
    both sides, and **each side is asked different things**:
    - **Student:** a rating (1–5), the pace (too slow / about right / too
@@ -974,7 +1007,7 @@ sequenceDiagram
    - **Who can hear them:** only the two people on the lesson, and admins.
    - **Who can attach them:** only the author, to their own feedback or
      write-up.
-5. Admins see all feedback under Administration → Feedback.
+5. Admins see all lesson ratings and write-ups under Administration → Lesson ratings.
 6. **Materials feedback.** Every material card has "Rate this" for
    students (how helpful it was, whether the level was right) and tutors
    (how well it works in a lesson, a suggested improvement — tutors rate
@@ -1028,10 +1061,10 @@ and 1 hour ahead, with the Meet link and a link to the calendar.
 | --- | --- |
 | People | Every account, with search, filters and sorting (needs attention first by default): change roles and membership, delete accounts (not super admins), invite someone, edit profiles, **Mark verified** for a code that never arrived |
 | Requests | Free-session requests and missed-lesson reports: approve (grants a free lesson) or decline with a note |
-| Questions | Questions from the Help button's **Ask us**: reply (emailed to the asker, with their question; follow-ups allowed), mark answered without email, or delete. Open ones count towards the Admin badge |
-| Tutor hours | Month by month, each tutor's lessons taught, **verified** hours (taught, written up, not reported missed — what pay is worked out from), lessons to come, card payments and free lessons, with a CSV download. Admins only |
+| Inbox | Everything people send the team, filtered by kind: **questions** from the Help button's Ask us, **feedback** from the calendar's Questions or concerns?, and **free intro call** requests from the pricing page (with a WhatsApp link and good times). Reply (emailed, with their message; follow-ups allowed), mark answered without email, or delete. Open ones count towards the Admin badge |
+| Tutor hours | Month by month, each tutor's lessons taught, **verified** hours (taught and not reported missed: what pay is worked out from), lessons to come, card payments and free lessons, with a CSV download. Admins only |
 | Tutor applications | Approve or reject pending tutors |
-| Feedback | All lesson ratings and write-ups |
+| Lesson ratings | Ratings and write-ups from when the portal asked after every lesson (switched off; see 8.5) |
 | Moderation | Approve or reject community posts |
 | Waitlist | "Register your interest" entries |
 | Google | Connect the shared Serendib calendar and the Gmail sender, with **test buttons** for each. The admin dashboard warns while either is missing. |
