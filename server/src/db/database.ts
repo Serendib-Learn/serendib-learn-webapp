@@ -117,6 +117,16 @@ export interface PaymentEvent extends Doc {
   receivedAt: string;
 }
 
+/**
+ * One reminder email, claimed before it is sent (lib/reminders.ts). The id
+ * names the email (booking, kind, which one), and ids are unique, so only one
+ * runner — however many timers, instances or cron calls race — ever sends it.
+ */
+export interface ReminderClaim extends Doc {
+  id: string;
+  claimedAt: string;
+}
+
 /** A recorded voice note. The audio stays on the server, base64 encoded. */
 export interface VoiceNote extends Doc {
   id: string;
@@ -185,6 +195,7 @@ export interface Database {
   mail: Collection<MailMessage>;
   gameResults: Collection<GameResult>;
   paymentEvents: Collection<PaymentEvent>;
+  reminderClaims: Collection<ReminderClaim>;
   feedback: Collection<SessionFeedback>;
   chapters: Collection<CourseChapter>;
   connections: Collection<Connection>;
@@ -231,6 +242,7 @@ function build(from: Store): Database {
     mail: from.collection<MailMessage>("mail"),
     gameResults: from.collection<GameResult>("gameResults"),
     paymentEvents: from.collection<PaymentEvent>("paymentEvents"),
+    reminderClaims: from.collection<ReminderClaim>("reminderClaims"),
     feedback: from.collection<SessionFeedback>("feedback"),
     chapters: from.collection<CourseChapter>("chapters"),
     connections: from.collection<Connection>("connections"),
@@ -282,6 +294,7 @@ async function seedContents(): Promise<Record<string, Doc[]>> {
     mail: seed.mail,
     gameResults: seed.gameResults,
     paymentEvents: [],
+    reminderClaims: [],
     feedback: [],
     connections: [],
     postImages: [],

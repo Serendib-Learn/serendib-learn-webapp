@@ -105,8 +105,12 @@ export const config = {
    * in-process timer off (the tests do). On Cloud Run an idle instance gets no
    * CPU, so also point Cloud Scheduler at POST /api/jobs/reminders with the
    * CRON_SECRET below — that runs the same job on demand.
+   *
+   * Every minute on Cloud Run (which sets K_SERVICE), off elsewhere unless
+   * set: a laptop whose .env points at the production database must not
+   * email real students and tutors.
    */
-  reminderIntervalMs: Number(process.env.REMINDER_INTERVAL_MS ?? 60_000),
+  reminderIntervalMs: Number(process.env.REMINDER_INTERVAL_MS ?? (process.env.K_SERVICE ? 60_000 : 0)),
 
   /** Shared secret for POST /api/jobs/reminders. Empty disables the endpoint. */
   cronSecret: process.env.CRON_SECRET ?? "",

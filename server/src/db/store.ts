@@ -18,6 +18,19 @@ export interface Doc {
   id: string;
 }
 
+/** Inserting a document whose id is taken. `code` matches MongoDB's duplicate-key error. */
+export class DuplicateIdError extends Error {
+  readonly code = 11000;
+  constructor(id: string) {
+    super(`A document with id ${id} already exists.`);
+  }
+}
+
+/** Either store's duplicate-id error. */
+export function isDuplicateId(error: unknown): boolean {
+  return (error as { code?: unknown } | null)?.code === 11000;
+}
+
 /** Supported filter operators. A bare value means "equals". */
 export interface Operators<V> {
   $in?: V[];
@@ -200,6 +213,9 @@ class JsonCollection<T extends Doc> implements Collection<T> {
   }
 
   async insertOne(doc: T): Promise<T> {
+    // Ids are unique, as MongoDB's index makes them. Checked and pushed with no
+    // await between, so two concurrent inserts cannot both get through.
+    if (this.#rows().some((row) => row.id === doc.id)) throw new DuplicateIdError(doc.id);
     this.#rows().push(clone(doc));
     await this.#store.flush();
     return clone(doc);

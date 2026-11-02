@@ -1209,7 +1209,7 @@ secrets):
 | `PAYMENTS_LK_SECRET_KEY` / `PAYMENTS_LK_WEBHOOK_SECRET` | empty | Payments (empty means the demo checkout) |
 | `LESSON_PRICE_LKR` | 5000 | What an hour-long lesson costs, in rupees (every tutor) |
 | `USD_TO_LKR` | 300 | Rupees per dollar: the rough dollar figure at checkout |
-| `REMINDER_INTERVAL_MS` | 60000 | In-process reminder timer (0 turns it off) |
+| `REMINDER_INTERVAL_MS` | 60000 on Cloud Run, off elsewhere | In-process reminder timer (0 turns it off). Off locally so a laptop on the production database never emails real people |
 | `CRON_SECRET` | empty | Enables `POST /api/jobs/reminders` |
 | `SUPER_ADMIN_EMAIL` / `_NAME` / `_PASSWORD` | empty | Owners' account bootstrap |
 | `RATE_LIMIT_SCALE` | 1 | Tests only |

@@ -1,5 +1,6 @@
 import { config } from "../config.ts";
 import { db } from "../db/database.ts";
+import { isDuplicateId } from "../db/store.ts";
 import {
   awaitsFeedback,
   lessonEndsAt,
@@ -8,16 +9,40 @@ import {
   tutorWroteUp,
 } from "./feedback.ts";
 import { deliver } from "./mail.ts";
+import { nowIso } from "./ids.ts";
 import { formatInZone } from "./time.ts";
 import { releaseUnpaidBookings } from "./unpaid-bookings.ts";
 import type { Booking } from "../../../shared/types.ts";
+
+/**
+ * Sends one reminder at most once, however many runners race for it: the
+ * in-process timer on every instance, Cloud Scheduler's POST /jobs/reminders,
+ * and any local server pointed at the same database. The email is claimed
+ * first (a unique id in `reminderClaims`); only the runner whose claim lands
+ * sends it. A send that fails gives the claim back, so the next run retries.
+ */
+async function sendOnce(claimId: string, send: () => Promise<boolean>): Promise<boolean> {
+  try {
+    await db().reminderClaims.insertOne({ id: claimId, claimedAt: nowIso() });
+  } catch (error) {
+    if (isDuplicateId(error)) return false;
+    throw error;
+  }
+  try {
+    return await send();
+  } catch (error) {
+    await db().reminderClaims.deleteOne({ id: claimId });
+    throw error;
+  }
+}
 
 /**
  * Lesson-feedback reminders, timed to the class: the first goes out as soon
  * as a lesson's end time passes, the second a day later if it is still not
  * done, and that is all. Each party is asked only for their own part — the
  * student for feedback, the tutor for the write-up — and only while it is
- * missing. Safe to run as often as you like: every send is recorded on the
+ * missing. Safe to run as often, and as many times at once, as you like:
+ * each email is claimed before it is sent (`sendOnce`) and recorded on the
  * booking, so nothing goes out twice.
  */
 export async function runFeedbackReminders(now = Date.now()): Promise<number> {
@@ -34,12 +59,16 @@ export async function runFeedbackReminders(now = Date.now()): Promise<number> {
     let changed = false;
 
     if (due(reminders.student) && !(await studentGaveFeedback(booking.id))) {
-      if (await remindStudent(booking, reminders.student.length === 0)) sent += 1;
+      const first = reminders.student.length === 0;
+      const claim = `${booking.id}:feedback:student:${reminders.student.length}`;
+      if (await sendOnce(claim, () => remindStudent(booking, first))) sent += 1;
       reminders.student = [...reminders.student, new Date(now).toISOString()];
       changed = true;
     }
     if (due(reminders.tutor) && !(await tutorWroteUp(booking.id))) {
-      if (await remindTutor(booking, reminders.tutor.length === 0)) sent += 1;
+      const first = reminders.tutor.length === 0;
+      const claim = `${booking.id}:feedback:tutor:${reminders.tutor.length}`;
+      if (await sendOnce(claim, () => remindTutor(booking, first))) sent += 1;
       reminders.tutor = [...reminders.tutor, new Date(now).toISOString()];
       changed = true;
     }
@@ -96,7 +125,8 @@ function when(booking: Booking, timezone: string | undefined): string {
 /**
  * Before-the-lesson reminders: a day ahead and an hour ahead, to both the
  * student and the tutor, with the Google Meet link to join from and the
- * portal calendar. Recorded on the booking, so each goes out once.
+ * portal calendar. Claimed per lesson time (a moved lesson is reminded
+ * afresh) and recorded on the booking, so each goes out once.
  */
 export async function runLessonReminders(now = Date.now()): Promise<number> {
   const upcoming = await db().bookings.find({ status: "confirmed" });
@@ -118,21 +148,25 @@ export async function runLessonReminders(now = Date.now()): Promise<number> {
       ? `Join on Google Meet: ${booking.meetingUrl}`
       : "The meeting link will be on the booking in your portal calendar.";
 
-    for (const [person, other] of [
-      [student, tutor],
-      [tutor, student],
+    for (const [role, person, other] of [
+      ["student", student, tutor],
+      ["tutor", tutor, student],
     ] as const) {
       if (!person) continue;
-      await deliver({
-        to: person.email,
-        subject:
-          which === "hour"
-            ? `Your lesson with ${other?.name ?? "Serendib"} starts within the hour`
-            : `Tomorrow: your lesson with ${other?.name ?? "Serendib"}`,
-        body: `${when(booking, person.timezone)}\n${booking.durationMins} minutes · ${booking.focus}\n\n${join}\n\nYour calendar: ${calendarLink()}`,
-        kind: "notification",
+      const claim = `${booking.id}:lesson:${which}:${role}:${booking.startsAt}`;
+      const delivered = await sendOnce(claim, async () => {
+        await deliver({
+          to: person.email,
+          subject:
+            which === "hour"
+              ? `Your lesson with ${other?.name ?? "Serendib"} starts within the hour`
+              : `Tomorrow: your lesson with ${other?.name ?? "Serendib"}`,
+          body: `${when(booking, person.timezone)}\n${booking.durationMins} minutes · ${booking.focus}\n\n${join}\n\nYour calendar: ${calendarLink()}`,
+          kind: "notification",
+        });
+        return true;
       });
-      sent += 1;
+      if (delivered) sent += 1;
     }
 
     reminders[which] = new Date(now).toISOString();

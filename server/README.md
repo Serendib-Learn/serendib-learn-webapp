@@ -244,7 +244,11 @@ admins read it all (`GET /materials/:id/feedback`, ratings summary on each
 card). Reminders go out at
 class end and once more 24 hours later, only for what is still missing, and
 are recorded on the booking (`feedbackReminders`) so nothing sends twice.
-They run on an in-process timer every `REMINDER_INTERVAL_MS` (0 = off) and on
+Each email is **claimed before it is sent** (a unique id in `reminderClaims`,
+such as `<booking>:feedback:student:0`), so however many runners race —
+every instance's timer, Cloud Scheduler, a local server on the same
+database — it goes out once. They run on an in-process timer every
+`REMINDER_INTERVAL_MS` (default: every minute on Cloud Run, off elsewhere; 0 = off) and on
 `POST /jobs/reminders` with `X-Cron-Secret: $CRON_SECRET` — use the latter
 from Cloud Scheduler, since an idle Cloud Run instance gets no CPU.
 
