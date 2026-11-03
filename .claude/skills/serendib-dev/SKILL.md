@@ -200,10 +200,12 @@ for code changes:
   **build** time, not read at container start — they're `ARG`s in the root
   Dockerfile and `build.args` in `docker-compose.yml`, never
   `environment:`. Getting this backwards silently ships the wrong API URL.
-- Production cookies need `COOKIE_SAMESITE=none` + `COOKIE_SECURE=true`
-  (already set in `deploy-backend.yml`) because Vercel and Cloud Run are
-  different domains — `lax` (the local-dev default) would silently break
-  login by never sending the session cookie back cross-site.
+- Production cookies use `COOKIE_SAMESITE=none` + `COOKIE_SECURE=true`
+  (set in `deploy-backend.yml`). Production is www.serendiblearn.com (site)
+  and api.serendiblearn.com (API), the same site, so login works even where
+  third-party cookies are blocked; `none` also keeps other origins (Vercel
+  previews, the old vercel.app address) able to sign in. `lax` (the
+  local-dev default) would break any cross-site origin.
 
 ## Redesigning the frontend
 

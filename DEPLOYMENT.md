@@ -451,6 +451,19 @@ invite" sends the invitation later.
 
 ## 10. Moving serendiblearn.com from the prototype
 
+> **Done 3 November 2026.** What is in place now:
+>
+> | Where | Setting |
+> | --- | --- |
+> | Namecheap DNS | `A @ 216.198.79.1`, `CNAME www 2755dbed28ca5614.vercel-dns-017.com.`, `CNAME api ghs.googlehosted.com.`, Search Console's TXT; email forwarding (MX, SPF) untouched |
+> | Vercel | `www.serendiblearn.com` (production), `serendiblearn.com` and `serendib-learn-webapp.vercel.app` redirect to it; `NEXT_PUBLIC_API_URL=https://api.serendiblearn.com`, `NEXT_PUBLIC_SITE_URL=https://www.serendiblearn.com` |
+> | Cloud Run | domain mapping `api.serendiblearn.com` → `serendib-api` (us-central1) |
+> | GitHub `production` | `APP_URL=https://www.serendiblearn.com`, `API_URL=https://api.serendiblearn.com`, `CORS_ORIGINS=https://www.serendiblearn.com https://serendiblearn.com` |
+> | Google OAuth | origins www and bare domain; redirect `https://api.serendiblearn.com/api/integrations/google/callback`; authorised domain `serendiblearn.com`; branding verified and published |
+> | Payments.lk | live webhook `https://api.serendiblearn.com/api/payments/webhook` |
+>
+> The steps below are how it was done, kept for reference.
+
 The live serendiblearn.com is the original Lovable prototype. To serve this
 build there instead, the way the prototype was hosted:
 
@@ -504,7 +517,7 @@ The site is installable like the prototype was ("Add to Home Screen" /
 - [ ] GitHub environment `production` exists
 - [x] Vercel project created, env vars set, custom domain attached (`www.serendiblearn.com`, 3 Nov 2026)
 - [ ] `DEMO_MODE=false` in the API's deployed env (already set in `deploy-backend.yml`)
-- [ ] `COOKIE_SAMESITE=none` + `COOKIE_SECURE=true` in the API's deployed env (already set) — required because Vercel and Cloud Run are different domains
+- [x] `COOKIE_SAMESITE=none` + `COOKIE_SECURE=true` in the API's deployed env (already set). Needed while the site and API were on different domains (vercel.app and run.app); since serendiblearn.com they are the same site, and `none` still works
 - [ ] (optional) Cloudflare Turnstile site created at [dash.cloudflare.com](https://dash.cloudflare.com/?to=/:account/turnstile) if you want CAPTCHA on signup/waitlist — `TURNSTILE_SECRET_KEY` as a Cloud Run secret, `NEXT_PUBLIC_TURNSTILE_SITE_KEY` as a Vercel env var. Skipping this just means no CAPTCHA, same as local dev today.
 - [ ] Owners' super admin created (`SUPER_ADMIN_EMAIL` or `create-admin`), and any demo accounts left over from a demo-mode start deleted (step 9)
 - [x] Payments.lk **live** since 2 Nov 2026: `sk_live_…` key (version 4) and the live webhook's secret (version 3) in Secret Manager, old test versions disabled, `/api/payments/config` reports `mode: live`, a dashboard test event to the live webhook accepted (step 7)

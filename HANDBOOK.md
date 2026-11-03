@@ -795,8 +795,11 @@ Both `awaiting_payment` and `confirmed` hold the tutor's slot.
 - **Passwords.** Passwords are hashed with scrypt from Node's crypto
   module. Reset links last 24 hours; invite links last 7 days.
 - **Sessions.** A random token goes in an httpOnly `sl_session` cookie for
-  30 days. In production the cookie is `SameSite=None; Secure`, because
-  Vercel and Cloud Run are on different domains.
+  30 days. In production the cookie is `SameSite=None; Secure`. Since the
+  move to serendiblearn.com the site (www.) and the API (api.) are the same
+  site, so browsers that block third-party cookies (Safari, iPhones,
+  private windows) keep people signed in; `None` still works and keeps any
+  other origin (a Vercel preview) able to sign in.
 - **Tutor approval.** Applicants stay `pending` (unlisted and unbookable),
   and admins are emailed. An admin approves or rejects under
   Administration → Tutor applications.
@@ -1391,8 +1394,8 @@ signing up, paying or getting lesson links.
    event to the live webhook was accepted. Still to do:
    - One real payment end to end, then cancel it in good time, refund it
      in the Payments.lk dashboard and press **Mark refunded**.
-   - After the domain move, point the live webhook at
-     `https://api.serendiblearn.com/api/payments/webhook`.
+   - ~~Point the live webhook at the new API.~~ Done 3 Nov 2026: it is
+     `https://api.serendiblearn.com/api/payments/webhook` (test event 200).
    - Ask Payments.lk to accept **overseas phone numbers and postcodes**.
      Their hosted checkout page takes only Sri Lankan ones; the API sends
      just the name and email, and their SDK has no country option, so it
@@ -1421,10 +1424,12 @@ signing up, paying or getting lesson links.
    `https://www.serendiblearn.com` (the bare domain redirects to it) and the
    API `https://api.serendiblearn.com` (Cloud Run domain mapping, verified
    in Search Console). `APP_URL`, `API_URL`, `CORS_ORIGINS`, the Vercel
-   variables and the OAuth origins and redirect are updated. Left: drop the
-   old Vercel origin from `CORS_ORIGINS` and the OAuth client, redirect the
-   `vercel.app` address to www, and (optional) move the Payments.lk
-   webhook to the new API address.
+   variables, the OAuth origins and redirect, the authorised domains and the
+   Payments.lk webhook all use it; `CORS_ORIGINS` allows only
+   serendiblearn.com and www; the old `vercel.app` address redirects to www.
+   Every link in emails comes from `APP_URL`
+   (`https://www.serendiblearn.com`). The old `run.app` API address still
+   answers but nothing uses it.
 9. **Accounts.** Use **Mark verified** for the gmail.com student stuck
    since before Gmail was connected. Then tell the waitlist you are open.
 10. **Safety nets (recommended).**
