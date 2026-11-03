@@ -69,8 +69,60 @@ export default function PrivacyPage() {
           </li>
         </ul>
         <p>
-          Lesson feedback and voice notes you record in the portal are shared only with your tutor
-          and our team.
+          Feedback and voice notes you send through the portal are seen only by our team.
+        </p>
+      </LegalSection>
+
+      {/* For Google's OAuth verification: how the app uses Google user data, and the Limited Use statement. */}
+      <LegalSection id="google" title="Google user data">
+        <p>Serendib Learn asks for access to a Google account in three cases, and only for what each needs:</p>
+        <ul className="list-disc space-y-1 pl-5">
+          <li>
+            <span className="font-medium">Signing in with Google:</span> we receive your name and email address from
+            Google, to create and sign in to your Serendib Learn account.
+          </li>
+          <li>
+            <span className="font-medium">Google Calendar (tutors, and the Serendib team&apos;s own calendar):</span>{" "}
+            when a lesson is booked, we create one calendar event with a Google Meet link and invite the student and
+            the tutor. We move it if the lesson is rescheduled and delete it if the lesson is cancelled. We only ever
+            create and change the lesson events we made; we do not read or change any other events in your calendar.
+          </li>
+          <li>
+            <span className="font-medium">Gmail (the Serendib team&apos;s own account only):</span> we send the
+            site&apos;s emails, such as verification codes, booking receipts and reminders, from our own address. We
+            only send; we never read any mailbox. Students and tutors are never asked for this.
+          </li>
+        </ul>
+        <p>
+          We store only what is needed to keep these connections working (a sign-in token for the calendar or mail
+          account, and the IDs of the lesson events we created), stored securely in our database. We do
+          not sell Google user data, use it for advertising, or share it with anyone, and no person at Serendib Learn
+          reads it except where you ask us to for support, for security, or where the law requires it.
+        </p>
+        <p>
+          Serendib Learn&apos;s use and transfer of information received from Google APIs adheres to the{" "}
+          <a
+            href="https://developers.google.com/terms/api-services-user-data-policy"
+            className="text-amber-spice underline"
+            target="_blank"
+            rel="noreferrer"
+          >
+            Google API Services User Data Policy
+          </a>
+          , including the Limited Use requirements.
+        </p>
+        <p>
+          You can disconnect Google Calendar at any time from Calendar &amp; Bookings → My hours, which deletes the
+          stored token, or remove Serendib Learn&apos;s access from your Google Account&apos;s{" "}
+          <a
+            href="https://myaccount.google.com/permissions"
+            className="text-amber-spice underline"
+            target="_blank"
+            rel="noreferrer"
+          >
+            third-party access page
+          </a>
+          . To have your data deleted, write to <ContactEmail />.
         </p>
       </LegalSection>
 
