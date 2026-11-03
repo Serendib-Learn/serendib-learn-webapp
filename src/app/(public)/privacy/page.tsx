@@ -78,8 +78,8 @@ export default function PrivacyPage() {
         <p>Serendib Learn asks for access to a Google account in three cases, and only for what each needs:</p>
         <ul className="list-disc space-y-1 pl-5">
           <li>
-            <span className="font-medium">Signing in with Google:</span> we receive your name and email address from
-            Google, to create and sign in to your Serendib Learn account.
+            <span className="font-medium">Signing in with Google:</span> we receive your name, email address and
+            profile picture from Google, to create and sign in to your Serendib Learn account.
           </li>
           <li>
             <span className="font-medium">Google Calendar (tutors, and the Serendib team&apos;s own calendar):</span>{" "}
