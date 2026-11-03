@@ -285,7 +285,7 @@ bookingsRouter.post(
     const endMs = startMs + booking.durationMins * 60_000;
 
     if (isStudent) {
-      const open = await openSlotsFor(booking.tutorId, 60);
+      const open = await openSlotsFor(booking.tutorId, 90);
       if (!open.some((slot) => new Date(slot.startsAt).getTime() === startMs)) {
         throw new ApiError("Pick one of your tutor's open hours.");
       }

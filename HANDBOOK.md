@@ -872,9 +872,11 @@ Both `awaiting_payment` and `confirmed` hold the tutor's slot.
 
 - **Booking.** On the calendar a student chooses *5 lessons* or *10
   lessons* (or arrives with `?bundle=5` from the pricing page), presses
-  **Add** on open hours with any tutors, picks the language and what to
+  **Add** on open hours with any tutors (or picks the first ones and
+  presses **Repeat weekly** to fill the rest with the same days and times,
+  week after week), picks the language and what to
   work on, then **Continue to payment**. `POST /bundles` checks every hour
-  is open (up to 60 days ahead), in a language the tutor teaches, and that
+  is open (up to 90 days ahead), in a language the tutor teaches, and that
   no two are at the same time, then books them as ordinary bookings
   carrying `bundleId`, plus one `bundles` record with the total.
 - **Paying.** `/portal/checkout/bundle/[id]`: one Payments.lk checkout for

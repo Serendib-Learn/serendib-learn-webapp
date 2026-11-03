@@ -24,8 +24,8 @@ import type {
  * together, and its lessons cannot be paid for one by one.
  */
 
-/** How far ahead a bundle's lessons can be (the calendar shows the same). */
-const BUNDLE_HORIZON_DAYS = 60;
+/** How far ahead a bundle's lessons can be (the calendar shows the same): ten weekly lessons fit. */
+const BUNDLE_HORIZON_DAYS = 90;
 /** How long a bundle holds its hours before its checkout is opened, as a single booking does. */
 const UNPAID_HOLD_MINUTES = 30;
 /** Payments.lk's own expiry, plus time for a last-second payment to report back. */

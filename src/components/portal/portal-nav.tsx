@@ -42,7 +42,7 @@ export const portalSections: PortalSection[] = [
   },
   {
     href: "/portal/calendar",
-    label: "Calendar",
+    label: "Calendar & Bookings",
     description: "Book sessions, see upcoming classes",
     tagline: "Pick a day, see what's open, and book a session - no other site needed.",
     Icon: Calendar,

@@ -32,7 +32,8 @@ availabilityRouter.get(
     const tutorId = String(request.query.tutorId ?? "");
     if (!tutorId) throw new ApiError("Which tutor?");
 
-    const days = Math.min(Math.max(Number(request.query.days ?? 14), 1), 60);
+    // Up to 90 days, so ten weekly lessons in a bundle fit.
+    const days = Math.min(Math.max(Number(request.query.days ?? 14), 1), 90);
     response.json(await openSlotsFor(tutorId, days));
   }),
 );

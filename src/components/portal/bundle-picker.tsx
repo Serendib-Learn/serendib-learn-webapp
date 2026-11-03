@@ -1,7 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Loader2, Plus, X } from "lucide-react";
+import { Check, Loader2, Plus, Repeat, X } from "lucide-react";
 import { api } from "@/lib/api";
 import { useAction } from "@/lib/hooks";
 import { cn } from "@/lib/cn";
@@ -110,6 +111,41 @@ export function BundleSlot({
   );
 }
 
+/** A slot's place in the week, in the viewer's own time: "2-20:00" for Tuesday 8pm. */
+function weekKey(slot: Slot): string {
+  const start = new Date(slot.startsAt);
+  return `${slot.tutorId}|${start.getDay()}-${start.getHours()}:${start.getMinutes()}`;
+}
+
+/**
+ * "Repeat weekly": the hours already chosen are the pattern (say Tuesday 8pm
+ * and Thursday 8pm with one tutor); this adds the same weekday, time and tutor
+ * week after week, in date order, until the bundle is full. Weeks the tutor
+ * isn't free, or that clash with a chosen lesson, are skipped. Returns the
+ * new list, which can be short of `size` if not enough weeks are open.
+ */
+export function fillWeekly(picked: Slot[], open: Slot[], size: number): Slot[] {
+  if (picked.length === 0) return picked;
+  const pattern = new Set(picked.map(weekKey));
+  const from = Math.min(...picked.map((slot) => new Date(slot.startsAt).getTime()));
+  const chosen = [...picked];
+  const overlaps = (slot: Slot) => {
+    const start = new Date(slot.startsAt).getTime();
+    return chosen.some((item) => {
+      const other = new Date(item.startsAt).getTime();
+      return start < other + item.durationMins * 60_000 && other < start + slot.durationMins * 60_000;
+    });
+  };
+  const candidates = [...open]
+    .filter((slot) => new Date(slot.startsAt).getTime() > from && pattern.has(weekKey(slot)))
+    .sort((a, b) => a.startsAt.localeCompare(b.startsAt));
+  for (const slot of candidates) {
+    if (chosen.length >= size) break;
+    if (!overlaps(slot)) chosen.push(slot);
+  }
+  return chosen;
+}
+
 /** The chosen lessons, the total, and the way to payment. */
 export function BundleTray({
   size,
@@ -122,6 +158,7 @@ export function BundleTray({
   focus,
   onFocus,
   onRemove,
+  onRepeatWeekly,
 }: {
   size: number;
   picked: Slot[];
@@ -134,8 +171,12 @@ export function BundleTray({
   focus: string;
   onFocus: (focus: string) => void;
   onRemove: (slot: Slot) => void;
+  /** Fills the rest with the chosen days and times, week after week. Resolves to a note when it falls short. */
+  onRepeatWeekly: () => Promise<string | null>;
 }) {
   const router = useRouter();
+  const repeat = useAction(onRepeatWeekly);
+  const [repeatNote, setRepeatNote] = useState<string | null>(null);
   const create = useAction(() =>
     api.bundles.create(
       picked.map((slot) => ({ tutorId: slot.tutorId, startsAt: slot.startsAt, language, focus: focus.trim() })),
@@ -181,6 +222,21 @@ export function BundleTray({
           ))}
         </ul>
       )}
+
+      {picked.length > 0 && left > 0 ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-mist/60 px-4 py-3">
+          <p className="max-w-md text-xs leading-relaxed text-ink-600">
+            <strong className="font-medium text-ink-800">Same time every week?</strong> Pick your first days and times
+            (say Tuesday and Thursday at 8pm), then fill the rest with them, week after week.
+          </p>
+          <Button type="button" variant="secondary" size="sm" disabled={repeat.pending} onClick={async () => setRepeatNote((await repeat.run()) ?? null)}>
+            {repeat.pending ? <Loader2 className="size-4 animate-spin" /> : <Repeat className="size-4" aria-hidden />}
+            Repeat weekly
+          </Button>
+        </div>
+      ) : null}
+      {repeatNote ? <Alert tone="saffron">{repeatNote}</Alert> : null}
+      {repeat.error ? <Alert>{repeat.error}</Alert> : null}
 
       <div className="grid gap-3 sm:grid-cols-[9rem_1fr]">
         <Field label="Language" htmlFor="bundle-language">

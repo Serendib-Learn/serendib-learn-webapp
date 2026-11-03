@@ -14,7 +14,7 @@ import { HolidaysPanel } from "@/components/portal/holidays-panel";
 import { MonthCalendar, toISODate, type DayMarks } from "@/components/portal/month-calendar";
 import { BookingRow } from "@/components/portal/booking-row";
 import { checkoutHref } from "@/lib/checkout-link";
-import { BookingModeSwitch, BundleSlot, BundleTray } from "@/components/portal/bundle-picker";
+import { BookingModeSwitch, BundleSlot, BundleTray, fillWeekly } from "@/components/portal/bundle-picker";
 import { FeedbackForm } from "@/components/portal/feedback-form";
 import {
   FreeLessonsPanel,
@@ -72,7 +72,7 @@ function Calendar() {
 
   return (
     <>
-      <PageHeader title="Calendar">
+      <PageHeader title="Calendar & Bookings">
         Pick a day, see what&apos;s open, and book a session - no other site needed.
       </PageHeader>
 
@@ -107,6 +107,9 @@ function Calendar() {
     </>
   );
 }
+
+/** How far ahead open hours are shown: ten weekly lessons fit (server/src/lib/bundles.ts allows the same). */
+const BOOKING_HORIZON_DAYS = 90;
 
 /**
  * The original site's calendar: a month on the left, the chosen day and the
@@ -155,7 +158,7 @@ function CalendarWorkspace({ user }: { user: User }) {
   const slots = useQuery(async () => {
     if (!isStudent) return [];
     const ids = (tutorFilter ? [tutorFilter] : tutorIds.split(",")).filter(Boolean);
-    const lists = await Promise.all(ids.map((id) => api.availability.openSlots(id, 60)));
+    const lists = await Promise.all(ids.map((id) => api.availability.openSlots(id, BOOKING_HORIZON_DAYS)));
     return lists.flat();
   }, [isStudent, tutorFilter, tutorIds]);
 
@@ -241,6 +244,19 @@ function CalendarWorkspace({ user }: { user: User }) {
             focus={bundleFocus}
             onFocus={setBundleFocus}
             onRemove={(slot) => setPicked((current) => current.filter((item) => item !== slot))}
+            onRepeatWeekly={async () => {
+              // Every chosen tutor's hours, whichever tutor the calendar is filtered to.
+              const tutorIdsInPattern = [...new Set(picked.map((slot) => slot.tutorId))];
+              const lists = await Promise.all(
+                tutorIdsInPattern.map((id) => api.availability.openSlots(id, BOOKING_HORIZON_DAYS)),
+              );
+              const filled = fillWeekly(picked, lists.flat(), bundleSize);
+              setPicked(filled);
+              const short = bundleSize - filled.length;
+              return short > 0
+                ? `Only ${filled.length - picked.length} more weeks were open at those times in the next ${BOOKING_HORIZON_DAYS} days. Pick the other ${short} by hand.`
+                : null;
+            }}
           />
         ) : null}
         <div className="rounded-xl border border-forest/10 bg-white p-5">
