@@ -874,7 +874,8 @@ Both `awaiting_payment` and `confirmed` hold the tutor's slot.
   lessons* (or arrives with `?bundle=5` from the pricing page), presses
   **Add** on open hours with any tutors (or picks the first ones and
   presses **Repeat weekly** to fill the rest with the same days and times,
-  week after week), picks the language and what to
+  week after week; while repeating, Add on another day makes that a weekly
+  time too, and each weekly time can be removed), picks the language and what to
   work on, then **Continue to payment**. `POST /bundles` checks every hour
   is open (up to 90 days ahead), in a language the tutor teaches, and that
   no two are at the same time, then books them as ordinary bookings

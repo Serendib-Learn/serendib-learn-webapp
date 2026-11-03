@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, Loader2, Plus, Repeat, X } from "lucide-react";
 import { api } from "@/lib/api";
@@ -111,10 +110,19 @@ export function BundleSlot({
   );
 }
 
-/** A slot's place in the week, in the viewer's own time: "2-20:00" for Tuesday 8pm. */
-function weekKey(slot: Slot): string {
+/** A slot's place in the week, with its tutor, in the viewer's own time: Tuesday 8pm with Dilani. */
+export function weekKey(slot: Slot): string {
   const start = new Date(slot.startsAt);
   return `${slot.tutorId}|${start.getDay()}-${start.getHours()}:${start.getMinutes()}`;
+}
+
+/** One slot per weekly time (the earliest), in date order: the pattern Repeat weekly follows. */
+export function weeklyTimesOf(slots: Slot[]): Slot[] {
+  const first = new Map<string, Slot>();
+  for (const slot of [...slots].sort((a, b) => a.startsAt.localeCompare(b.startsAt))) {
+    if (!first.has(weekKey(slot))) first.set(weekKey(slot), slot);
+  }
+  return [...first.values()];
 }
 
 /**
@@ -159,6 +167,10 @@ export function BundleTray({
   onFocus,
   onRemove,
   onRepeatWeekly,
+  weeklyTimes,
+  onRemoveWeeklyTime,
+  onStopRepeating,
+  repeatNote,
 }: {
   size: number;
   picked: Slot[];
@@ -171,12 +183,17 @@ export function BundleTray({
   focus: string;
   onFocus: (focus: string) => void;
   onRemove: (slot: Slot) => void;
-  /** Fills the rest with the chosen days and times, week after week. Resolves to a note when it falls short. */
-  onRepeatWeekly: () => Promise<string | null>;
+  /** Turns the chosen hours into weekly times and fills the bundle with them. */
+  onRepeatWeekly: () => Promise<void>;
+  /** The weekly times while repeating (null when picking by hand). */
+  weeklyTimes: Slot[] | null;
+  onRemoveWeeklyTime: (slot: Slot) => void;
+  onStopRepeating: () => void;
+  /** Why the bundle could not be filled from the weekly times, if it couldn't. */
+  repeatNote: string | null;
 }) {
   const router = useRouter();
   const repeat = useAction(onRepeatWeekly);
-  const [repeatNote, setRepeatNote] = useState<string | null>(null);
   const create = useAction(() =>
     api.bundles.create(
       picked.map((slot) => ({ tutorId: slot.tutorId, startsAt: slot.startsAt, language, focus: focus.trim() })),
@@ -223,13 +240,48 @@ export function BundleTray({
         </ul>
       )}
 
-      {picked.length > 0 && left > 0 ? (
+      {weeklyTimes ? (
+        <div className="space-y-2.5 rounded-lg bg-mist/60 px-4 py-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-xs font-medium text-ink-800">
+              <Repeat className="mr-1 inline size-3.5 align-[-2px]" aria-hidden />
+              Repeating every week
+            </p>
+            <button type="button" onClick={onStopRepeating} className="text-xs font-medium text-ink-500 hover:text-ink-900">
+              Stop repeating
+            </button>
+          </div>
+          <ul className="flex flex-wrap gap-1.5">
+            {weeklyTimes.map((slot) => (
+              <li
+                key={`${slot.tutorId}-${slot.startsAt}`}
+                className="flex items-center gap-1 rounded-full bg-white py-1 pr-1 pl-3 text-xs text-ink-700 ring-1 ring-forest/10"
+              >
+                {new Date(slot.startsAt).toLocaleDateString(undefined, { weekday: "long" })}s at {formatTime(slot.startsAt)}
+                <span className="text-ink-400"> · {tutorsById.get(slot.tutorId)?.name ?? "a tutor"}</span>
+                <button
+                  type="button"
+                  onClick={() => onRemoveWeeklyTime(slot)}
+                  aria-label="Stop repeating this time"
+                  className="rounded-full p-0.5 text-ink-400 hover:bg-clay-50 hover:text-clay-600"
+                >
+                  <X className="size-3" />
+                </button>
+              </li>
+            ))}
+          </ul>
+          <p className="text-[11px] leading-relaxed text-ink-500">
+            Want another day too? Press <strong className="font-medium text-ink-700">Add</strong> on an open hour that
+            day, and it repeats every week as well.
+          </p>
+        </div>
+      ) : picked.length > 0 ? (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-mist/60 px-4 py-3">
           <p className="max-w-md text-xs leading-relaxed text-ink-600">
-            <strong className="font-medium text-ink-800">Same time every week?</strong> Pick your first days and times
-            (say Tuesday and Thursday at 8pm), then fill the rest with them, week after week.
+            <strong className="font-medium text-ink-800">Same time every week?</strong> Repeat the times you have
+            chosen (say Tuesday and Thursday at 8pm) week after week. You can add more days after.
           </p>
-          <Button type="button" variant="secondary" size="sm" disabled={repeat.pending} onClick={async () => setRepeatNote((await repeat.run()) ?? null)}>
+          <Button type="button" variant="secondary" size="sm" disabled={repeat.pending} onClick={() => void repeat.run()}>
             {repeat.pending ? <Loader2 className="size-4 animate-spin" /> : <Repeat className="size-4" aria-hidden />}
             Repeat weekly
           </Button>

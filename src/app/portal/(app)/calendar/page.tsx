@@ -14,7 +14,7 @@ import { HolidaysPanel } from "@/components/portal/holidays-panel";
 import { MonthCalendar, toISODate, type DayMarks } from "@/components/portal/month-calendar";
 import { BookingRow } from "@/components/portal/booking-row";
 import { checkoutHref } from "@/lib/checkout-link";
-import { BookingModeSwitch, BundleSlot, BundleTray, fillWeekly } from "@/components/portal/bundle-picker";
+import { BookingModeSwitch, BundleSlot, BundleTray, fillWeekly, weekKey, weeklyTimesOf } from "@/components/portal/bundle-picker";
 import { FeedbackForm } from "@/components/portal/feedback-form";
 import {
   FreeLessonsPanel,
@@ -131,6 +131,9 @@ function CalendarWorkspace({ user }: { user: User }) {
     return isStudent && Number.isInteger(asked) && asked > 1 ? asked : null;
   });
   const [picked, setPicked] = useState<Slot[]>([]);
+  // Repeat weekly: the weekly times the bundle is filled from (null: picking by hand).
+  const [weeklyTimes, setWeeklyTimes] = useState<Slot[] | null>(null);
+  const [repeatNote, setRepeatNote] = useState<string | null>(null);
   const [bundleLanguage, setBundleLanguage] = useState<LanguageCode>(user.languages[0] ?? "sinhala");
   const [bundleFocus, setBundleFocus] = useState("");
 
@@ -189,12 +192,39 @@ function CalendarWorkspace({ user }: { user: User }) {
       return start < other + item.durationMins * 60_000 && other < start + slot.durationMins * 60_000;
     });
   };
+  /** Picking by hand again: the lessons stay, the weekly times go. */
+  const stopRepeating = () => {
+    setWeeklyTimes(null);
+    setRepeatNote(null);
+  };
+  /** Fills the bundle from these weekly times, week after week, with each tutor's open hours. */
+  const fillFromWeeklyTimes = async (times: Slot[]) => {
+    if (!bundleSize || times.length === 0) {
+      stopRepeating();
+      setPicked([]);
+      return;
+    }
+    setWeeklyTimes(times);
+    const lists = await Promise.all(
+      [...new Set(times.map((slot) => slot.tutorId))].map((id) => api.availability.openSlots(id, BOOKING_HORIZON_DAYS)),
+    );
+    const filled = fillWeekly(times, lists.flat(), bundleSize);
+    setPicked(filled);
+    const short = bundleSize - filled.length;
+    setRepeatNote(
+      short > 0
+        ? `Those times are only open for ${filled.length} lessons in the next ${BOOKING_HORIZON_DAYS} days. Add another day, or pick the other ${short} by hand.`
+        : null,
+    );
+  };
   const chooseBundleSize = (size: number | null) => {
     setBundleSize(size);
+    stopRepeating();
     setPicked((current) => (size ? current.slice(0, size) : []));
   };
   const chooseBundleLanguage = (language: LanguageCode) => {
     setBundleLanguage(language);
+    stopRepeating();
     // Hours with tutors who don't teach it can't stay in the bundle.
     setPicked((current) => current.filter((slot) => tutorsById.get(slot.tutorId)?.languages.includes(language)));
   };
@@ -243,20 +273,18 @@ function CalendarWorkspace({ user }: { user: User }) {
             onLanguage={chooseBundleLanguage}
             focus={bundleFocus}
             onFocus={setBundleFocus}
-            onRemove={(slot) => setPicked((current) => current.filter((item) => item !== slot))}
-            onRepeatWeekly={async () => {
-              // Every chosen tutor's hours, whichever tutor the calendar is filtered to.
-              const tutorIdsInPattern = [...new Set(picked.map((slot) => slot.tutorId))];
-              const lists = await Promise.all(
-                tutorIdsInPattern.map((id) => api.availability.openSlots(id, BOOKING_HORIZON_DAYS)),
-              );
-              const filled = fillWeekly(picked, lists.flat(), bundleSize);
-              setPicked(filled);
-              const short = bundleSize - filled.length;
-              return short > 0
-                ? `Only ${filled.length - picked.length} more weeks were open at those times in the next ${BOOKING_HORIZON_DAYS} days. Pick the other ${short} by hand.`
-                : null;
+            onRemove={(slot) => {
+              // Taking out one date means picking by hand from here.
+              stopRepeating();
+              setPicked((current) => current.filter((item) => item !== slot));
             }}
+            onRepeatWeekly={() => fillFromWeeklyTimes(weeklyTimesOf(picked))}
+            weeklyTimes={weeklyTimes}
+            onRemoveWeeklyTime={(slot) =>
+              void fillFromWeeklyTimes((weeklyTimes ?? []).filter((item) => weekKey(item) !== weekKey(slot)))
+            }
+            onStopRepeating={stopRepeating}
+            repeatNote={repeatNote}
           />
         ) : null}
         <div className="rounded-xl border border-forest/10 bg-white p-5">
@@ -315,16 +343,22 @@ function CalendarWorkspace({ user }: { user: User }) {
                       slot={slot}
                       tutor={tutorsById.get(slot.tutorId)}
                       picked={isPicked(slot)}
-                      full={picked.length >= bundleSize}
+                      // While repeating, a new hour becomes another weekly time and the bundle refills.
+                      full={!weeklyTimes && picked.length >= bundleSize}
                       clash={!isPicked(slot) && clashes(slot)}
                       teaches={tutorsById.get(slot.tutorId)?.languages.includes(bundleLanguage) ?? true}
-                      onToggle={() =>
+                      onToggle={() => {
+                        if (weeklyTimes && !isPicked(slot)) {
+                          void fillFromWeeklyTimes(weeklyTimesOf([...weeklyTimes, slot]));
+                          return;
+                        }
+                        if (isPicked(slot)) stopRepeating();
                         setPicked((current) =>
                           isPicked(slot)
                             ? current.filter((item) => !(item.tutorId === slot.tutorId && item.startsAt === slot.startsAt))
                             : [...current, slot],
-                        )
-                      }
+                        );
+                      }}
                     />
                   ))
                 : null}

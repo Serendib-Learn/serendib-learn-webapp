@@ -245,7 +245,7 @@ export const helpCategories: HelpCategory[] = [
         steps: [
           "In Calendar & Bookings, choose 5 lessons or 10 lessons under How would you like to book?",
           "Pick days and press Add on open hours. Mix tutors however you like.",
-          "Same time every week? Add your first days and times (say Tuesday and Thursday at 8pm), then press Repeat weekly to fill the rest.",
+          "Same time every week? Add a lesson, press Repeat weekly, then press Add on another day (say Thursday) to repeat that too. Remove a weekly time with its ×.",
           "Once all are chosen, press Continue to payment and pay once for them all.",
           "Each lesson can still be moved or cancelled up to 6 hours before, and you keep it.",
         ],
