@@ -1417,12 +1417,14 @@ signing up, paying or getting lesson links.
    - Review the phrase lists.
    - **Add 2027 holidays before January** (the starting list covers
      2026).
-8. **Domain.** Point `serendiblearn.com` at Vercel and
-   `api.serendiblearn.com` at Cloud Run (DEPLOYMENT §10), then update:
-   - `APP_URL` and `API_URL`;
-   - the OAuth origins and redirect;
-   - the Payments.lk webhook;
-   - `NEXT_PUBLIC_API_URL` and `NEXT_PUBLIC_SITE_URL`.
+8. ~~**Domain.**~~ **Done 3 Nov 2026:** the site is
+   `https://www.serendiblearn.com` (the bare domain redirects to it) and the
+   API `https://api.serendiblearn.com` (Cloud Run domain mapping, verified
+   in Search Console). `APP_URL`, `API_URL`, `CORS_ORIGINS`, the Vercel
+   variables and the OAuth origins and redirect are updated. Left: drop the
+   old Vercel origin from `CORS_ORIGINS` and the OAuth client, redirect the
+   `vercel.app` address to www, and (optional) move the Payments.lk
+   webhook to the new API address.
 9. **Accounts.** Use **Mark verified** for the gmail.com student stuck
    since before Gmail was connected. Then tell the waitlist you are open.
 10. **Safety nets (recommended).**

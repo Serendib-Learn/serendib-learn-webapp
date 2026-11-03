@@ -498,11 +498,11 @@ The site is installable like the prototype was ("Add to Home Screen" /
 - [ ] `MONGODB_URI`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` in Secret Manager, **both** the deployer service account and the default Compute (runtime) service account can read them — granting only one causes a "Permission denied on secret" deploy failure
 - [ ] Cloud Run service allows unauthenticated invocations (`deploy-backend.yml` sets `--allow-unauthenticated` on every deploy) — otherwise every real request 403s
 - [ ] `APP_URL`/`API_URL` GitHub variables have **no trailing slash** — a trailing slash silently breaks CORS for the real frontend
-- [ ] Cloud Run has a stable URL (custom domain mapped, or you're fine with the `*.run.app` one)
+- [x] Cloud Run has a stable URL: `https://api.serendiblearn.com` (domain mapping, 3 Nov 2026)
 - [ ] Google Cloud project: Calendar API + Gmail API enabled, OAuth consent screen configured, redirect URI set to the Cloud Run URL
 - [ ] GitHub secrets/variables from the table above are set
 - [ ] GitHub environment `production` exists
-- [ ] Vercel project created, env vars set, custom domain attached
+- [x] Vercel project created, env vars set, custom domain attached (`www.serendiblearn.com`, 3 Nov 2026)
 - [ ] `DEMO_MODE=false` in the API's deployed env (already set in `deploy-backend.yml`)
 - [ ] `COOKIE_SAMESITE=none` + `COOKIE_SECURE=true` in the API's deployed env (already set) — required because Vercel and Cloud Run are different domains
 - [ ] (optional) Cloudflare Turnstile site created at [dash.cloudflare.com](https://dash.cloudflare.com/?to=/:account/turnstile) if you want CAPTCHA on signup/waitlist — `TURNSTILE_SECRET_KEY` as a Cloud Run secret, `NEXT_PUBLIC_TURNSTILE_SITE_KEY` as a Vercel env var. Skipping this just means no CAPTCHA, same as local dev today.
