@@ -1379,12 +1379,12 @@ signing up, paying or getting lesson links.
 1. ~~**Email.**~~ **Done 28 Oct 2026:** the Gmail sender
    (serendib.learn@gmail.com) is connected and the test email arrived.
    The test button appears once a connection exists.
-2. **Google consent screen (blocking).** **Published 29 Oct 2026**; the
-   Serendib calendar and Gmail still need reconnecting so they get
-   long-lasting access. Then submit the app for
-   verification (`calendar.events` and `gmail.send` are sensitive
-   scopes). Until it is verified, people see an "unverified app" warning
-   and Google caps it at 100 users.
+2. **Google consent screen.** Published 29 Oct 2026. **Branding verified
+   and published, and the sensitive scopes (`calendar.events`,
+   `gmail.send`) submitted for verification on 3 Nov 2026**, with a demo
+   video. Until Google approves, connecting Calendar or Gmail shows the
+   "unverified app" screen (Advanced → Go to Serendib Learn); sign-in with
+   Google is unaffected. Forward Google's emails to the developer.
 3. ~~**Meet links.**~~ **Done 28 Oct 2026:** the shared Serendib calendar
    is connected, so every booking gets a Meet link. Tutors can also
    connect their own under Calendar → My hours.
