@@ -45,7 +45,7 @@ export function Footer() {
       </div>
       <div className="mx-auto mt-10 flex max-w-6xl flex-col items-center justify-center gap-2 border-t border-white/10 pt-6 text-center text-xs text-sage sm:flex-row sm:gap-4">
         <span>
-          © {new Date().getFullYear()} Serendib ·{" "}
+          © {new Date().getFullYear()} Serendib Learn ·{" "}
           <a href={`mailto:${contactEmail}`} className="transition-colors hover:text-cream">
             {contactEmail}
           </a>
