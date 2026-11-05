@@ -11,6 +11,7 @@ import {
   googleMailAuthUrl,
   sendGmail,
 } from "../lib/google.ts";
+import { forgetGoogleConnection } from "../lib/google-connections.ts";
 import { nowIso } from "../lib/ids.ts";
 import { randomToken } from "../lib/passwords.ts";
 import { requireAdmin, requireAuth, requireUser } from "../lib/sessions.ts";
@@ -90,7 +91,7 @@ integrationsRouter.post(
   requireAuth,
   wrap(async (request, response) => {
     const actor = requireUser(request);
-    await db().googleAccounts.deleteOne({ id: actor.id });
+    await forgetGoogleConnection("googleAccounts", actor.id);
     response.status(204).end();
   }),
 );
@@ -132,7 +133,7 @@ integrationsRouter.post(
   "/google/mail/disconnect",
   requireAdmin,
   wrap(async (_request, response) => {
-    await db().googleMailer.deleteOne({ id: "system" });
+    await forgetGoogleConnection("googleMailer", "system");
     response.status(204).end();
   }),
 );
@@ -177,7 +178,7 @@ integrationsRouter.post(
   "/google/system-calendar/disconnect",
   requireAdmin,
   wrap(async (_request, response) => {
-    await db().googleAccounts.deleteOne({ id: SYSTEM_CALENDAR_ID });
+    await forgetGoogleConnection("googleAccounts", SYSTEM_CALENDAR_ID);
     response.status(204).end();
   }),
 );

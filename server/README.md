@@ -379,14 +379,21 @@ just keeps behaving exactly as the demo always did. Refresh tokens live in
 
 Sign-in works as soon as steps 4–6 are done. Calendar and Gmail both need
 step 2 (enable the **Gmail API** too, for the mail flow) — their scopes
-(`.../auth/calendar.events`, `.../auth/gmail.send`, `.../auth/userinfo.email`)
+(`.../auth/calendar.events.owned`, `.../auth/gmail.send`, `.../auth/userinfo.email`)
 are requested automatically, nothing to configure by hand, but Google's
 consent screen will list them, which is normal.
 
 Deploying for real users means submitting the OAuth consent screen for
 [verification](https://support.google.com/cloud/answer/13463073), since both
-`calendar.events` and `gmail.send` are sensitive scopes; unverified apps are
+`calendar.events.owned` and `gmail.send` are sensitive scopes; unverified apps are
 capped at 100 test users and show an "unverified app" warning.
+
+**Ending a connection** (`lib/google-connections.ts`): disconnecting, or an
+admin deleting the account, deletes the stored token and asks Google to revoke
+it. Google revokes everything one account granted the app, so the revoke is
+skipped while another stored connection uses the same Google account: the
+Serendib account holds both the shared calendar and the Gmail sender, and
+disconnecting one must not stop the other.
 
 ## Authorization
 

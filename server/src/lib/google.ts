@@ -29,8 +29,13 @@ export function googleCalendarEnabled(): boolean {
   return config.googleClientId !== "" && config.googleClientSecret !== "";
 }
 
+/**
+ * `calendar.events.owned` is the narrowest scope that lets us create, move and
+ * delete lesson events on the connected account's primary calendar. Keep it
+ * matching the scopes declared in Cloud Console and submitted for verification.
+ */
 const CALENDAR_SCOPES = [
-  "https://www.googleapis.com/auth/calendar.events",
+  "https://www.googleapis.com/auth/calendar.events.owned",
   "https://www.googleapis.com/auth/userinfo.email",
 ];
 
@@ -113,6 +118,28 @@ export async function exchangeGoogleAuthCode(code: string): Promise<GoogleAccoun
   if (!data.email) throw new ApiError("Google did not tell us the account's email.", 401);
 
   return { refreshToken, email: data.email };
+}
+
+/**
+ * Asks Google to withdraw a token's access. Best-effort, like deleting an
+ * event: our own copy is what's being forgotten, and a token the person
+ * already revoked is refused here. The token goes in the body, not the URL, so
+ * it stays out of logs.
+ *
+ * Google revokes the whole grant, not one scope: see `forgetGoogleConnection`.
+ */
+export async function revokeGoogleToken(refreshToken: string): Promise<void> {
+  try {
+    const response = await fetch("https://oauth2.googleapis.com/revoke", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ token: refreshToken }).toString(),
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!response.ok) console.error(`Google refused to revoke a token (${response.status}).`);
+  } catch (error) {
+    console.error("Revoking a Google token failed:", error);
+  }
 }
 
 function calendarClient(refreshToken: string) {

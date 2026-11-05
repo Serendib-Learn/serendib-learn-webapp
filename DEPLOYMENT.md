@@ -276,7 +276,7 @@ https://api.yourdomain.com/api/integrations/google/callback
 ```
 
 Once you have real users, submit the OAuth consent screen for verification
-(same section) — `calendar.events` and `gmail.send` are both sensitive
+(same section) — `calendar.events.owned` and `gmail.send` are both sensitive
 scopes, and an unverified app caps out at 100 test users.
 
 ## 4. Vercel (frontend)
@@ -524,7 +524,7 @@ The site is installable like the prototype was ("Add to Home Screen" /
 - [x] Serendib Google account connected under Administration → Google, so every booking gets a Meet link — done 28 Oct 2026
 - [x] `CRON_SECRET` + the Cloud Scheduler job for lesson and feedback reminders (step 8) — set up
 - [x] Gmail sender connected under Administration → Google and its test button pressed — done 28 Oct 2026 (serendib.learn@gmail.com)
-- [ ] Google OAuth consent screen **published** and submitted for verification (sensitive scopes: `calendar.events`, `gmail.send`)
+- [ ] Google OAuth consent screen **published** and submitted for verification (sensitive scopes: `calendar.events.owned`, `gmail.send`)
 - [x] Terms (`/terms`) and Cancellation and Refund Policy (`/refunds`) live and linked, 2 Nov 2026
 - [ ] Real tutors invited or approved, with their profiles, timezone and weekly hours filled in
 - [ ] Alphabet sheets checked by tutors (Portal → Content) and next year's holidays added before January

@@ -1137,13 +1137,16 @@ database, and every screen reads it through one API:
 | **Google Cloud Text-to-Speech** | Generating the Tamil alphabet audio (offline script) | Run by hand with Google Cloud credentials | Speech synthesis fallback |
 | **Cloud Scheduler** | Runs reminders every 5 minutes | `CRON_SECRET` and the scheduler job | Reminders only run while an instance is awake |
 
-**Google OAuth scopes:** `calendar.events`, `gmail.send` and
-`userinfo.email`. The first two are sensitive scopes. Until the consent
-screen is published and verified, Google shows an "unverified app" warning
-and caps use at 100 test users.
+**Google OAuth scopes:** `calendar.events.owned`, `gmail.send` and
+`userinfo.email`, plus `openid`, `email` and `profile` for sign-in. The
+first two are sensitive scopes. Until the consent screen is published and
+verified, Google shows an "unverified app" warning and caps use at 100 test
+users.
 
 Refresh tokens are stored server-side only, in `googleAccounts` and
-`googleMailer`.
+`googleMailer`. Disconnecting, or deleting the account, deletes the token and
+revokes it at Google, unless another connection still uses that Google account
+(`lib/google-connections.ts`).
 
 ---
 
@@ -1380,9 +1383,12 @@ signing up, paying or getting lesson links.
    (serendib.learn@gmail.com) is connected and the test email arrived.
    The test button appears once a connection exists.
 2. **Google consent screen.** Published 29 Oct 2026. **Branding verified
-   and published, and the sensitive scopes (`calendar.events`,
-   `gmail.send`) submitted for verification on 3 Nov 2026**, with a demo
-   video. Until Google approves, connecting Calendar or Gmail shows the
+   and published, and the sensitive scopes submitted for verification on
+   3 Nov 2026.** On 5 Nov Google sent its audit checklist and is waiting for
+   a reply: the app moved from `calendar.events` to the narrower
+   `calendar.events.owned` and the privacy policy was expanded, so the
+   Console scopes, the demo video and the reply still have to follow (steps
+   in the owners' `GOOGLE-VERIFICATION.md`). Until Google approves, connecting Calendar or Gmail shows the
    "unverified app" screen (Advanced → Go to Serendib Learn); sign-in with
    Google is unaffected. Forward Google's emails to the developer.
 3. ~~**Meet links.**~~ **Done 28 Oct 2026:** the shared Serendib calendar

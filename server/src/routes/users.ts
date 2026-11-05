@@ -5,6 +5,7 @@ import { db } from "../db/database.ts";
 import { sendInvite } from "../lib/accounts.ts";
 import { logAudit } from "../lib/audit.ts";
 import { ApiError, forbidden, notFound, wrap } from "../lib/errors.ts";
+import { forgetGoogleConnection } from "../lib/google-connections.ts";
 import { pathParam } from "../lib/http.ts";
 import { isListedTutor, publicTutor, teaches, tuteeIdsOf } from "../lib/domain.ts";
 import { newId, nowIso } from "../lib/ids.ts";
@@ -420,6 +421,9 @@ usersRouter.delete(
 
     await db().credentials.deleteOne({ id });
     await db().sessions.deleteMany({ userId: id });
+    // The privacy policy promises this: a deleted account leaves no Google access behind.
+    await db().oauthStates.deleteMany({ userId: id });
+    await forgetGoogleConnection("googleAccounts", id);
     await logAudit(actor, "account_deleted", target?.name ?? id, target?.email);
 
     response.status(204).end();
