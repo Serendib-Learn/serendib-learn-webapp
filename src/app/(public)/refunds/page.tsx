@@ -17,7 +17,7 @@ export default function RefundsPage() {
   return (
     <LegalPage
       title="Cancellation and Refund Policy"
-      updated="2 November 2026"
+      updated="7 November 2026"
       intro={
         <p>
           Plans change. This policy explains what happens when you need to move or cancel a
@@ -120,6 +120,11 @@ export default function RefundsPage() {
           For a bundle, each lesson counts as one fifth or one tenth of the payment: the lessons you
           have not used can be refunded within 30 days of paying for the bundle.
         </p>
+        <p>
+          If you paid us directly, for example by bank transfer, the same rules apply to the
+          prepaid lessons on your account: each counts as an equal share of what you paid, and
+          refunds go back by bank transfer instead of to a card.
+        </p>
         <p>We cannot refund:</p>
         <ul>
           <li>lessons that have taken place;</li>
@@ -136,6 +141,11 @@ export default function RefundsPage() {
         <p>
           Email <ContactEmail /> from the address on your account, with the date of the lesson
           and your tutor&apos;s name. We will confirm by email, normally within 2 working days.
+        </p>
+        <p>
+          For prepaid lessons you paid for directly, you can also press &ldquo;Ask for a
+          refund&rdquo; on the Calendar &amp; Bookings page of your portal. We will email you to
+          arrange the bank transfer.
         </p>
         <p>
           Approved refunds go back to the card you paid with, through our payment provider

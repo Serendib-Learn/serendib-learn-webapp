@@ -22,6 +22,7 @@ import type {
   InviteInput,
   LanguageCode,
   LessonCredit,
+  PrepaidLessonsInput,
   LessonNote,
   LessonNoteInput,
   MailMessage,
@@ -189,8 +190,12 @@ export interface Backend {
     credits(studentId?: string): Promise<{ available: number; credits: LessonCredit[] }>;
     /** Every student's unused free lessons. Administrators only. */
     heldCredits(): Promise<LessonCredit[]>;
-    /** Records an unused lesson as refunded to the card, so it can no longer be booked. Administrators only. */
+    /** Records an unused lesson as refunded (to the card, or by bank transfer if prepaid), so it can no longer be booked. Administrators only. */
     markCreditRefunded(id: string): Promise<LessonCredit>;
+    /** Adds lessons a student paid for outside the site. Administrators only. */
+    addPrepaid(input: PrepaidLessonsInput): Promise<LessonCredit[]>;
+    /** A student asking for their unused prepaid lessons back: the administrators are emailed. */
+    askRefund(message: string): Promise<{ lessons: number; amountLkr: number }>;
   };
 
   /** Bundles: 5 or 10 lessons with any tutors, booked together and paid for once. */

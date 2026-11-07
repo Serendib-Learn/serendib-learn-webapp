@@ -7,6 +7,7 @@ import { api } from "@/lib/api";
 import { photoUrlFor } from "@/lib/api/public";
 import { useAuth } from "@/lib/auth";
 import { errorMessage, useAction, useQuery } from "@/lib/hooks";
+import { creditNoun, unusedCredits } from "@/lib/credits";
 import { formatLongDate, formatTime, money, rupees } from "@/lib/format";
 import { PageHeader } from "@/components/portal/page-header";
 import { Button, ButtonLink } from "@/components/ui/button";
@@ -68,6 +69,18 @@ function Checkout() {
     };
   }, [id, returned]);
 
+  // Booked with a free lesson or a prepaid one? They read differently.
+  const creditId = (polled ?? booking.data)?.creditId;
+  const studentId = booking.data?.studentId;
+  const creditReason = useQuery(
+    async () =>
+      creditId && studentId
+        ? ((await api.requests.credits(studentId)).credits.find((credit) => credit.id === creditId)?.reason ?? null)
+        : null,
+    [creditId, studentId],
+  );
+  const prepaid = creditReason.data === "prepaid";
+
   if (!user || booking.loading || config.loading) return <Loading label="Opening checkout" />;
   if (booking.error || !booking.data) {
     return (
@@ -86,7 +99,7 @@ function Checkout() {
       <PageHeader title={current.status === "confirmed" ? "You're booked" : "Checkout"}>
         {current.status === "confirmed"
           ? current.creditId
-            ? "Booked with your free lesson, nothing to pay. Your meeting link is below and in your calendar."
+            ? `Booked with ${prepaid ? "one of your prepaid lessons, nothing more" : "your free lesson, nothing"} to pay. Your meeting link is below and in your calendar.`
             : "Payment received. Your meeting link is below and in your calendar."
           : "Check the details, then pay securely by card."}
       </PageHeader>
@@ -127,7 +140,7 @@ function Checkout() {
           )}
         </div>
 
-        <Summary booking={current} tutor={tutor} config={config.data} />
+        <Summary booking={current} tutor={tutor} config={config.data} prepaid={prepaid} />
       </div>
     </>
   );
@@ -142,10 +155,13 @@ function Summary({
   booking,
   tutor,
   config,
+  prepaid,
 }: {
   booking: Booking;
   tutor?: PublicProfile;
   config?: PaymentsConfig;
+  /** Booked with a lesson paid for outside the site. */
+  prepaid: boolean;
 }) {
   const cents = amountFor(booking);
   return (
@@ -173,7 +189,7 @@ function Summary({
         <div className="flex justify-between gap-4 border-t border-ink-900/10 pt-2 font-medium">
           <dt className="text-ink-700">Total</dt>
           <dd className="text-right text-ink-900">
-            {booking.creditId ? "Free lesson" : rupees(cents)}
+            {booking.creditId ? (prepaid ? "Prepaid lesson" : "Free lesson") : rupees(cents)}
             {config?.usdToLkr && !booking.creditId ? (
               <span className="block text-xs font-normal text-ink-400">
                 about {money(cents / 100 / config.usdToLkr)}; your bank converts it
@@ -198,15 +214,17 @@ function PayPanel({ booking, config }: { booking: Booking; config?: PaymentsConf
   const cents = amountFor(booking);
   const credits = useQuery(() => api.requests.credits(booking.studentId), [booking.studentId]);
   const bookWithCredit = useAction(() => api.bookings.useCredit(booking.id));
-  const freeLessons = credits.data?.available ?? 0;
+  const unused = unusedCredits(credits.data?.credits ?? []);
+  const freeLessons = unused.length;
+  const noun = creditNoun(unused);
 
   return (
     <Card className="p-6">
       {freeLessons > 0 ? (
         <div className="mb-5 rounded-lg border border-fern/25 bg-mist/60 p-4">
           <p className="text-sm text-ink-700">
-            You have {freeLessons} free lesson{freeLessons === 1 ? "" : "s"}. Use one for this
-            booking and there is nothing to pay.
+            You have {freeLessons} {noun}
+            {freeLessons === 1 ? "" : "s"}. Use one for this booking and there is nothing more to pay.
           </p>
           {bookWithCredit.error ? <Alert className="mt-3">{bookWithCredit.error}</Alert> : null}
           <Button
@@ -215,7 +233,7 @@ function PayPanel({ booking, config }: { booking: Booking; config?: PaymentsConf
             disabled={bookWithCredit.pending || redirecting}
             onClick={() => void bookWithCredit.run()}
           >
-            {bookWithCredit.pending ? "Booking…" : "Book with a free lesson"}
+            {bookWithCredit.pending ? "Booking…" : `Book with a ${noun}`}
           </Button>
         </div>
       ) : null}

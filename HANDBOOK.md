@@ -193,7 +193,10 @@ none of the tutor rows. Unverified students cannot log in at all.
   no-show, the lesson is used. If the *tutor* or the team cancels, the
   student always keeps it.
 - **Refund:** an unused paid lesson can be refunded within 30 days of
-  paying — the student emails the team (see the admin steps).
+  paying — the student emails the team (see the admin steps). A student
+  with unused **prepaid** lessons can instead press **Ask for a refund** on
+  their calendar, which emails the admins; those are refunded by bank
+  transfer.
 
 #### Student: free lessons and help
 
@@ -285,6 +288,9 @@ none of the tutor rows. Unverified students cannot log in at all.
    - The **Admin** badge counts what is waiting.
    - **Requests:** approve (gives a free lesson) or decline (a note is
      required) free-session requests and missed-lesson reports.
+   - **Prepaid lessons:** a student who paid outside the site (bank
+     transfer, or before launch) gets **Add prepaid lessons** on their row
+     under People: number of lessons, amount, date paid, a note.
    - **Moderation:** approve or reject community posts.
    - **Questions:** what people asked through the Help button. **Send
      reply** emails the answer; **Mark answered, no email** if it was sorted
@@ -739,7 +745,7 @@ Timestamps are ISO strings.
 | `courseStages` | The description on each learning hub stage folder | Same |
 | `heritageSites` | The parked heritage game's places | Same |
 | `profilePhotos` | Tutor photos (base64), keyed by user id | `User.photoId` versions the URL |
-| `lessonCredits` | Free lessons: reason, used-by booking | Given back if that booking is cancelled |
+| `lessonCredits` | Free and prepaid lessons: reason, used-by booking; prepaid ones add `paidOn`, `amountLkr` (their share) and `paymentNote` | Given back if that booking is cancelled |
 | `studentRequests` | Free-session requests and missed-lesson reports | pending → approved / declined, with the admin's note |
 | `materialFeedback` | Ratings and comments on materials, per person | Student and tutor questions differ |
 | `waitlist` | "Register your interest" entries | |
@@ -868,6 +874,16 @@ Both `awaiting_payment` and `confirmed` hold the tutor's slot.
   Administration → Requests. Approving grants a free lesson; declining
   needs a note. The student is emailed either way and sees the status and
   the note on their calendar.
+- **Prepaid lessons** are the same one-hour credits, for lessons paid for
+  outside the site (a bank transfer, or before the portal launched). An
+  admin adds them under People → **Add prepaid lessons** (lessons, amount,
+  date paid, note); each holds an equal share of the payment. They don't
+  expire; the owners revisit them if lesson prices change. The student
+  books with "Book with a prepaid lesson", and Tutor hours shows them as
+  *Prepaid* with that share. Refunds follow the same 30-day rule, by bank
+  transfer: the student presses **Ask for a refund**, the admins get an
+  email with the payment dates, and after the transfer an admin presses
+  **Mark refunded** under Requests.
 - Who may do what as a student, tutor or admin is tabulated in
   `server/README.md` → "Who can do what".
 

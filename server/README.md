@@ -65,7 +65,7 @@ form, the help widget's questions, the tutor list and the demo inbox needs a ses
 | Users | `GET /users` (admin), `GET /users/directory`, `GET /users/tutors` (public: approved tutors, no emails, with `bookable`), `POST /users/invite` (admin; email optional for a tutor), `POST /users/:id/email` (admin: add the address to an account listed without one, and send the invite), `POST /users/:id/verify` (admin: confirm someone's email when the code never arrived), `GET /users/audit-log` (admin), `GET /users/:id` (yourself, your own students for a tutor, anyone for an admin), `GET /users/:id/tutees`, `GET /users/:id/tutors` (public profiles, no emails), `PATCH /users/:id` (profile fields only, zod-validated), `POST /users/:id/role` (admin), `POST /users/:id/tutor-status` (admin), `POST /users/:id/membership` (admin), `DELETE /users/:id` (admin) |
 | Availability | `GET /availability?tutorId`, `GET /availability/slots?tutorId&days`, `POST /availability`, `DELETE /availability/:id` |
 | Bookings | `GET /bookings?userId`, `GET /bookings/:id`, `POST /bookings`, `POST /bookings/:id/checkout`, `GET /bookings/:id/payment`, `POST /bookings/:id/pay` (demo, or admin), `/cancel`, `/complete`, `/meeting-link`, `/reschedule` (free), `/use-credit` (book with a free lesson) |
-| Requests | `GET /requests` (yours; all for an admin), `POST /requests` (students: `free_session` or `missed_session`), `POST /requests/:id/approve\|decline` (admin), `GET /requests/credits` (free lessons left), `GET /requests/credits/held` (admin: every unused one), `POST /requests/credits/:id/refunded` (admin) |
+| Requests | `GET /requests` (yours; all for an admin), `POST /requests` (students: `free_session` or `missed_session`), `POST /requests/:id/approve\|decline` (admin), `GET /requests/credits` (free lessons left), `GET /requests/credits/held` (admin: every unused one), `POST /requests/credits/:id/refunded` (admin), `POST /requests/credits/prepaid` (admin: lessons paid for outside the site), `POST /requests/credits/refund` (students: ask for unused prepaid lessons back; emails the admins) |
 | Reports | `GET /reports/tutor-hours?from&to` (admin: each tutor's lessons between two instants, with taught, verified, upcoming and cancelled lessons, card payments, free lessons and ratings; a period of up to 370 days) |
 | Payments | `GET /payments/config`, `POST /payments/webhook` (Payments.lk, signature-verified) |
 | Feedback | `GET /feedback/pending`, `POST /feedback`, `GET /feedback?tutorId\|studentId` (or all, admin), `POST /feedback/lesson-notes`, `POST /voice-notes`, `GET /voice-notes/:id` |
@@ -221,6 +221,17 @@ an assigned material or homework from that tutor.
   presses **Mark refunded** under Administration → Requests → *Free lessons
   held* (`POST /requests/credits/:id/refunded`), which takes the credit off
   the account (`refundedAt`) and emails the student.
+- **Prepaid lessons** (`lib/credits.ts`'s `grantPrepaid`, reason `prepaid`)
+  are credits for lessons paid for outside the site: an admin adds them
+  (`POST /requests/credits/prepaid`: lessons, amountLkr, paidOn, note), one
+  credit per lesson, each holding its share (`amountLkr`), the payment day
+  (`paidOn`) and the note. They don't expire. They book, cancel and come
+  back like free lessons, but emails, the checkout and Tutor hours call
+  them prepaid (`paidWith: "prepaid"`, with the share). A student asks for
+  them back with `POST /requests/credits/refund`, which only emails the
+  admins, saying whether each payment is inside the 30-day window; after
+  the bank transfer, **Mark refunded** works as above and the email says
+  bank transfer.
 - **Requests** (`studentRequests`) are a student asking for a free session
   (a reason, one pending at a time) or reporting a missed lesson (which one,
   what happened, up to 30 days after). Admins are emailed and decide under

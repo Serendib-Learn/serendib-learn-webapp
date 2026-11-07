@@ -7,6 +7,7 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { useAction, useQuery } from "@/lib/hooks";
 import { cn } from "@/lib/cn";
+import { creditNoun, unusedCredits } from "@/lib/credits";
 import { formatTime, isPast, lkr } from "@/lib/format";
 import { HOLIDAY_CATEGORY_LABEL as CATEGORY_LABEL } from "@/lib/content";
 import { AvailabilityEditor } from "@/components/portal/availability-editor";
@@ -154,8 +155,9 @@ function CalendarWorkspace({ user }: { user: User }) {
   );
   const tutorIds = (tutors.data ?? []).map((tutor) => tutor.id).join(",");
   const payments = useQuery(() => api.payments.config(), []);
+  // Free and prepaid lessons the student can book with, oldest (spent) first.
   const credits = useQuery(
-    async () => (isStudent ? (await api.requests.credits()).available : 0),
+    async () => (isStudent ? unusedCredits((await api.requests.credits()).credits) : []),
     [isStudent],
   );
   const slots = useQuery(async () => {
@@ -368,7 +370,8 @@ function CalendarWorkspace({ user }: { user: User }) {
                   slot={slot}
                   tutor={tutorsById.get(slot.tutorId)}
                   student={user}
-                  freeLessons={credits.data ?? 0}
+                  freeLessons={credits.data?.length ?? 0}
+                  creditLabel={creditNoun(credits.data ?? [])}
                   focusIdeas={focusIdeas}
                   priceLkr={payments.data ? (payments.data.lessonPriceLkr * slot.durationMins) / 60 : undefined}
                 />
@@ -401,14 +404,17 @@ function OpenSlot({
   tutor,
   student,
   freeLessons,
+  creditLabel,
   focusIdeas,
   priceLkr,
 }: {
   slot: Slot;
   tutor?: PublicTutor;
   student: User;
-  /** Free lessons the student can book this hour with instead of paying. */
+  /** Free or prepaid lessons the student can book this hour with instead of paying. */
   freeLessons: number;
+  /** What to call them: "free lesson", "prepaid lesson", or both. */
+  creditLabel: string;
   /** Suggestions for what the lesson should cover: the course's chapter titles. */
   focusIdeas: string[];
   /** What this hour costs, in rupees — the same for every tutor for now. */
@@ -527,7 +533,7 @@ function OpenSlot({
                 className="flex h-8 items-center gap-1 rounded-md border border-fern/40 bg-mist px-3 text-xs font-medium text-fern disabled:opacity-60"
               >
                 {bookFree.pending ? <Loader2 className="h-3 w-3 animate-spin" /> : null}
-                Book with a free lesson ({freeLessons} left)
+                Book with a {creditLabel} ({freeLessons} left)
               </button>
             ) : null}
           </div>

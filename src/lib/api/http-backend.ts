@@ -365,6 +365,17 @@ export const httpBackend: Backend = {
     markCreditRefunded(id) {
       return request<LessonCredit>(`/requests/credits/${id}/refunded`, { method: "POST" });
     },
+
+    addPrepaid(input) {
+      return request<LessonCredit[]>("/requests/credits/prepaid", { method: "POST", body: input });
+    },
+
+    askRefund(message) {
+      return request<{ lessons: number; amountLkr: number }>("/requests/credits/refund", {
+        method: "POST",
+        body: { message },
+      });
+    },
   },
 
   bundles: {

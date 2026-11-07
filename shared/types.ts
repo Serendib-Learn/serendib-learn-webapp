@@ -188,11 +188,12 @@ export interface BookingReschedule {
 }
 
 /**
- * Why a student holds a free lesson: an approved request, a paid lesson the
- * tutor (or the team) cancelled, or one the student cancelled in good time
- * (the refund policy's notice period).
+ * Why a student holds a lesson to book: an approved request, a paid lesson the
+ * tutor (or the team) cancelled, one the student cancelled in good time
+ * (the refund policy's notice period), or one paid for outside the site, by
+ * bank transfer or before the portal launched, and added by an administrator.
  */
-export type CreditReason = "free_session" | "missed_session" | "tutor_cancelled" | "student_cancelled";
+export type CreditReason = "free_session" | "missed_session" | "tutor_cancelled" | "student_cancelled" | "prepaid";
 
 /**
  * One free lesson a student can book instead of paying. Used once; given
@@ -219,6 +220,23 @@ export interface LessonCredit {
    */
   refundedAt?: string;
   refundedById?: string;
+  /** A prepaid lesson's payment day, YYYY-MM-DD: the refund window counts from it. */
+  paidOn?: string;
+  /** A prepaid lesson's share of what was paid, in LKR. */
+  amountLkr?: number;
+  /** How a prepaid lesson was paid for, as the administrator noted it. */
+  paymentNote?: string;
+}
+
+/** Lessons paid for outside the site, added to a student's account by an administrator. */
+export interface PrepaidLessonsInput {
+  studentId: string;
+  lessons: number;
+  /** The whole payment, in LKR. */
+  amountLkr: number;
+  /** YYYY-MM-DD, not in the future. */
+  paidOn: string;
+  note?: string;
 }
 
 export type StudentRequestKind = "free_session" | "missed_session";
@@ -258,10 +276,10 @@ export interface StudentRequestInput {
 
 /**
  * How a lesson was paid for: by card through Payments.lk, with a free
- * lesson, recorded as paid by an administrator (or the demo checkout), or
- * not at all.
+ * lesson, with a lesson paid for outside the site (prepaid), recorded as paid
+ * by an administrator (or the demo checkout), or not at all.
  */
-export type LessonPaidWith = "card" | "free_lesson" | "recorded" | "unpaid";
+export type LessonPaidWith = "card" | "free_lesson" | "prepaid" | "recorded" | "unpaid";
 
 /** One lesson in the tutor hours report — administrators only. */
 export interface TutorHoursLesson {
@@ -274,7 +292,7 @@ export interface TutorHoursLesson {
   /** Taught (its end has passed), still to come, or cancelled after it was paid for. */
   state: "taught" | "upcoming" | "cancelled";
   paidWith: LessonPaidWith;
-  /** What the card was charged, in LKR cents. */
+  /** What the card was charged, or the prepaid lesson's share of its payment, in LKR cents. */
   amountCents?: number;
   /** A Payments.lk sandbox payment: no real money moved. */
   testPayment?: boolean;

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { api } from "@/lib/api";
 import { useAction, useQuery } from "@/lib/hooks";
+import { creditNoun, unusedCredits } from "@/lib/credits";
 import { formatDateTime, formatTime, groupByDay } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Field, Select, Textarea } from "@/components/ui/field";
@@ -222,29 +223,46 @@ function describe(item: StudentRequest): string {
   return item.kind === "free_session" ? "Free session" : "Missed lesson";
 }
 
+const lessonCount = (count: number, kind: string) => `${count} ${kind} lesson${count === 1 ? "" : "s"}`;
+
 /**
- * A student's free lessons and requests to the team: how many free lessons
- * are left to book, asking for one, and what became of each request.
+ * A student's free and prepaid lessons and requests to the team: how many
+ * are left to book, asking for a free one or a refund of prepaid ones, and
+ * what became of each request.
  */
 export function FreeLessonsPanel() {
   const credits = useQuery(() => api.requests.credits(), []);
   const requests = useQuery(() => api.requests.list(), []);
   const [asking, setAsking] = useState(false);
-  const available = credits.data?.available ?? 0;
+  const [refunding, setRefunding] = useState(false);
+  const unused = unusedCredits(credits.data?.credits ?? []);
+  const prepaid = unused.filter((credit) => credit.reason === "prepaid").length;
+  const free = unused.length - prepaid;
+  const held = [prepaid > 0 ? lessonCount(prepaid, "prepaid") : "", free > 0 ? lessonCount(free, "free") : ""]
+    .filter(Boolean)
+    .join(" and ");
 
   return (
     <Card className="p-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
-          <h2 className="font-display text-xl text-forest">Free lessons &amp; help</h2>
+          <h2 className="font-display text-xl text-forest">
+            {prepaid > 0 ? "Your lessons" : "Free lessons"} &amp; help
+          </h2>
           <p className="mt-1 text-sm leading-relaxed text-ink-500">
-            {available > 0
-              ? `You have ${available} free lesson${available === 1 ? "" : "s"} to book. Pick any open hour above and choose “Book with a free lesson”.`
+            {unused.length > 0
+              ? `You have ${held} to book. Pick any open hour above and choose “Book with a ${creditNoun(unused)}”.`
               : "Moving a booked lesson is always free. You can also ask us for a free session, or report a missed lesson from “Your sessions” below."}
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          {available > 0 ? <Badge tone="jade">{available} free</Badge> : null}
+        <div className="flex flex-wrap items-center gap-3">
+          {prepaid > 0 ? <Badge tone="ocean">{prepaid} prepaid</Badge> : null}
+          {free > 0 ? <Badge tone="jade">{free} free</Badge> : null}
+          {prepaid > 0 ? (
+            <Button size="sm" variant="ghost" onClick={() => setRefunding(true)}>
+              Ask for a refund
+            </Button>
+          ) : null}
           <Button size="sm" variant="secondary" onClick={() => setAsking(true)}>
             Ask for a free session
           </Button>
@@ -270,7 +288,70 @@ export function FreeLessonsPanel() {
       ) : null}
 
       {asking ? <FreeSessionDialog onClose={() => setAsking(false)} /> : null}
+      {refunding ? <RefundDialog lessons={prepaid} onClose={() => setRefunding(false)} /> : null}
     </Card>
+  );
+}
+
+/** Asking for unused prepaid lessons back: the Serendib team is emailed and replies. */
+function RefundDialog({ lessons, onClose }: { lessons: number; onClose: () => void }) {
+  const [message, setMessage] = useState("");
+  const [sent, setSent] = useState(false);
+  const ask = useAction(() => api.requests.askRefund(message.trim()));
+
+  return (
+    <Modal
+      open
+      onClose={onClose}
+      title={sent ? "Refund request sent" : "Ask for a refund"}
+      description={
+        sent
+          ? undefined
+          : `You have ${lessonCount(lessons, "unused prepaid")}. Under our refund policy, unused lessons can be refunded within 30 days of your payment, by bank transfer.`
+      }
+    >
+      {sent ? (
+        <div className="space-y-4">
+          <Alert tone="jade">
+            The Serendib team has your request and will email you, usually within 2 working days.
+            Your lessons stay on your account until a refund is made.
+          </Alert>
+          <Button className="w-full" onClick={onClose}>
+            Done
+          </Button>
+        </div>
+      ) : (
+        <form
+          className="space-y-4"
+          onSubmit={async (event) => {
+            event.preventDefault();
+            if (await ask.run()) setSent(true);
+          }}
+        >
+          <Field
+            label="Anything we should know? (optional)"
+            htmlFor="refund-message"
+            hint="We will email you to arrange the transfer. Please don't send bank details here."
+          >
+            <Textarea
+              id="refund-message"
+              value={message}
+              maxLength={2000}
+              onChange={(event) => setMessage(event.target.value)}
+            />
+          </Field>
+          {ask.error ? <Alert>{ask.error}</Alert> : null}
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="ghost" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={ask.pending}>
+              {ask.pending ? "Sending…" : "Send refund request"}
+            </Button>
+          </div>
+        </form>
+      )}
+    </Modal>
   );
 }
 

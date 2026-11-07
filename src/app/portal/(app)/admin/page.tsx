@@ -7,6 +7,7 @@ import { profilePhotoUrl, photoUrlFor } from "@/lib/api/public";
 import { useAuth } from "@/lib/auth";
 import { useAction, useQuery } from "@/lib/hooks";
 import { cn } from "@/lib/cn";
+import { rupeesLkr } from "@/lib/credits";
 import { formatDate, formatDateTime, relativeTime } from "@/lib/format";
 import { AdminQuestions } from "@/components/portal/admin-questions";
 import { AdminRequests } from "@/components/portal/admin-requests";
@@ -218,6 +219,7 @@ function People({ me }: { me: User }) {
   const [inviting, setInviting] = useState(false);
   const [editing, setEditing] = useState<User | null>(null);
   const [addingEmail, setAddingEmail] = useState<User | null>(null);
+  const [prepaying, setPrepaying] = useState<User | null>(null);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<PeopleFilter>("all");
   const [sort, setSort] = useState<PeopleSort>("attention");
@@ -319,6 +321,7 @@ function People({ me }: { me: User }) {
       {addingEmail ? (
         <AddEmailDialog user={addingEmail} onClose={() => setAddingEmail(null)} />
       ) : null}
+      {prepaying ? <PrepaidDialog user={prepaying} onClose={() => setPrepaying(null)} /> : null}
 
       {everyone.map((person) => (
         // Two rows on every card — who they are, then what you can do — so the
@@ -402,6 +405,17 @@ function People({ me }: { me: User }) {
             {person.role === "tutor" ? (
               <Button variant="secondary" size="sm" onClick={() => setEditing(person)}>
                 Edit profile
+              </Button>
+            ) : null}
+
+            {person.role === "student" ? (
+              <Button
+                variant="secondary"
+                size="sm"
+                title="Lessons they paid for outside the site: a bank transfer, or before the portal launched"
+                onClick={() => setPrepaying(person)}
+              >
+                Add prepaid lessons
               </Button>
             ) : null}
 
@@ -507,6 +521,115 @@ function AddEmailDialog({ user, onClose }: { user: User; onClose: () => void }) 
             </Button>
             <Button type="submit" disabled={add.pending || !email.trim()}>
               {add.pending ? "Sending…" : "Add and send invite"}
+            </Button>
+          </div>
+        </form>
+      )}
+    </Modal>
+  );
+}
+
+/**
+ * Lessons a student paid for outside the site, by bank transfer or before the
+ * portal launched. They book them like free lessons; they do not expire, and
+ * unused ones can be refunded by bank transfer (the refund policy).
+ */
+function PrepaidDialog({ user, onClose }: { user: User; onClose: () => void }) {
+  const [lessons, setLessons] = useState("4");
+  const [amount, setAmount] = useState("");
+  const [paidOn, setPaidOn] = useState(() => new Date().toLocaleDateString("en-CA"));
+  const [note, setNote] = useState("");
+  const [added, setAdded] = useState<number | null>(null);
+  const count = Number(lessons);
+  const rupees = Number(amount);
+  const valid = Number.isInteger(count) && count >= 1 && count <= 100 && rupees > 0 && Boolean(paidOn);
+  const add = useAction(() =>
+    api.requests.addPrepaid({ studentId: user.id, lessons: count, amountLkr: rupees, paidOn, note: note.trim() }),
+  );
+
+  return (
+    <Modal
+      open
+      onClose={onClose}
+      title={added ? "Prepaid lessons added" : `Add prepaid lessons for ${user.name}`}
+      description={
+        added
+          ? undefined
+          : "For lessons they paid for outside the site. They book them like free lessons, one hour each with any tutor. They do not expire, and unused ones can be refunded by bank transfer."
+      }
+    >
+      {added ? (
+        <div className="space-y-5">
+          <Alert tone="jade">
+            {user.name} now has {added} prepaid lesson{added === 1 ? "" : "s"} to book, and has been
+            emailed. You can see them under Requests → Free and prepaid lessons held.
+          </Alert>
+          <Button className="w-full" onClick={onClose}>
+            Done
+          </Button>
+        </div>
+      ) : (
+        <form
+          className="space-y-4"
+          onSubmit={async (event) => {
+            event.preventDefault();
+            const result = await add.run();
+            if (result) setAdded(result.length);
+          }}
+        >
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Lessons (one hour each)" htmlFor="prepaid-lessons">
+              <Input
+                id="prepaid-lessons"
+                type="number"
+                min={1}
+                max={100}
+                step={1}
+                value={lessons}
+                onChange={(event) => setLessons(event.target.value)}
+              />
+            </Field>
+            <Field
+              label="Amount paid (Rs)"
+              htmlFor="prepaid-amount"
+              hint={valid ? `${rupeesLkr(Math.round((rupees / count) * 100) / 100)} a lesson` : undefined}
+            >
+              <Input
+                id="prepaid-amount"
+                type="number"
+                min={1}
+                step="any"
+                inputMode="decimal"
+                value={amount}
+                onChange={(event) => setAmount(event.target.value)}
+              />
+            </Field>
+          </div>
+          <Field label="Date paid" htmlFor="prepaid-date" hint="Refunds are possible within 30 days of this date.">
+            <Input
+              id="prepaid-date"
+              type="date"
+              max={new Date().toLocaleDateString("en-CA")}
+              value={paidOn}
+              onChange={(event) => setPaidOn(event.target.value)}
+            />
+          </Field>
+          <Field label="Note (optional)" htmlFor="prepaid-note" hint="How they paid, for your records. The student does not see it.">
+            <Input
+              id="prepaid-note"
+              value={note}
+              maxLength={500}
+              placeholder="Bank transfer, reference 1234"
+              onChange={(event) => setNote(event.target.value)}
+            />
+          </Field>
+          {add.error ? <Alert>{add.error}</Alert> : null}
+          <div className="flex justify-end gap-2 pt-2">
+            <Button type="button" variant="ghost" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={add.pending || !valid}>
+              {add.pending ? "Adding…" : `Add ${valid ? count : ""} prepaid lesson${count === 1 ? "" : "s"}`}
             </Button>
           </div>
         </form>

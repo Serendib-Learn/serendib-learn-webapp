@@ -20,7 +20,62 @@ const why: Record<CreditReason, string> = {
   missed_session: "We have looked into your missed lesson and added a make-up lesson for you.",
   tutor_cancelled: "Your tutor had to cancel a lesson you had paid for, so you have a free lesson to book instead.",
   student_cancelled: "You cancelled a paid lesson in good time, so you keep it: book it again whenever suits you. If you would rather have your money back, reply within 30 days of paying and we will refund it to your card.",
+  prepaid: "You have a lesson you paid for in advance.",
 };
+
+/** Rupees with thousands separators: "Rs 20,000". */
+export const rupeesLkr = (amount: number) => `Rs ${amount.toLocaleString("en-LK", { maximumFractionDigits: 2 })}`;
+
+/** Unused prepaid lessons, oldest first. */
+export async function availablePrepaid(studentId: string): Promise<LessonCredit[]> {
+  return (await availableCredits(studentId)).filter((credit) => credit.reason === "prepaid");
+}
+
+/**
+ * Lessons a student paid for outside the site, by bank transfer or before
+ * the portal launched. Each is an ordinary one-hour credit holding its share
+ * of the payment, so it is booked, cancelled and refunded like any other.
+ * They do not expire. The student gets one email for the whole payment.
+ */
+export async function grantPrepaid(input: {
+  studentId: string;
+  lessons: number;
+  amountLkr: number;
+  paidOn: string;
+  note?: string;
+  grantedById: string;
+}): Promise<LessonCredit[]> {
+  const share = Math.round((input.amountLkr / input.lessons) * 100) / 100;
+  const createdAt = nowIso();
+  const credits: LessonCredit[] = [];
+  for (let index = 0; index < input.lessons; index += 1) {
+    credits.push(
+      await db().lessonCredits.insertOne({
+        id: newId("cr"),
+        studentId: input.studentId,
+        reason: "prepaid",
+        durationMins: CREDIT_MINUTES,
+        grantedById: input.grantedById,
+        createdAt,
+        paidOn: input.paidOn,
+        amountLkr: share,
+        paymentNote: input.note || undefined,
+      }),
+    );
+  }
+
+  const student = await db().users.findById(input.studentId);
+  if (student) {
+    const lessons = `${input.lessons} prepaid lesson${input.lessons === 1 ? "" : "s"}`;
+    await deliver({
+      to: student.email,
+      subject: `Your ${lessons} ${input.lessons === 1 ? "is" : "are"} ready to book`,
+      body: `Thank you for your payment of ${rupeesLkr(input.amountLkr)}. We have added ${lessons} to your account, one hour each with any tutor. They do not expire.\n\nPick any open hour in your calendar and choose "Book with a prepaid lesson". There is nothing more to pay: ${config.appUrl}/portal/calendar\n\nIf you would like a refund of lessons you have not used, use "Ask for a refund" on the same page.`,
+      kind: "notification",
+    });
+  }
+  return credits;
+}
 
 /** Gives a student one free lesson and tells them how to use it. */
 export async function grantCredit(input: {

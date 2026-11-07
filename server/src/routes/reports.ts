@@ -57,11 +57,17 @@ reportsRouter.get(
     );
     const ids = bookings.map((booking) => booking.id);
 
-    const [feedback, reports, tutors] = await Promise.all([
+    const creditIds = bookings.map((booking) => booking.creditId).filter((id): id is string => Boolean(id));
+    const [feedback, reports, tutors, credits] = await Promise.all([
       db().feedback.find({ bookingId: { $in: ids } }),
       db().studentRequests.find({ kind: "missed_session", bookingId: { $in: ids } }),
       db().users.find({ role: "tutor" }),
+      db().lessonCredits.find({ id: { $in: creditIds } }),
     ]);
+    // Lessons booked with one paid for outside the site: their share of that payment, in LKR.
+    const prepaidShare = new Map(
+      credits.filter((credit) => credit.reason === "prepaid").map((credit) => [credit.id, credit.amountLkr ?? 0]),
+    );
     const ratingFor = new Map(feedback.map((item) => [item.bookingId, item.rating]));
     const disputeFor = new Map<string, StudentRequest>();
     for (const report of reports) {
@@ -75,7 +81,8 @@ reportsRouter.get(
       const ends = new Date(booking.startsAt).getTime() + booking.durationMins * 60_000;
       const state = booking.status === "cancelled" ? "cancelled" : ends <= now ? "taught" : "upcoming";
       const dispute = disputeFor.get(booking.id);
-      const paid = paidWith(booking);
+      const share = booking.creditId ? prepaidShare.get(booking.creditId) : undefined;
+      const paid = share !== undefined ? "prepaid" : paidWith(booking);
       return {
         bookingId: booking.id,
         studentId: booking.studentId,
@@ -85,7 +92,8 @@ reportsRouter.get(
         focus: booking.focus,
         state,
         paidWith: paid,
-        amountCents: paid === "card" ? booking.payment?.amountCents : undefined,
+        amountCents:
+          paid === "card" ? booking.payment?.amountCents : share !== undefined ? Math.round(share * 100) : undefined,
         testPayment: paid === "card" && booking.payment?.mode === "test" ? true : undefined,
         rating: ratingFor.get(booking.id),
         dispute: dispute ? { status: dispute.status, cause: dispute.cause } : undefined,
@@ -120,7 +128,9 @@ reportsRouter.get(
         upcomingLessons: upcoming.length,
         upcomingMinutes: minutes(upcoming),
         cancelledLessons: lessons.length - held.length,
-        cardCents: held.reduce((sum, lesson) => sum + (lesson.amountCents ?? 0), 0),
+        cardCents: held
+          .filter((lesson) => lesson.paidWith === "card")
+          .reduce((sum, lesson) => sum + (lesson.amountCents ?? 0), 0),
         freeLessons: held.filter((lesson) => lesson.paidWith === "free_lesson").length,
         averageRating: rated.length
           ? Math.round((rated.reduce((sum, lesson) => sum + lesson.rating!, 0) / rated.length) * 10) / 10

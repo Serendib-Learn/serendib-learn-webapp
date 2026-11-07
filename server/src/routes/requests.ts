@@ -4,7 +4,7 @@ import { config } from "../config.ts";
 import { db } from "../db/database.ts";
 import { notifyAdmins } from "../lib/accounts.ts";
 import { logAudit } from "../lib/audit.ts";
-import { availableCredits, grantCredit } from "../lib/credits.ts";
+import { availableCredits, availablePrepaid, grantCredit, grantPrepaid, rupeesLkr } from "../lib/credits.ts";
 import { ApiError, forbidden, notFound, wrap } from "../lib/errors.ts";
 import { pathParam } from "../lib/http.ts";
 import { newId, nowIso } from "../lib/ids.ts";
@@ -107,15 +107,117 @@ requestsRouter.post(
     );
     const student = await db().users.findById(credit.studentId);
     if (student) {
+      const how =
+        credit.reason === "prepaid"
+          ? "We have refunded your unused prepaid lesson by bank transfer. It may take a few working days to reach your account."
+          : "We have refunded your unused lesson to the card you paid with. Your bank may take 5 to 10 working days to show it.";
       await deliver({
         to: student.email,
         subject: "Your lesson has been refunded",
-        body: `We have refunded your unused lesson to the card you paid with. Your bank may take 5 to 10 working days to show it.\n\nThe lesson has been taken off your account, so it can no longer be booked. Thank you for learning with us. You are welcome back any time: ${config.appUrl}/portal/calendar`,
+        body: `${how}\n\nThe lesson has been taken off your account, so it can no longer be booked. Thank you for learning with us. You are welcome back any time: ${config.appUrl}/portal/calendar`,
         kind: "notification",
       });
     }
     await logAudit(actor, "credit_refunded", student?.name ?? credit.studentId, credit.reason);
     response.json(updated);
+  }),
+);
+
+/** The refund policy's window, counted from the payment. */
+const REFUND_DAYS = 30;
+
+/** "2026-11-01" is not after today, in the latest timezone (UTC+14). */
+function notInFuture(day: string): boolean {
+  const date = new Date(`${day}T00:00:00Z`);
+  return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === day && date.getTime() <= Date.now() + 14 * 3600_000;
+}
+
+const prepaidSchema = z.object({
+  studentId: z.string({ error: "Choose the student." }).trim().min(1, "Choose the student."),
+  lessons: z
+    .number({ error: "How many lessons did they pay for?" })
+    .int("Lessons are whole hours.")
+    .min(1, "Add at least one lesson.")
+    .max(100, "That is more than 100 lessons. Add them in smaller payments."),
+  amountLkr: z
+    .number({ error: "How much did they pay, in rupees?" })
+    .positive("How much did they pay, in rupees?")
+    .max(10_000_000, "That amount looks too large."),
+  paidOn: z
+    .string({ error: "When did they pay?" })
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Give the payment date.")
+    .refine(notInFuture, "The payment date cannot be in the future."),
+  note: z.string().trim().max(500, "Keep the note under 500 characters.").default(""),
+});
+
+/**
+ * Adds lessons a student paid for outside the site: by bank transfer, or
+ * before the portal launched. Administrators only.
+ */
+requestsRouter.post(
+  "/credits/prepaid",
+  requireAdmin,
+  wrap(async (request, response) => {
+    const actor = requireUser(request);
+    const input = parseBody(prepaidSchema, request.body ?? {});
+    const student = await db().users.findById(String(input.studentId));
+    if (!student) throw notFound("No such student.");
+    if (student.role !== "student") throw new ApiError("Prepaid lessons are for students.");
+
+    const credits = await grantPrepaid({ ...input, studentId: student.id, grantedById: actor.id });
+    await logAudit(
+      actor,
+      "prepaid_lessons_added",
+      student.name,
+      `${input.lessons} lessons, ${rupeesLkr(input.amountLkr)}, paid on ${input.paidOn}${input.note ? `: ${input.note}` : ""}`,
+    );
+    response.status(201).json(credits);
+  }),
+);
+
+const refundSchema = z.object({
+  message: z.string().trim().max(2000, "Keep it under 2000 characters.").default(""),
+});
+
+/**
+ * A student asking for their unused prepaid lessons back. Nothing changes
+ * here: the administrators are emailed, refund by bank transfer, then mark
+ * each lesson refunded (the refund policy: within 30 days of the payment).
+ */
+requestsRouter.post(
+  "/credits/refund",
+  requireAuth,
+  wrap(async (request, response) => {
+    const actor = requireUser(request);
+    if (actor.role !== "student") throw forbidden("Refunds are for students.");
+    const { message } = parseBody(refundSchema, request.body ?? {});
+    const prepaid = await availablePrepaid(actor.id);
+    if (prepaid.length === 0) {
+      throw new ApiError(
+        "You have no unused prepaid lessons. For a lesson you paid for by card, email serendib.learn@gmail.com.",
+        409,
+      );
+    }
+
+    const byDay = new Map<string, typeof prepaid>();
+    for (const credit of prepaid) {
+      const day = credit.paidOn ?? credit.createdAt.slice(0, 10);
+      byDay.set(day, [...(byDay.get(day) ?? []), credit]);
+    }
+    const payments = [...byDay.entries()].map(([day, credits]) => {
+      const days = Math.floor((Date.now() - new Date(`${day}T00:00:00Z`).getTime()) / 86_400_000);
+      const total = credits.reduce((sum, credit) => sum + (credit.amountLkr ?? 0), 0);
+      const window = days <= REFUND_DAYS ? `within the ${REFUND_DAYS}-day refund window` : `more than ${REFUND_DAYS} days ago, outside the refund window`;
+      const notes = [...new Set(credits.map((credit) => credit.paymentNote).filter(Boolean))].join("; ");
+      return `- ${credits.length} lesson${credits.length === 1 ? "" : "s"} paid on ${day} (${days} days ago, ${window}), worth ${rupeesLkr(total)}${notes ? `. Note: ${notes}` : ""}`;
+    });
+    const total = prepaid.reduce((sum, credit) => sum + (credit.amountLkr ?? 0), 0);
+
+    await notifyAdmins(
+      `Refund request from ${actor.name}`,
+      `${actor.name} (${actor.email}) has asked for a refund of ${prepaid.length} unused prepaid lesson${prepaid.length === 1 ? "" : "s"}, worth ${rupeesLkr(total)}:\n${payments.join("\n")}\n\n${message ? `Their message:\n${message}\n\n` : ""}If you agree, refund them by bank transfer, then mark each lesson refunded: ${config.appUrl}/portal/admin?tab=requests`,
+    );
+    response.status(202).json({ lessons: prepaid.length, amountLkr: total });
   }),
 );
 

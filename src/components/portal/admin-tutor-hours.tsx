@@ -16,6 +16,7 @@ const monthLabel = (month: Date) => month.toLocaleDateString(undefined, { month:
 const paidLabel: Record<LessonPaidWith, string> = {
   card: "Card",
   free_lesson: "Free lesson",
+  prepaid: "Prepaid",
   recorded: "Recorded as paid",
   unpaid: "Not paid",
 };
@@ -40,6 +41,9 @@ function lessonStatus(lesson: TutorHoursLesson): { tone: Tone; label: string } {
 }
 
 function paymentText(lesson: TutorHoursLesson) {
+  if (lesson.paidWith === "prepaid" && lesson.amountCents !== undefined) {
+    return `Prepaid, ${rupees(lesson.amountCents)}`;
+  }
   if (lesson.paidWith !== "card" || lesson.amountCents === undefined) return paidLabel[lesson.paidWith];
   return `${rupees(lesson.amountCents)}${lesson.testPayment ? " (test)" : ""}`;
 }

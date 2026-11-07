@@ -315,9 +315,10 @@ export const helpCategories: HelpCategory[] = [
         steps: [
           "An unused paid lesson can be refunded within 30 days of paying.",
           "Ask us below, or email serendib.learn@gmail.com, and the team will arrange it.",
+          "Paid us directly for prepaid lessons? Press Ask for a refund on your calendar page, and we refund by bank transfer.",
         ],
         link: { href: "/refunds", label: "Refund policy" },
-        keywords: "refund money back",
+        keywords: "refund money back prepaid bank transfer",
       },
     ],
   },

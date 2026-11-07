@@ -4,6 +4,7 @@ import { useState } from "react";
 import { api } from "@/lib/api";
 import { photoUrlFor } from "@/lib/api/public";
 import { useAction, useQuery } from "@/lib/hooks";
+import { rupeesLkr } from "@/lib/credits";
 import { formatDateTime, relativeTime } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { useConfirm } from "@/components/ui/confirm";
@@ -25,11 +26,19 @@ const creditReasonLabel: Record<CreditReason, string> = {
   missed_session: "Missed lesson made up",
   tutor_cancelled: "Paid lesson cancelled by the tutor or team",
   student_cancelled: "Paid lesson cancelled by the student in good time",
+  prepaid: "Prepaid lesson",
 };
 
 /** Credits that stand for a lesson the student paid for, so can be refunded (the refund policy). */
 const refundable = (credit: LessonCredit) =>
-  credit.reason === "tutor_cancelled" || credit.reason === "student_cancelled";
+  credit.reason === "tutor_cancelled" || credit.reason === "student_cancelled" || credit.reason === "prepaid";
+
+/** "Rs 5,000 · paid 2026-11-01 · Bank transfer", for a prepaid lesson. */
+function prepaidDetail(credit: LessonCredit): string {
+  return [credit.amountLkr !== undefined ? rupeesLkr(credit.amountLkr) : null, credit.paidOn ? `paid ${credit.paidOn}` : null, credit.paymentNote]
+    .filter(Boolean)
+    .join(" · ");
+}
 
 /**
  * Administration → Requests: free session requests and missed-lesson
@@ -181,11 +190,11 @@ function HeldCredits({ people }: { people: Map<string, PublicProfile> }) {
   return (
     <section className="space-y-3">
       <div>
-        <h2 className="font-display text-xl text-forest">Free lessons held</h2>
+        <h2 className="font-display text-xl text-forest">Free and prepaid lessons held</h2>
         <p className="text-xs text-ink-400">
           Lessons students can still book without paying. One that stands for a paid lesson can be
-          refunded within 30 days of the payment: refund it in the Payments.lk dashboard, then mark
-          it refunded here.
+          refunded within 30 days of the payment: refund a card payment in the Payments.lk dashboard,
+          or a prepaid lesson by bank transfer, then mark it refunded here.
         </p>
       </div>
       {refund.error ? <Alert>{refund.error}</Alert> : null}
@@ -197,6 +206,7 @@ function HeldCredits({ people }: { people: Map<string, PublicProfile> }) {
               <p className="text-sm text-ink-800">{student?.name ?? "Former student"}</p>
               <p className="text-xs text-ink-400">
                 {creditReasonLabel[credit.reason]} · {relativeTime(credit.createdAt)}
+                {credit.reason === "prepaid" && prepaidDetail(credit) ? ` · ${prepaidDetail(credit)}` : ""}
               </p>
             </div>
             {refundable(credit) ? (
@@ -207,7 +217,7 @@ function HeldCredits({ people }: { people: Map<string, PublicProfile> }) {
                 onClick={async () => {
                   const yes = await confirm({
                     title: "Mark this lesson refunded?",
-                    message: `Do this after refunding the payment in the Payments.lk dashboard. The free lesson is taken off ${student?.name ?? "the student"}'s account, so it can no longer be booked, and they are emailed that it was refunded.`,
+                    message: `Do this after refunding the payment ${credit.reason === "prepaid" ? `by bank transfer${credit.amountLkr !== undefined ? ` (${rupeesLkr(credit.amountLkr)} for this lesson)` : ""}` : "in the Payments.lk dashboard"}. The lesson is taken off ${student?.name ?? "the student"}'s account, so it can no longer be booked, and they are emailed that it was refunded.`,
                     confirmLabel: "Mark refunded",
                   });
                   if (yes) void refund.run(credit.id);
