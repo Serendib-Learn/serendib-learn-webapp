@@ -56,6 +56,19 @@ function url(path: string, query?: RequestOptions["query"]): string {
 }
 
 /**
+ * The browser could not connect at all: usually no internet, sometimes a
+ * blocked network. Visitors get plain words; only a local development build
+ * adds the hint about starting the API.
+ */
+function unreachable(what?: string): ApiError {
+  const hint =
+    process.env.NODE_ENV === "development" ? ` (Developer: is the API running at ${BASE}? npm run dev in server/)` : "";
+  return new ApiError(
+    `${what ? `We could not load ${what}.` : "We could not connect to Serendib Learn."} Check your internet connection and try again.${hint}`,
+  );
+}
+
+/**
  * Every call carries the session cookie, and any write bumps the revision so
  * mounted queries refetch. Errors from the API arrive as `{ error }` and are
  * rethrown as `ApiError`, which the UI already knows how to display.
@@ -73,9 +86,7 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
       cache: "no-store",
     });
   } catch {
-    throw new ApiError(
-      `Could not reach the API at ${BASE}. Is the server running? (npm run dev in server/)`,
-    );
+    throw unreachable();
   }
 
   if (method !== "GET") bumpRevision();
@@ -567,7 +578,7 @@ export const httpBackend: Backend = {
       try {
         response = await fetch(url(`/voice-notes/${id}`), { credentials: "include" });
       } catch {
-        throw new ApiError("Could not reach the API to fetch that voice note.");
+        throw unreachable("that voice note");
       }
       if (!response.ok) throw new ApiError("That voice note could not be played.");
       return response.blob();
@@ -627,7 +638,7 @@ export const httpBackend: Backend = {
       try {
         response = await fetch(url(`/post-images/${id}`), { credentials: "include" });
       } catch {
-        throw new ApiError("Could not reach the API to fetch that photo.");
+        throw unreachable("that photo");
       }
       if (!response.ok) throw new ApiError("That photo could not be shown.");
       return response.blob();
